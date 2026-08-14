@@ -1,0 +1,15 @@
+[06:36:53.526] TX> 
+[06:36:54.528] TX> 
+[06:36:55.528] RX< 
+[06:36:55.528] RX< msh />
+[06:36:55.528] RX< msh />
+[06:36:55.529] TX> 
+[06:36:56.331] TX> echo "EVBTEST_HELLO"; echo "__EVBTEST_END_6ffd505b__"
+[06:36:57.529] RX< 
+[06:36:57.529] RX< msh />echo "EVBTEST_HELLO"; echo "__EVBTEST_END_6ffd505b__"
+[06:36:57.529] RX< Usage: echo "string" [filename]
+[06:36:57.529] RX< msh />
+[06:37:01.333] TX> echo "EVBTEST_HELLO"; echo "MARK"
+[06:37:01.531] RX< echo "EVBTEST_HELLO"; echo "MARK"
+[06:37:01.531] RX< Usage: echo "string" [filename]
+[06:37:01.531] RX< msh />

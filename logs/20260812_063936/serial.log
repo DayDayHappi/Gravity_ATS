@@ -1,0 +1,41 @@
+[06:39:36.622] TX> 
+[06:39:37.623] TX> 
+[06:39:38.623] RX< 
+[06:39:38.623] RX< msh />
+[06:39:38.623] RX< msh />
+[06:39:38.624] TX> wifi status
+[06:39:38.624] TX> echo "__EVBTEST_END_ebff0af7__"
+[06:39:40.625] RX< wifi status
+[06:39:40.625] RX< Wi-Fi STA Info
+[06:39:40.625] RX< SSID : G-Demo
+[06:39:40.625] RX< MAC Addr: f4:e4:51:83:e3:02
+[06:39:40.625] RX< Channel: 11
+[06:39:40.625] RX< DataRate: 144Mbps
+[06:39:40.625] RX< RSSI: -52
+[06:39:40.625] RX< wifi ap not start!
+[06:39:40.625] RX< Auto Connect status:Disable!
+[06:39:40.625] RX< msh />echo "__EVBTEST_END_ebff0af7__"
+[06:39:40.625] RX< __EVBTEST_END_ebff0af7__
+[06:39:40.625] RX< msh />
+[06:39:40.625] TX> wifi disc
+[06:39:40.625] TX> echo "__EVBTEST_END_d95190e1__"
+[06:39:42.627] RX< wifi disc
+[06:39:42.627] RX< [32m[I/WLAN.mgnt] disconnect success![0m
+[06:39:42.627] RX< msh />echo "__EVBTEST_END_d95190e1__"
+[06:39:42.627] RX< __EVBTEST_END_d95190e1__
+[06:39:42.627] RX< msh />
+[06:39:43.637] TX> wifi join ftp_test_2_4G ftp_test_2_4G
+[06:39:44.628] RX< wifi join ftp_test_2_4G ftp_test_2_4G
+[06:39:48.629] RX< [32m[I/WLAN.mgnt] wifi connect success ssid:ftp_test_2_4G[0m
+[06:39:56.636] RX< whd_wifi_join_wait_for_complete: not ready to transceive (err 33555494); left network
+[06:39:56.636] RX< Function whd_wifi_join failed at line 2164 checkres = 33555494 
+[06:39:56.636] RX< msh />
+[06:40:03.665] TX> wifi status
+[06:40:03.665] TX> echo "__EVBTEST_END_7de8968e__"
+[06:40:04.642] RX< wifi status
+[06:40:04.642] RX< wifi disconnected!
+[06:40:04.642] RX< wifi ap not start!
+[06:40:04.642] RX< Auto Connect status:Disable!
+[06:40:04.642] RX< msh />echo "__EVBTEST_END_7de8968e__"
+[06:40:04.642] RX< __EVBTEST_END_7de8968e__
+[06:40:04.642] RX< msh />

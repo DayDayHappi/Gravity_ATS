@@ -1,0 +1,9 @@
+[06:36:29.593] TX> 
+[06:36:30.594] TX> 
+[06:36:31.594] RX< 
+[06:36:31.594] RX< msh />
+[06:36:31.594] RX< msh />
+[06:36:31.595] TX> echo "EVBTEST_HELLO"; echo "__EVBTEST_END_6771a173__"
+[06:36:33.596] RX< echo "EVBTEST_HELLO"; echo "__EVBTEST_END_6771a173__"
+[06:36:33.596] RX< Usage: echo "string" [filename]
+[06:36:33.596] RX< msh />

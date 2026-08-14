@@ -1,0 +1,16 @@
+[06:34:19.985] TX> echo EVBTEST_HELLO; echo __EVBTEST_END_eec449e9__
+[06:34:20.996] RX< echo EVBTEST_HELLO; echo __EVBTEST_END_eec449e9__
+[06:34:20.996] RX< Usage: echo "string" [filename]
+[06:34:20.996] RX< msh />
+[06:34:25.000] TX> wifi scan; echo __EVBTEST_END_c557a29c__
+[06:34:27.001] RX< wifi scan; echo __EVBTEST_END_c557a29c__
+[06:34:27.001] RX< wifi
+[06:34:27.001] RX< wifi help
+[06:34:27.001] RX< wifi scan [SSID]
+[06:34:27.001] RX< wifi join [SSID] [PASSWORD]
+[06:34:27.001] RX< wifi ap SSID [PASSWORD]
+[06:34:27.001] RX< wifi disc
+[06:34:27.001] RX< wifi ap_stop
+[06:34:27.001] RX< wifi status
+[06:34:27.001] RX< wifi smartconfig
+[06:34:27.001] RX< msh />

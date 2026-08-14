@@ -1,0 +1,11 @@
+[03:59:21.506] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260813_035921
+[03:59:21.506] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[03:59:21.506] [INFO] dry-run: 配置与依赖校验通过，不执行测试
+[03:59:21.515] [INFO]   模块 wifi_check 依赖: []
+[03:59:21.515] [INFO]   模块 wifi_scan 依赖: ['wifi_check']
+[03:59:21.515] [INFO]   模块 wifi_join 依赖: ['wifi_scan']
+[03:59:21.515] [INFO]   模块 emmc 依赖: []
+[03:59:21.515] [INFO]   模块 ftp 依赖: ['wifi_join']
+[03:59:21.515] [INFO]   模块 photo 依赖: ['ftp']
+[03:59:21.515] [INFO]   模块 video 依赖: ['ftp']
+[03:59:21.515] [INFO]   模块 rtmp 依赖: ['wifi_join']

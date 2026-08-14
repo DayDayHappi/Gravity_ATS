@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "total": 7,
+    "passed": 4,
+    "failed": 1,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 57.1,
+    "total_elapsed_ms": 52419
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 32,
+      "message": "已联网，IP=10.1.90.71（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-13 01:27:12"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=10.1.90.71），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-13 01:27:12"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (未知SSID/10.1.90.71)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-13 01:27:12"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 21,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-13 01:27:12"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 633,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 3 项",
+      "detail": "",
+      "timestamp": "2026-08-13 01:27:12"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 20776,
+      "message": "JPEG OK 724KB | 拍照成功，保存到 /emmc/PIC/20260813_042714_6973 | 已下载到 logs/20260813_012649/photos/auto_20260813_042714_6973_Image_20260813_042714_6973_0.jpg",
+      "detail": "含 8 个 jpg",
+      "timestamp": "2026-08-13 01:27:34"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "FAIL",
+      "elapsed_ms": 30957,
+      "message": "停止录像失败",
+      "detail": "...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\u001b[0",
+      "timestamp": "2026-08-13 01:28:05"
+    }
+  ],
+  "generated_at": "2026-08-13 01:28:05"
+}

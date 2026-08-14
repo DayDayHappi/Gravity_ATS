@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="1" errors="0" skipped="0" time="237.23">
+  <testcase name="wifi_check" classname="wifi_check" time="2.02">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="4.14">
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="10.01">
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="2.00">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="2.85">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="65.84">
+  </testcase>
+  <testcase name="video" classname="video" time="126.37">
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="24.00">
+    <failure message="推流验证失败: 拉流文件未生成"><![CDATA[{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'duration': 0.0, 'ok': False, 'reason': '拉流文件未生成'}]]></failure>
+  </testcase>
+</testsuite>

@@ -1,0 +1,20 @@
+[06:40:59.416] TX> 
+[06:41:00.417] TX> 
+[06:41:01.417] RX< 
+[06:41:01.417] RX< msh />
+[06:41:01.417] RX< msh />
+[06:41:01.418] TX> 
+[06:41:02.419] TX> 
+[06:41:03.418] RX< 
+[06:41:03.418] RX< msh />
+[06:41:03.418] RX< msh />
+[06:41:03.425] TX> wifi disc
+[06:41:03.425] TX> echo "__EVBTEST_END_32155bb6__"
+[06:41:05.420] RX< wifi disc
+[06:41:05.420] RX< [32m[I/WLAN.mgnt] disconnect success![0m
+[06:41:05.420] RX< msh />echo "__EVBTEST_END_32155bb6__"
+[06:41:05.420] RX< __EVBTEST_END_32155bb6__
+[06:41:05.420] RX< msh />
+[06:41:08.425] TX> wifi join G-Demo Gdemo@123
+[06:41:08.425] TX> echo "__EVBTEST_END_7288d0e7__"
+[06:41:09.424] RX< wifi join G-Demo Gdemo@123

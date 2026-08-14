@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "errored": 0,
+    "pass_rate": 100.0,
+    "total_elapsed_ms": 28743
+  },
+  "results": [
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "PASS",
+      "elapsed_ms": 3809,
+      "message": "扫描到 15 个 AP（其中 1 个 RSSI<-70 信号弱）",
+      "detail": "",
+      "timestamp": "2026-08-12 08:04:23"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "PASS",
+      "elapsed_ms": 8004,
+      "message": "已连接 G-Demo，IP=10.1.90.71",
+      "detail": "",
+      "timestamp": "2026-08-12 08:04:31"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2001,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-12 08:04:33"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 2419,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 3 项",
+      "detail": "",
+      "timestamp": "2026-08-12 08:04:35"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 5215,
+      "message": "拍照成功，保存到 /emmc/PIC/20260812_110438_7596（未列出 jpg 辅助验证）",
+      "detail": "Save Photo Successful: /emmc/PIC/20260812_110438_7596/\n[6] [App Dfs] Capture completed successfully.\r\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n",
+      "timestamp": "2026-08-12 08:04:41"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 7295,
+      "message": "录像成功，文件 /emmc/VIDEO/20260812_110442_2492/Video_2492_0.h265（大小校验跳过）",
+      "detail": " success\n[6] [App Dfs] Save Video Successful: /emmc/VIDEO/20260812_110442_2492/Video_2492_0.h265\n[6] [App Dfs] Save Imu Successful: /emmc/VIDEO/20260812_110442_2492/Imu_2492.bin\r\n[6] [App Dfs] Video r",
+      "timestamp": "2026-08-12 08:04:48"
+    }
+  ],
+  "generated_at": "2026-08-12 08:04:48"
+}

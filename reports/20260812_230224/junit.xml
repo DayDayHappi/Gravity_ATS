@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="6" failures="0" errors="0" skipped="0" time="33.65">
+  <testcase name="wifi_scan" classname="wifi_scan" time="2.19">
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="8.00">
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="0.18">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="2.05">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="12.98">
+  </testcase>
+  <testcase name="video" classname="video" time="8.26">
+  </testcase>
+</testsuite>

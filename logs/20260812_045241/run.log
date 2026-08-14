@@ -1,0 +1,6 @@
+[04:52:41.776] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260812_045241
+[04:52:41.776] [INFO] 启用模块: ['wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[04:52:41.776] [ERROR] 缺少依赖:
+[04:52:41.776] [ERROR]   - pyserial (pip install pyserial)
+[04:52:41.776] [ERROR]   - ffmpeg (sudo apt install ffmpeg)
+[04:52:41.776] [ERROR]   - ffprobe (sudo apt install ffmpeg)

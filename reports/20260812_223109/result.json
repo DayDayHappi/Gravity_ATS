@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 5,
+    "errored": 0,
+    "pass_rate": 16.7,
+    "total_elapsed_ms": 2001
+  },
+  "results": [
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已交互连接，跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:54"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_scan']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:54"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2001,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:56"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_join']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:56"
+    },
+    {
+      "name": "photo",
+      "module": "photo",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['ftp']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:56"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['ftp']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:31:56"
+    }
+  ],
+  "generated_at": "2026-08-12 22:31:56"
+}

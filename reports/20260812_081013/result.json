@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "errored": 0,
+    "pass_rate": 100.0,
+    "total_elapsed_ms": 31271
+  },
+  "results": [
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "PASS",
+      "elapsed_ms": 3374,
+      "message": "扫描到 16 个 AP",
+      "detail": "",
+      "timestamp": "2026-08-12 08:10:49"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "PASS",
+      "elapsed_ms": 10007,
+      "message": "已连接 G-Demo，IP=10.1.90.71",
+      "detail": "",
+      "timestamp": "2026-08-12 08:10:59"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2002,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-12 08:11:01"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 2638,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 3 项",
+      "detail": "",
+      "timestamp": "2026-08-12 08:11:04"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 5993,
+      "message": "拍照成功，保存到 /emmc/PIC/20260812_111106_0821（未列出 jpg 辅助验证）",
+      "detail": "Save Photo Successful: /emmc/PIC/20260812_111106_0821/\n[6] [App Dfs] Capture completed successfully.\r\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n",
+      "timestamp": "2026-08-12 08:11:10"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 7257,
+      "message": "录像成功，文件 /emmc/VIDEO/20260812_111110_5715/Video_5715_0.h265（大小校验跳过）",
+      "detail": "cam exit] perf=564(us)!\r\n[6] [App Cam] cam exit success\n[6] [App Dfs] Save Video Successful: /emmc/VIDEO/20260812_111110_5715/Video_5715_0.h265\n[6] [App Dfs] Save Imu Successful: /emmc/VIDEO/20260812_",
+      "timestamp": "2026-08-12 08:11:18"
+    }
+  ],
+  "generated_at": "2026-08-12 08:11:18"
+}

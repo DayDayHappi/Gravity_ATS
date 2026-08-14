@@ -1,0 +1,77 @@
+{
+  "summary": {
+    "total": 7,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 71.4,
+    "total_elapsed_ms": 63660
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 247,
+      "message": "已联网，IP=10.1.90.71（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-13 02:41:29"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=10.1.90.71），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-13 02:41:29"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (未知SSID/10.1.90.71)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-13 02:41:29"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 87,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-13 02:41:30"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 1085,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 3 项",
+      "detail": "",
+      "timestamp": "2026-08-13 02:41:31"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 9377,
+      "message": "JPEG OK 654KB | 拍照成功，保存到 /emmc/PIC/20260813_054132_8644 | 已下载到 logs/20260813_024105/photos/auto_20260813_054132_8644_Image_20260813_054132_8644_0.jpg",
+      "detail": "含 5 个 jpg",
+      "timestamp": "2026-08-13 02:41:41"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 52864,
+      "message": "录像成功，文件 /emmc/VIDEO/20260813_054141_8409/Video_8409_0.h265，3600KB | 已下载到 logs/20260813_024105/videos/Video_8409_0.h265",
+      "detail": "/emmc/VIDEO/20260813_054141_8409/Video_8409_0.h265",
+      "timestamp": "2026-08-13 02:42:34"
+    }
+  ],
+  "generated_at": "2026-08-13 02:42:34"
+}

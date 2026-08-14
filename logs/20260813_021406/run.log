@@ -1,0 +1,16 @@
+[02:14:07.152] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:14:58.911] [WARN] 下载超时(50s，本轮6239KB，累计6239KB/10025KB)，续传 1/8
+[02:14:59.133] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:14:59.193] [WARN] 下载失败(尝试2/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:14:59.424] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:14:59.483] [WARN] 下载失败(尝试3/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:14:59.670] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:14:59.827] [WARN] 下载失败(尝试4/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:14:59.973] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:15:00.019] [WARN] 下载失败(尝试5/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:15:00.193] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:15:00.238] [WARN] 下载失败(尝试6/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:15:00.404] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:15:00.449] [WARN] 下载失败(尝试7/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.
+[02:15:00.641] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:15:00.689] [WARN] 下载失败(尝试8/8) /emmc/VIDEO/20260813_043343_0103/Video_0103_0.h265: 350 Send RETR or STOR to start transfert.

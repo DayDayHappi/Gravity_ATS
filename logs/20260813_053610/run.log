@@ -1,0 +1,59 @@
+[05:36:10.938] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260813_053610
+[05:36:10.938] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[05:36:10.939] [INFO] 开始自动探测 EVB 串口，候选端口 ['/dev/ttyUSB0']，候选波特率 [2000000, 250000, 115200, 921600]
+[05:36:10.939] [DEBUG] 探测 /dev/ttyUSB0 @ 2000000 ...
+[05:36:13.245] [INFO]   命中 EVB 指纹: /dev/ttyUSB0 @ 2000000
+[05:36:13.245] [INFO] 探测到 EVB: /dev/ttyUSB0 @ 2000000
+[05:36:13.247] [INFO] 串口已打开: /dev/ttyUSB0 @ 2000000 bps
+[05:36:15.248] [INFO] EVB 已就绪
+[05:36:17.249] [DEBUG] 串口自检通过
+[05:36:17.249] [INFO] 预清理板子状态...
+[05:36:27.828] [INFO] 使用默认 WiFi: G-Demo
+[05:36:57.849] [ERROR] WiFi 连接失败: 期望结果未出现(30.0s): Got IP address\s*:\s*([0-9.]+)
+[05:36:57.849] [ERROR] 输出: wifi join G-Demo Gdemo@123
+[W/WLAN.mgnt] F:rt_wlan_connect L:935 not find ap! ssid:G-Demo,info.ssid.len=6
+msh />echo "__EVBTEST_END_12bd1b86__"
+__EVBTEST_END_12bd1b86__
+msh />
+[05:36:57.849] [WARN] WiFi 交互连接失败，将依赖 wifi_join 用例连接
+[05:36:57.849] [INFO] 本次执行模块顺序: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[05:36:57.849] >>> 执行模块: wifi_check
+[05:36:59.872] [PASS] wifi_check (2022ms) - 未联网，将继续 scan/join
+[05:36:59.872] >>> 执行模块: wifi_scan
+[05:37:04.001] [PASS] wifi_scan (4128ms) - 扫描到 10 个 AP
+[05:37:04.001] >>> 执行模块: wifi_join
+[05:37:12.006] [PASS] wifi_join (8005ms) - 已连接 G-Demo，IP=10.1.90.71
+[05:37:12.006] >>> 执行模块: emmc
+[05:37:14.008] [PASS] emmc (2001ms) - 已进入 /emmc（自动挂载）
+[05:37:14.009] >>> 执行模块: ftp
+[05:37:16.230] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[05:37:16.762] [PASS] ftp (2752ms) - FTP 已连接 10.1.90.71，/emmc 列出 3 项
+[05:37:16.762] >>> 执行模块: photo
+[05:37:17.397]   拍照测试: 模式 auto
+[05:37:20.073] [DEBUG] 强制重连 FTP
+[05:37:23.753] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[05:37:23.753] [INFO] FTP 已恢复
+[05:37:28.035] [PASS] photo[auto] (10637ms) - JPEG OK 772KB | 拍照成功，保存到 /emmc/PIC/20260813_083719_8397 | 已下载到 logs/20260813_053610/photos/auto_20260813_083719_8397_Image_20260813_083719_8397_0.jpg
+[05:37:28.035] >>> 执行模块: video
+[05:37:28.382]   录像测试: 1080p / 2s
+[05:37:31.357] [DEBUG] 强制重连 FTP
+[05:37:33.710] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[05:37:33.710] [INFO] FTP 已恢复
+[05:37:59.612] [PASS] video (31230ms) - 录像成功，文件 /emmc/VIDEO/20260813_083728_8286/Video_8286_0.h265，3595KB | 已下载到 logs/20260813_053610/videos/Video_8286_0.h265
+[05:37:59.612] [INFO] 自动检测到 PC IP: 10.1.64.35
+[05:37:59.613] >>> 执行模块: rtmp
+[05:37:59.613] [INFO] 启动 RTMP 服务端 MediaMTX: tools/mediamtx/mediamtx tools/mediamtx/mediamtx_min.yml
+[05:37:59.815] [INFO] MediaMTX 就绪，RTMP 监听 :1935
+[05:37:59.815] [DEBUG] 强制重连 FTP
+[05:38:01.789] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[05:38:01.789] [INFO] FTP 已恢复
+[05:38:02.790]   RTMP 推流测试: rtmp://10.1.64.35/live/cam1 / 10s
+[05:38:05.809] [INFO] 启动 ffmpeg 拉流: tools/ffmpeg/ffmpeg -rw_timeout 15000000 -y -i rtmp://10.1.64.35/live/cam1 -t 10 -c copy -f flv /home/gravity/AutoTestScripts_JX009/logs/rtmp/stream_1786613885.flv
+[05:38:17.853] [FAIL] rtmp (15047ms) - 推流验证失败: 拉流文件未生成
+[05:38:17.898] ==================================================
+[05:38:17.898] 测试完成：共 8 项 | 通过 7 | 失败 1 | 跳过 0 | 错误 0 | 通过率 87.5% | 总耗时 75.8s
+[05:38:17.898] ==================================================
+[05:38:17.898] [INFO]   json 报告: reports/20260813_053610/result.json
+[05:38:17.898] [INFO]   junit 报告: reports/20260813_053610/junit.xml
+[05:38:17.898] [INFO]   html 报告: reports/20260813_053610/report.html
+[05:38:18.371] [DEBUG] 串口已关闭

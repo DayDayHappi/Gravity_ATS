@@ -1,0 +1,71 @@
+# VX100 EVB 自动化测试默认配置
+# 增删测试项：改 test.enabled_modules；改参数：改对应段。
+# 敏感字段支持 ${ENV_VAR} 语法从环境变量读取。
+
+serial:
+  port: "auto"             # auto=自动探测(默认)；或填具体 /dev/ttyUSB0
+  baudrate: 2000000        # 默认2000000(用户指定)；自动探测时回退候选
+  baudrate_candidates: [2000000, 250000, 115200, 921600]
+  timeout: 2.0
+  ready_timeout: 60        # 等 msh 就绪
+  sentinel_timeout: 5      # 哨兵下发确认超时
+  detect_timeout: 2.0      # 自动探测时每端口读响应超时
+
+wifi:
+  default_ssid: "G-Demo"
+  default_password: "Gdemo@123"   # 默认密码(可用 ${WIFI_PASSWORD} 覆盖)
+  interactive: true        # 启动时交互选择 WiFi
+
+emmc:
+  format: false            # 默认跳过格式化，仅 cd 验证
+
+ftp:
+  user: "loogg"
+  password: "loogg"
+  port: 21
+  connect_retry: 3
+  connect_interval: 1.0
+  pasv: false              # 主动模式(RT-Thread FTP不支持PASV)；需PC防火墙放行入站
+  timeout: 10
+
+camera:
+  photo_modes: ["auto"]    # 默认只测 auto；可扩为 [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
+  photo_min_size_kb: 10
+  photo_settle_delay: 1.0  # 模式切换后稳定延时(秒)
+  photo_capture_timeout: 10
+  video_resolution: "1080p"
+  video_duration: 2        # 录像时长(秒)——2秒约3.6MB，FTP可完整下载；5秒(10MB)会因固件FTP卡死下不完
+  video_min_size_kb: 100
+  video_capture_timeout: 15
+
+rtmp:
+  stream_url: "rtmp://{pc_ip}/live/cam"
+  stream_duration: 10
+  pc_ip: "auto"            # auto=自动检测，或填具体 IP
+  # 使用项目内置的静态构建 ffmpeg/ffprobe (tools/ffmpeg/)，不依赖系统安装
+  # 相对路径基于运行时 cwd（python -m ATS.main 在项目根目录执行）
+  ffprobe_path: "tools/ffmpeg/ffprobe"
+  ffmpeg_path: "tools/ffmpeg/ffmpeg"
+  # RTMP 服务端 MediaMTX (接收 EVB 推流并中转给 ffmpeg 拉流)
+  # 默认用项目内置 tools/mediamtx/，留空即可；可覆盖为绝对路径
+  mediamtx_path: ""        # 空=自动取 tools/mediamtx/mediamtx
+  mediamtx_config: ""      # 空=自动取 tools/mediamtx/mediamtx_min.yml
+
+test:
+  enabled_modules:
+    - wifi_check          # 先 ifconfig 检测，已联网则跳过 scan/join
+    - wifi_scan
+    - wifi_join
+    - emmc
+    - ftp
+    - photo
+    - video
+    - rtmp
+  retry_on_fail: 1
+  fail_fast: true
+
+report:
+  output_dir: "reports"
+  log_dir: "logs"
+  junit: true
+  html: true

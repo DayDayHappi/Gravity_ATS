@@ -1,0 +1,1407 @@
+[05:42:26.378] TX> 
+[05:42:27.379] TX> 
+[05:42:28.379] RX< 
+[05:42:28.379] RX< msh />
+[05:42:28.379] RX< msh />
+[05:42:28.380] TX> 
+[05:42:29.380] TX> 
+[05:42:30.380] RX< 
+[05:42:30.380] RX< msh />
+[05:42:30.380] RX< msh />
+[05:42:30.381] TX> 
+[05:42:31.381] TX> 
+[05:42:32.382] TX> 
+[05:42:32.382] RX< 
+[05:42:32.382] RX< msh />
+[05:42:32.382] RX< msh />
+[05:42:32.389] TX> echo "EVBTEST_HELLO"
+[05:42:32.389] TX> echo "__EVBTEST_END_f894fae9__"
+[05:42:34.384] RX< 
+[05:42:34.384] RX< msh />echo "EVBTEST_HELLO"
+[05:42:34.384] RX< EVBTEST_HELLO
+[05:42:34.384] RX< msh />echo "__EVBTEST_END_f894fae9__"
+[05:42:34.384] RX< __EVBTEST_END_f894fae9__
+[05:42:34.384] RX< msh />
+[05:42:34.393] TX> cd /
+[05:42:34.393] TX> echo "__EVBTEST_END_39b6e451__"
+[05:42:36.385] RX< cd /
+[05:42:36.385] RX< msh />echo "__EVBTEST_END_39b6e451__"
+[05:42:36.385] RX< __EVBTEST_END_39b6e451__
+[05:42:36.385] RX< msh />
+[05:42:36.393] TX> dfs_video_stop
+[05:42:36.393] TX> echo "__EVBTEST_END_4da5a3c5__"
+[05:42:38.387] RX< dfs_video_stop
+[05:42:38.387] RX< [6] [App Dfs] Please start recording the video first.
+[05:42:38.387] RX< msh />echo "__EVBTEST_END_4da5a3c5__"
+[05:42:38.387] RX< __EVBTEST_END_4da5a3c5__
+[05:42:38.387] RX< msh />
+[05:42:38.393] TX> ftp_server
+[05:42:38.393] TX> echo "__EVBTEST_END_670bff3c__"
+[05:42:40.389] RX< ftp_server
+[05:42:40.389] RX< 
+[05:42:40.389] RX< [FTP] Ftp server init success!!!
+[05:42:40.389] RX< msh />echo "__EVBTEST_END_670bff3c__"
+[05:42:40.389] RX< __EVBTEST_END_670bff3c__
+[05:42:40.389] RX< msh />
+[05:42:44.392] RX< [32m[I/ftp] service launched success.[0m
+[05:43:09.777] TX> wifi join G-Demo Gdemo@123
+[05:43:09.777] TX> echo "__EVBTEST_END_09c3d93b__"
+[05:43:10.415] RX< wifi join G-Demo Gdemo@123
+[05:43:22.426] RX< whd_wifi_join_wait_for_complete: not ready to transceive (err 33555456); left network
+[05:43:22.426] RX< Function whd_wifi_join failed at line 2164 checkres = 33555456 
+[05:43:22.426] RX< msh />echo "__EVBTEST_END_09c3d93b__"
+[05:43:22.426] RX< __EVBTEST_END_09c3d93b__
+[05:43:22.426] RX< msh />
+[05:43:39.789] RX< ifconfig
+[05:43:39.789] RX< network interface device: w0 (Default)
+[05:43:39.789] RX< MTU: 1500
+[05:43:39.789] RX< MAC: 8c ea 12 ba a8 2c 
+[05:43:39.789] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[05:43:39.789] RX< ip address: 0.0.0.0
+[05:43:39.789] RX< gw address: 0.0.0.0
+[05:43:39.789] RX< net mask  : 0.0.0.0
+[05:43:39.789] RX< dns server #0: 0.0.0.0
+[05:43:39.789] RX< dns server #1: 0.0
+[05:43:39.789] TX> ifconfig
+[05:43:39.789] TX> echo "__EVBTEST_END_e5181d33__"
+[05:43:39.797] RX< .0.0
+[05:43:39.797] RX< 
+[05:43:39.797] RX< network interface device: w1
+[05:43:39.797] RX< MTU: 1500
+[05:43:39.797] RX< MAC: 8e ea 12 ba a8 2c 
+[05:43:39.797] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[05:43:39.797] RX< ip address: 0.0.0.0
+[05:43:39.797] RX< gw address: 0.0.0.0
+[05:43:39.797] RX< net mask  : 0.0.0.0
+[05:43:39.797] RX< dns server #0: 0.0.0.0
+[05:43:39.797] RX< dns server #1: 0.0.0.0
+[05:43:39.797] RX< msh />e
+[05:43:41.799] RX< cho "__EVBTEST_END_e5181d33__"
+[05:43:41.799] RX< __EVBTEST_END_e5181d33__
+[05:43:41.799] RX< msh />
+[05:43:41.805] TX> wifi scan
+[05:43:41.805] TX> echo "__EVBTEST_END_a2a27bb0__"
+[05:43:42.098] RX< wifi scan
+[05:43:42.098] RX<              SSID                      MAC            security    rssi chn Mbps
+[05:43:42.098] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[05:43:42.098] RX< HUAWEI-AX2                      02:25:74:39:4e:47  WPA2_AES_PSK   -56    1  300
+[05:43:42.098] RX< grav
+[05:43:42.489] RX< ityXR                       f4:e4:51:83:d5:80  WPA2_AES_PSK   -49    6  144
+[05:43:42.489] RX< MTK_CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -39   13  300
+[05:43:42.489] RX< TP-LINK_5G_756B                 c2:45:86:39:8c:5f  WPA2_AES_PSK   -56    1  300
+[05:43:42.489] RX< ftp_hw_2_4g      
+[05:43:43.098] RX<                e2:19:01:17:87:d1  WPA2_AES_PSK   -40    1  144
+[05:43:43.098] RX< alk_guest                       2c:97:b1:17:2e:a1  WPA2_MIXED_PSK -55    1   72
+[05:43:43.098] RX<  Gwireless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -47    6  144
+[05:43:43.098] RX< G-Demo                        
+[05:43:43.934] RX<   f4:e4:51:83:d5:82  WPA2_AES_PSK   -49    6  144
+[05:43:43.934] RX< gravityXR                       f4:e4:51:83:e3:00  WPA2_AES_PSK   -67   11  144
+[05:43:43.934] RX< G-Demo                          f4:e4:51:83:e3:02  WPA2_AES_PSK   -64   11  144
+[05:43:43.934] RX< msh />echo "__EVBTEST_END_a2a27bb0__"
+[05:43:43.934] RX< __EVB
+[05:43:45.937] RX< TEST_END_a2a27bb0__
+[05:43:45.937] RX< msh />
+[05:43:45.945] TX> wifi join G-Demo Gdemo@123
+[05:43:45.945] TX> echo "__EVBTEST_END_92edcd1e__"
+[05:43:47.939] RX< wifi join G-Demo Gdemo@123
+[05:43:51.941] RX< [32m[I/WLAN.mgnt] wifi connect success ssid:G-Demo[0m
+[05:43:51.941] RX< msh />echo "__EVBTEST_END_92edcd1e__"
+[05:43:51.941] RX< __EVBTEST_END_92edcd1e__
+[05:43:51.941] RX< msh />
+[05:43:55.945] RX< [32m[I/WLAN.lwip] Got IP address : 10.1.90.71[0m
+[05:43:55.945] RX< [6] [SNTP] rtc synced: 2026-08-13 08:43:54 (tick=620321088)
+[05:43:55.953] TX> cd /emmc
+[05:43:55.953] TX> echo "__EVBTEST_END_08cc5947__"
+[05:43:57.947] RX< cd /emmc
+[05:43:57.947] RX< msh /emmc>echo "__EVBTEST_END_08cc5947__"
+[05:43:57.947] RX< __EVBTEST_END_08cc5947__
+[05:43:57.947] RX< msh /emmc>
+[05:43:57.953] TX> ftp_server
+[05:43:57.953] TX> echo "__EVBTEST_END_a96bb188__"
+[05:43:59.949] RX< ftp_server
+[05:43:59.949] RX< 
+[05:43:59.949] RX< [FTP] Ftp server init success!!!
+[05:43:59.949] RX< msh /emmc>echo "__EVBTEST_END_a96bb188__"
+[05:43:59.949] RX< __EVBTEST_END_a96bb188__
+[05:43:59.949] RX< msh /emmc>
+[05:44:01.457] TX> cam_set photo auto
+[05:44:01.457] TX> echo "__EVBTEST_END_060a73d4__"
+[05:44:01.949] RX< cam_set photo auto
+[05:44:01.949] RX< [6] [App Dfs] auto mode
+[05:44:01.949] RX< msh /emmc>echo "__EVBTEST_END_060a73d4__"
+[05:44:01.949] RX< __EVBTEST_END_060a73d4__
+[05:44:01.949] RX< msh /emmc>
+[05:44:02.957] TX> dfs_capture_start
+[05:44:02.957] TX> echo "__EVBTEST_END_544f1ba3__"
+[05:44:02.966] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:02.966] RX< dfs_capture_start
+[05:44:02.966] RX< [7] [cam] [107149][tshell][cgm_parse_bin:105]total logical camera num: 1
+[05:44:02.966] RX< [6] [cam] [107149][tshell][cam_prelude_create:187]E id, 0
+[05:44:02.966] RX< [7] [cam] [107149][cpl0][cam_prelude_proc_routin
+[05:44:02.969] RX< e:101]thread start
+[05:44:02.969] RX< [6] [cam] [107150][tshell][cam_prelude_create:214]X ctx size 124 addr 0x88482d18
+[05:44:02.969] RX< [6] [cam] [107156][tshell][sensor_probe:418]sensor [1]: identifing 0 success.
+[05:44:02.969] RX< [6] [cam] [107157][tshell][sensor_probe:441]sensor [1]: probe exit!
+[05:44:02.969] RX< [6] [cam]
+[05:44:02.969] RX<  [107157][tshell][cam_prelude_fast_probe:251]cam: 0 probe result: 0
+[05:44:02.969] RX< [6] [cam] [107158][tshell][cgm_parse_bin:215]cam(0) probe success
+[05:44:02.969] RX< [6] [cam] [107158][tshell][cam_entry:435]entry ok
+[05:44:02.969] RX< [34m[cam entry] perf=9629(us)!
+[05:44:02.969] RX< [0m[6] [App Cam] cam entry success
+[05:44:02.969] RX< 
+[05:44:02.971] RX< [36mmem_laySolv: scenario=01 in=4032x3024, me_rotate=1 me_stripe=1 
+[05:44:02.971] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[05:44:02.971] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCfg for bound!
+[05:44:02.971] RX< [36mmem_laySolv: scen01 20 entries solved OK!
+[05:44:02.971] RX< [0m[7] [cam]
+[05:44:02.972] RX<  [107160][tshell][cam_solve_whole_layout:355]
+[05:44:02.972] RX< scen1: vol 0x8c000000 rbuf 0x8a000000 sz 0x1400000 wbuf 0x8b400000 sz 0x200000
+[05:44:02.972] RX< [36mmem_laySolv: scenario=02 in=2016x1512, me_rotate=0 me_stripe=0 
+[05:44:02.972] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:44:02.974] RX< [0mscen2 type15 bufAdr 0x89ce3ef0 sz 0xd00000 reCfg for bound!
+[05:44:02.974] RX< [36mmem_laySolv: scen02 14 entries solved OK!
+[05:44:02.974] RX< [0m[36mmem_laySolv: scenario=03 in=4032x2268, me_rotate=1 me_stripe=0 
+[05:44:02.974] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 0, eis 0, be_rot 0
+[05:44:02.974] RX< [0m[36m
+[05:44:02.974] RX< mem_laySolv: scen03 14 entries solved OK!
+[05:44:02.974] RX< [0m[36mmem_laySolv: scenario=04 in=4032x3024, me_rotate=1 me_stripe=1 
+[05:44:02.974] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[05:44:02.974] RX< [0m[36mmem_laySolv: scen04 14 entries solved OK!
+[05:44:02.974] RX< [0m[36mmem_laySolv: scena
+[05:44:02.977] RX< rio=05 in=1008x0756, me_rotate=0 me_stripe=0 
+[05:44:02.977] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:44:02.977] RX< [0m[36mmem_laySolv: scen05 17 entries solved OK!
+[05:44:02.977] RX< [0m[36mmem_laySolv: scenario=06 in=1008x0720, me_rotate=0 me_stripe=0 
+[05:44:02.977] RX< [0m[36mmem_laySolv: m
+[05:44:02.977] RX< e_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:44:02.977] RX< [0m[36mmem_laySolv: scen06 12 entries solved OK!
+[05:44:02.977] RX< [0m[36mmem_laySolv: scenario=01 in=4032x3024, me_rotate=1 me_stripe=1 
+[05:44:02.977] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCfg for bound!
+[05:44:02.977] RX< [36mmem_laySolv: scen01 20
+[05:44:02.980] RX<  entries solved OK!
+[05:44:02.980] RX< [0m[7] [cam] [107167][tshell][cam_solve_whole_layout:383]Solve Whole-layout Done!
+[05:44:02.980] RX< [6] [cam] [107168][tshell][cgm_parse_media_para:271]phy cam num: 1
+[05:44:02.980] RX< [7] [cam] [107168][cer0][cer_recovery_proc:343]thread start cid, 0
+[05:44:02.980] RX< [6] [cam] [107168
+[05:44:02.980] RX< ][tshell][csc_open:443]SENSOR MCLK cal: 24MHz
+[05:44:02.980] RX< [6] [cam] [107169][tshell][csc_isp_clk_cal:344]MIPI CLK cal: 346MHz
+[05:44:02.980] RX< [6] [cam] [107169][tshell][csc_isp_clk_cal:371]LITE CLK cal: 28MHz
+[05:44:02.980] RX< [7] [cam] [107170][tshell][cpc_csi_rx_power_on:633]E id: 2
+[05:44:02.980] RX< [4] [cam] [107
+[05:44:02.986] RX< 170][tshell][cpc_csi_rx_power_on:644]csi_2 has already power on, STATUS: 1
+[05:44:02.986] RX< [6] [cam] [107171][tshell][cpc_update_clock:603]actual SNS mclk: 24MHz
+[05:44:02.986] RX< [6] [cam] [107171][tshell][cpc_update_clock:608]actual MIPI0: 500MHz
+[05:44:02.986] RX< [6] [cam] [107171][tshell][cpc_update_c
+[05:44:02.986] RX< lock:598]actual LITE clk: 50MHz
+[05:44:02.986] RX< [7] [cam] [107172][tshell][cam_prelude_open:297][34msnsOpen camID1 csiID0 phyIdx0[0m
+[05:44:02.986] RX< [6] [cam] [107176][tshell][sensor_expo_gain_match:48]sensor get sensor expo gain of imx681_vst
+[05:44:02.986] RX< [6] [cam] [107176][tshell][sensor_open:68
+[05:44:02.989] RX< 4]sensor [1] open OK.
+[05:44:02.989] RX< [6] [cam] [107177][tshell][cam_cpm_parse_media:280]photo scenario, media para[mfnr:0, hdr:0, capture_num:0]
+[05:44:02.989] RX< [6] [cam] [107177][tshell][cam_cpm_parse_media:283]photo scenario, media para[iso:0, gain:0, wb_mode:0]
+[05:44:02.989] RX< [6] [cam] [107178][t
+[05:44:02.989] RX< shell][csc_isp_clk_cal:353]FE CLK cal: 426MHz, ME CLK cal: 462MHz, FE/ME CLK cal: 508MHz
+[05:44:02.989] RX< [6] [cam] [107178][tshell][csc_isp_clk_cal:360]BE CLK cal: 401MHz
+[05:44:02.989] RX< [4] [cam] [107179][tshell][cam_fe_core_power_on:269]fe pipe has already power on, STATUS: 1
+[05:44:02.989] RX< [6] [cam
+[05:44:02.992] RX< ] [107179][tshell][cpc_update_clock:588]actual FE/ME clk: 550MHz
+[05:44:02.992] RX< [4] [cam] [107180][tshell][cam_be_core_power_on:964]be pipe has already power on, STATUS: 1
+[05:44:02.992] RX< [6] [cam] [107180][tshell][cpc_update_clock:593]actual BE clk: 500MHz
+[05:44:02.992] RX< [7] [cam] [107181][tshell][
+[05:44:02.993] RX< cam_cpm_core_power_on:425]id,0 type,1 ret 0
+[05:44:02.993] RX< [6] [cam] [107181][tshell][cam_cpm_core_init:914]E id,0 sensor type,1
+[05:44:02.993] RX< [6] [cam] [107182][tshell][cpm_core_check_tuningbin:854]Tuning bin crc check PASS! sum 0xc9b121ad, xor 0x29d57d51
+[05:44:02.993] RX< [6] [cam] [107182][tshell][
+[05:44:02.995] RX< qpc_tuning_check_iqbin_validness:396]IQ bin addr: 0x8869de60, project_name: capture_12M
+[05:44:02.995] RX< [6] [cam] [107184][tshell][qpc_tuning_check_iqbin_validness:397]total_size: 107856
+[05:44:02.995] RX< [6] [cam] [107184][tshell][qpc_tuning_check_iqbin_validness:398]id_count: 93. ID_TOT
+[05:44:02.995] RX< AL: 94
+[05:44:02.995] RX< [6] [cam] [107185][tshell][qpc_tuning_check_iqbin_validness:399]spinel tuning data ver: V1.30
+[05:44:02.995] RX< [6] [cam] [107185][tshell][cpm_core_check_tuningbin:868]IQ bin check success!
+[05:44:02.995] RX< [6] [cam] [107185][tshell][cam_bm_core_init:94]E
+[05:44:02.995] RX< [6] [cam] [107186][tshell]
+[05:44:03.002] RX< [bm_lab_init:174]X ctx size 4 addr 0x88455450
+[05:44:03.002] RX< [6] [cam] [107186][tshell][cam_bm_core_init:114]X ctx size 180 addr 0x88485878
+[05:44:03.002] RX< [6] [cam] [107186][tshell][qpc_core_init:1218]E id,0
+[05:44:03.002] RX< [6] [cam] [107187][tshell][qpc_queue_init:65]QPC init qnodes 8, size 508, po
+[05:44:03.002] RX< ol 0x88486828
+[05:44:03.002] RX< [6] [cam] [107187][tshell][_qpc_get_cap_cfg_para:892]preset capCfg 200 3 4
+[05:44:03.002] RX< [7] [cam] [107188][tshell][_qpc_cfg_hdr_frms:840]hdr preset - gainThres 1600
+[05:44:03.002] RX< FrmNB:	TNR	|EV-	|EV0	|EV+
+[05:44:03.002] RX< LDR:	 3	| 5	| -	| 3
+[05:44:03.002] RX< LLLDR:	 3	| 5	| -	| 3
+[05:44:03.002] RX< HDR:	 3	| 5	| 3	| 1
+[05:44:03.002] RX< L
+[05:44:03.006] RX< LHDR:	 3	| 5	| 3	| 1
+[05:44:03.006] RX< 
+[05:44:03.006] RX< [6] [cam] [107193][tshell][qpc_core_init:1264]X ctx size 3800 addr 0x88485940
+[05:44:03.006] RX< [6] [cam] [107193][tshell][cpm_core_get_param:666]cpm para chk: tunBin-w 4000 h 3000 img-w 4032 h 3024
+[05:44:03.006] RX< [6] [cam] [107194][tshell][cam_fe_core_init:436]E id
+[05:44:03.007] RX< ,0
+[05:44:03.007] RX< [6] [cam] [107194][tshell][cam_fe_core_init:490]X ctx size 100 addr 0x884973b8
+[05:44:03.007] RX< [7] [cam] [107195][tshell][qpc_core_fe_chords_init:1659][34mqpc fe init snsOut w 4032 h 3024, tbl w 28 h 20[0m
+[05:44:03.007] RX< [6] [cam] [107195][tshell][cam_me_core_init:1474]X ctx size 
+[05:44:03.009] RX< 1352 addr 0x88499720
+[05:44:03.009] RX< [34m[ME SLICE CFG] perf=1403(us)!
+[05:44:03.009] RX< [0m[6] [cam] [107198][tshell][cam_bayer_fe_3a_stats_core_init:445]fe 3a id,0
+[05:44:03.009] RX< [6] [cam] [107198][tshell][cam_bayer_fe_3a_stats_core_init:490]X ctx size 132 addr 0x884a2140
+[05:44:03.009] RX< [6] [cam] [107198][tshell]
+[05:44:03.009] RX< [cam_be_core_init:618]E id,0
+[05:44:03.009] RX< [7] [cam] [107199][be0][be_core_irq_proc:267]thread start cid,0
+[05:44:03.009] RX< [6] [cam] [107199][tshell][cam_be_core_init:710]X ctx size 464 addr 0x884a24d0
+[05:44:03.009] RX< [6] [cam] [107200][tshell][cam_lite_core_init:433]E id,0
+[05:44:03.009] RX< [7] [cam] [107200][lite0]
+[05:44:03.012] RX< [lite_core_irq_proc:152]thread start cid,0
+[05:44:03.012] RX< [6] [cam] [107201][tshell][cam_lite_core_init:497]X ctx size 164 addr 0x884a4f20
+[05:44:03.012] RX< [6] [cam] [107201][tshell][awb_wrapper_init:66]xxx awb_bin=0x88488f14, awb_bin_length=8068
+[05:44:03.012] RX< [6] [cam] [107202][tshell][awb_wrapper_
+[05:44:03.012] RX< init:86]X algo_handle 0x884acf58
+[05:44:03.012] RX< [7] [cam] [107202][awb0][a5_core_wrapper_task:252]thread start cid,0 algo type,2
+[05:44:03.012] RX< [6] [cam] [107202][tshell][a5_core_init_task:426]thread created: awb0 mq=0x884af250 thread=0x884af368 sem=0x884af1e0 ret=0
+[05:44:03.012] RX< [6] [cam] [107203]
+[05:44:03.016] RX< [tshell][bayer_ae_wrapper_init:68]E id,0 proc mode 1 
+[05:44:03.016] RX< 
+[05:44:03.016] RX< [AEC Proc] @[allib_ae_set_debug_log_flag] Line:129:[DEBUG] debug level/to_file/to_terminal: 22/1/1
+[05:44:03.016] RX< [AEC Proc] @[AeInit] Line:377:[INFO] AE ver: 2026_V2.269
+[05:44:03.016] RX< 
+[05:44:03.016] RX< [AEC Proc] @[allib_ae_loadfunc] Line:193:[
+[05:44:03.017] RX< INFO] camera ID: 0
+[05:44:03.017] RX< [AEC Proc] @[AeInit] Line:404:[DEBUG] init imu detector sucessed!
+[05:44:03.017] RX< [AEC Proc] @[AeInit] Line:406:[DEBUG] imu init errcode:0
+[05:44:03.017] RX< [AEC Proc] @[alAE_set_param] Line:575:[DEBUG] sw_maxtime 66381 ,pertline 9444, after check sensor step sw_max_tim
+[05:44:03.019] RX< e 66375.00
+[05:44:03.019] RX< [AEC Proc] @[alAE_set_param] Line:580:[DEBUG] sw_mintime 37 ,pertline 9444, after check sensor step sw_min_time 36.00
+[05:44:03.019] RX< [AEC Proc] @[alAE_set_param] Line:513:[DEBUG] DEBUG minbv exptime 9 gain 100, minExpBV 14098
+[05:44:03.019] RX< [AEC Proc] @[AeTuningParseSet] L
+[05:44:03.019] RX< ine:167:[DEBUG] aeparam version 2.268 60704
+[05:44:03.019] RX< [AEC Proc] @[alAE_set_param] Line:340:[DEBUG] INITEXP gain 100, shutter 8000, midtonegain 100, bv 4303
+[05:44:03.019] RX< [6] [cam] [107210][tshell][bayer_ae_wrapper_init:119]X tline 9444 max_exp 66381 alg_hdl 0x884b1b18 
+[05:44:03.019] RX< [7] [cam
+[05:44:03.022] RX< ] [107210][b_ae0][a5_core_wrapper_task:252]thread start cid,0 algo type,0
+[05:44:03.022] RX< [6] [cam] [107211][tshell][a5_core_init_task:426]thread created: b_ae0 mq=0x884b83f0 thread=0x884b8508 sem=0x884b8380 ret=0
+[05:44:03.022] RX< [6] [cam] [107211][tshell][atf_wrapper_init:67]E id,0
+[05:44:03.022] RX< [6
+[05:44:03.030] RX< ] [cam] [107212][tshell][atf_wrapper_init:107]X alg_ctx addr 0x884ba9c8
+[05:44:03.030] RX< [7] [cam] [107212][atf0][a5_core_wrapper_task:252]thread start cid,0 algo type,1
+[05:44:03.030] RX< [6] [cam] [107213][tshell][a5_core_init_task:426]thread created: atf0 mq=0x884bcd20 thread=0x884bce38 
+[05:44:03.030] RX< sem=0x884bccb0 ret=0
+[05:44:03.030] RX< [6] [cam] [107213][tshell][cam_cpm_core_init:1030]X ctx size 1064 addr 0x88485440
+[05:44:03.030] RX< [6] [cam] [107214][tshell][csc_open:527]ok! phys_id[1], phys_num[1] 
+[05:44:03.030] RX< [6] [cam] [107214][tshell][cam_open:699]open ok! camera_id[0]
+[05:44:03.030] RX< [34m[cam open] perf
+[05:44:03.032] RX< =55912(us)!
+[05:44:03.032] RX< [0m[6] [App Cam] cam open success
+[05:44:03.032] RX< [6] [cam] [107220][tshell][csc_init:637]sensor info:size:4032x3024, formt: 0x2b, bps: 2496, tline: 9444
+[05:44:03.032] RX< [6] [cam] [107220][tshell][cam_sif_mgr_init:261]E id,0
+[05:44:03.032] RX< [7] [cam] [107221][sif0][sif_irq_proc:151]thread
+[05:44:03.032] RX<  start cid,0
+[05:44:03.032] RX< [6] [cam] [107221][tshell][cam_sif_mgr_init:293]X ctx size 52 addr 0x884d5ef0
+[05:44:03.032] RX< [7] [cam] [107222][tshell][sif_btm_paramSet:102]btm lite w4032 h4032 binEn1 binRatio2
+[05:44:03.032] RX< [7] [cam] [107222][tshell][sif_btm_paramSet:106]cropSlct2 x0 y0 w4032 h4032
+[05:44:03.032] RX< [
+[05:44:03.046] RX< 6] [cam] [107223][tshell][cam_prelude_init_cfg:368]CSI ID is 0,  phy lanes is 2.
+[05:44:03.046] RX< [7] [cam] [107223][tshell][check_phy_ready:96]MIPI_PHY[0] is ready
+[05:44:03.046] RX< [6] [cam] [107223][tshell][sensor_init:348]sensor [1]: register ok
+[05:44:03.046] RX< [6] [cam] [107224][tshell][sensor_set_mo
+[05:44:03.047] RX< de:852]sensor [1]: SetMode -> mode = 0.
+[05:44:03.047] RX< [6] [cam] [107224][tshell][sensor_send_reg_tab_to_sensor:704]sensor [1]: send_reg_tab_to_sensor E.
+[05:44:03.047] RX< [6] [cam] [107235][tshell][sensor_send_reg_tab_to_sensor:726]sensor [1]: reg_count = 77.
+[05:44:03.047] RX< [6] [cam] [107237][tshell][
+[05:44:03.063] RX< sensor_init:361]sensor [1]: init success.
+[05:44:03.063] RX< [6] [cam] [107237][tshell][sensor_set_mode:852]sensor [1]: SetMode -> mode = 1.
+[05:44:03.063] RX< [6] [cam] [107237][tshell][sensor_send_reg_tab_to_sensor:704]sensor [1]: send_reg_tab_to_sensor E.
+[05:44:03.063] RX< [6] [cam] [107252][tshell][sensor_
+[05:44:03.064] RX< send_reg_tab_to_sensor:726]sensor [1]: reg_count = 84.
+[05:44:03.064] RX< [6] [cam] [107252][tshell][csc_init:646]ok! phys_id[1], phys_num[1]
+[05:44:03.064] RX< [6] [cam] [107253][tshell][csc_get_bayer_single_buffer:1038]scenario_type: 1
+[05:44:03.064] RX< [6] [cam] [107253][tshell][csc_set_stats_fmt:98]index 0
+[05:44:03.066] RX<  w 1 h 1 bw 8 wcmp 255
+[05:44:03.066] RX< [7] [cam] [107254][tshell][bm_ioctl:201]BMIOC_STATS_FMT
+[05:44:03.066] RX< [6] [cam] [107254][tshell][csc_set_fe_fmt:47]index 1 w 4032 h 3024 bw 10 wcmp 0
+[05:44:03.066] RX< [7] [cam] [107255][tshell][bm_ioctl:201]BMIOC_FE_FMT
+[05:44:03.066] RX< [6] [cam] [107255][tshell][csc_set_lite_fm
+[05:44:03.066] RX< t:115]index 2 w 1008 h 720 bw 8 wcmp 255
+[05:44:03.066] RX< [7] [cam] [107255][tshell][bm_ioctl:201]BMIOC_LITE_FMT
+[05:44:03.066] RX< [6] [cam] [107256][tshell][csc_set_lite_fmt:115]index 21 w 1008 h 720 bw 8 wcmp 255
+[05:44:03.066] RX< [7] [cam] [107256][tshell][bm_ioctl:201]BMIOC_LITE_FMT
+[05:44:03.066] RX< [6] [cam] [107256][
+[05:44:03.069] RX< tshell][csc_set_be_fmt:81]index 25 w 0 h 0 bw 8 wcmp 255
+[05:44:03.069] RX< [7] [cam] [107257][tshell][bm_ioctl:201]BMIOC_BE_FMT
+[05:44:03.069] RX< [6] [cam] [107257][tshell][csc_set_be_fmt:81]index 22 w 480 h 360 bw 8 wcmp 255
+[05:44:03.069] RX< [7] [cam] [107258][tshell][bm_ioctl:201]BMIOC_BE_FMT
+[05:44:03.069] RX< [6] [cam] [
+[05:44:03.069] RX< 107258][tshell][csc_set_me_fmt:64]index 5 w 3024 h 4032 bw 10 wcmp 0, rdma_addr 0x8919f780, wdma_addr 0x8919f780
+[05:44:03.069] RX< [7] [cam] [107259][tshell][bm_ioctl:201]BMIOC_ME_FMT
+[05:44:03.069] RX< [6] [cam] [107259][tshell][csc_set_me_fmt:64]index 6 w 3024 h 4032 bw 8 wcmp 255, rdma_ad
+[05:44:03.072] RX< dr 0x88795200, wdma_addr 0x8c000000
+[05:44:03.072] RX< [6] [cam] [107260][tshell][cam_me_core_buffer_cfg:1367]
+[05:44:03.072] RX< ----ME PIPE INFO---
+[05:44:03.072] RX<  wdma_buf_num:1, rotation_en: 1
+[05:44:03.072] RX< [7] [cam] [107260][tshell][cam_me_core_buffer_cfg:1375]yuv wdma_addr 0:0x8c000000, meta_en: 0, 0x00000000
+[05:44:03.072] RX< [7] 
+[05:44:03.072] RX< [cam] [107261][tshell][bm_ioctl:201]BMIOC_ME_FMT
+[05:44:03.072] RX< [6] [cam] [107261][tshell][csc_init:654]get otp ok! phys_id[1], phys_num[1]
+[05:44:03.072] RX< [6] [cam] [107262][tshell][cam_init:789]init ok! logic_id[0]
+[05:44:03.072] RX< [34m[cam init] perf=41697(us)!
+[05:44:03.072] RX< [0m[6] [App Cam] cam init success
+[05:44:03.072] RX< [
+[05:44:03.075] RX< 7] [cam] [107262][tshell][cam_cpm_core_stream_on:541]id 0 sensor type 1
+[05:44:03.075] RX< [6] [cam] [107263][tshell][sensor_stream_on:979]sensor [1]: stream_on
+[05:44:03.075] RX< [6] [cam] [107263][tshell][sensor_stream_on:1007]sensor [1]: REG: 0x100, W:0x1.
+[05:44:03.075] RX< [6] [cam] [107264][tshell][sensor
+[05:44:03.075] RX< _stream_on:1009]sensor [1]: REG: 0x100, R:0x1.
+[05:44:03.075] RX< [6] [cam] [107264][tshell][csc_prv_start:783]ok! phys_id[1], phys_num[1], cam_ids[1]
+[05:44:03.075] RX< [6] [cam] [107265][tshell][cam_start:897]preview start ok! logic_id[0]
+[05:44:03.075] RX< [34m[cam start] perf=2411(us)!
+[05:44:03.075] RX< [0m[6] [App Cam] c
+[05:44:03.091] RX< am start success
+[05:44:03.091] RX< [6] [App Dfs] Gravity_XR Capture Start
+[05:44:03.091] RX< msh /emmc>echo "__EVBTEST_END_544f1ba3__"
+[05:44:03.091] RX< __EVBTEST_END_544f1ba3__
+[05:44:03.091] RX< msh /emmc>[7] [cam] [107266][b_3a_sts][bayer_stats_core_irq_proc:164]thread start cid,0
+[05:44:03.091] RX< [7] [cam] [107266][fe0][fe_core_irq_proc:98]t
+[05:44:03.463] RX< hread start cid,0
+[05:44:03.463] RX< [34m[AE] fid=0,exp=32373,adg=400,Y=330,mtg=100,shg=100,bgbv=355,iso=400,cnv0,hdr0
+[05:44:03.463] RX< [0m[34m[b_ae0 proc] perf=2681(us), max=2681(us)!
+[05:44:03.463] RX< [0m[34m[awb0 proc] perf=1443(us), max=1443(us)!
+[05:44:03.463] RX< [0m[34m[AE conv] fid=10,exp=18099,adg=400,Y=4466,m
+[05:44:03.463] RX< tg=336,shg=100,bgbv=1194,iso=400,cnv1,hdr1
+[05:44:03.463] RX< [0m[7] [cam] [107638][fe0][_qpc_hdr_rslt_chk:1564]
+[05:44:03.463] RX< ALG: EV0 t18099 g400 | EV+ t18099 g400 | EV- t10143 g207
+[05:44:03.463] RX< [6] [cam] [107639][fe0][qpc_core_hdr_mapExp_cfg:1632]evMapExp set OK, typ:2 1 FF num:3 5 0
+[05:44:03.463] RX< [34m[cap] 
+[05:44:03.545] RX< FE sync ME @fid10 as mod2 cfg0x01, cap 8frms @fid+3
+[05:44:03.545] RX< [0m[7] [cam] [107675][qpc0][qpc_core_hdr_upd_sensor:558][HDRupd]: Sns cap-0 EV:0->2 st-18099 ag-400
+[05:44:03.545] RX< [6] [cam] [107721][me0][cpm_cb_fe2me_tikChk:152]frm_length 33330us, fe2me delta 11
+[05:44:03.545] RX< [7] [cam] [107721][
+[05:44:03.627] RX< qpc0][qpc_core_hdr_upd_me:605][HDRupd] ME cap-0 EV:0->2, dg-100
+[05:44:03.627] RX< [7] [JPEG] frame num=8, pre frame=873813 Bytes
+[05:44:03.627] RX< [exif] cap 0, bv 1195 exp 18099 iso 400 time 107722
+[05:44:03.627] RX< [6] [cam] [107741][fe0][_cpm_cb_jpegInfo_proc:602]SnapStream E @ frm14!
+[05:44:03.627] RX< [cap] oFrm14 Ym1479
+[05:44:03.628] RX< 3 bv1040 lux164
+[05:44:03.628] RX< [32m[BE] fid=0, perf=1448(us), max=1448(us)!
+[05:44:03.628] RX< [0m[7] [cam] [107776][qpc0][qpc_core_hdr_upd_sensor:558][HDRupd]: Sns cap-3 EV:2->1 st-10143 ag-207
+[05:44:03.628] RX< [34m[cap] fid: me0 fe15, perf=523972(us)!
+[05:44:03.628] RX< [0m[7] [cam] [107789][me0][me_core_thread:322]ME
+[05:44:03.793] RX<  out fid 0
+[05:44:03.793] RX< [cap] oFrm15 Ym16354 bv873 lux146
+[05:44:03.793] RX< [cap] oFrm16 Ym15905 bv942 lux153
+[05:44:03.793] RX< [exif] cap 3, bv 1195 exp 10143 iso 207 time 107830
+[05:44:03.793] RX< [cap] oFrm17 Ym4857 bv-767 lux47
+[05:44:03.793] RX< [cap] oFrm18 Ym4902 bv-587 lux53
+[05:44:03.793] RX< [cap] oFrm19 Ym4902 bv-769 lux46
+[05:44:03.793] RX< [cap] oFrm20 Ym4905 bv-67
+[05:44:04.012] RX< 2 lux50
+[05:44:04.012] RX< [cap] oFrm21 Ym5978 bv-2395 lux15
+[05:44:04.012] RX< [6] [cam] [108007][fe0][_cpm_cb_jpegInfo_proc:610]SnapStream X @ frm22!
+[05:44:04.012] RX< [34m[cap] fid: me7 fe22, perf=31154(us)!
+[05:44:04.012] RX< [0m[33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:04.012] RX< [6] [App Dfs] Gravity_XR Capture Stop 
+[05:44:04.013] RX< Success: total frames = 8
+[05:44:04.013] RX< [6] [cam] [108201][DfsSend][sensor_stream_off:1143]sensor [1]: stream_off
+[05:44:04.013] RX< [6] [cam] [108202][DfsSend][sensor_stream_off:1172]sensor [1]: REG: 0x100, W:0x0.
+[05:44:04.013] RX< [6] [cam] [108202][DfsSend][sensor_stream_off:1174]sensor [1]: REG: 0x100
+[05:44:04.016] RX< , R:0x0.
+[05:44:04.016] RX< [6] [cam] [108202][DfsSend][csc_prv_stop:893]ok! phys_id[1], phys_num[1], stop_type = 0
+[05:44:04.016] RX< [6] [cam] [108203][DfsSend][cam_stop:1017]preview stop ok! logic_id[0]
+[05:44:04.016] RX< [34m[cam stop] perf=2446(us)!
+[05:44:04.016] RX< [0m[6] [App Cam] cam stop success
+[05:44:04.016] RX< [7] [cam] [108204][D
+[05:44:04.016] RX< fsSend][cam_cpm_core_power_off:457]id,0 type,1 ret 0
+[05:44:04.016] RX< [6] [cam] [108204][sif0][sif_irq_proc:174]thread release cid,0
+[05:44:04.016] RX< [6] [cam] [108204][DfsSend][cam_sif_mgr_deinit:316]X
+[05:44:04.016] RX< [6] [cam] [108205][DfsSend][cam_deinit:846]deinit ok! logic_id[0]
+[05:44:04.016] RX< [34m[cam deinit] p
+[05:44:04.019] RX< erf=1241(us)!
+[05:44:04.019] RX< [0m[6] [App Cam] cam deinit success
+[05:44:04.019] RX< [6] [cam] [108206][DfsSend][sensor_close:1247]sensor [1]: close!
+[05:44:04.019] RX< [6] [cam] [108207][DfsSend][cam_bm_core_deinit:136]X
+[05:44:04.019] RX< [INFO]	cpm[0] snsType1 capMod2 cfg0x01 8frms
+[05:44:04.019] RX< [head]  frmID ref 10 eff 14 sns 12 cdma
+[05:44:04.019] RX<  13 
+[05:44:04.019] RX< [AErlt] flags fid 10 isWdr 1 isConv 1 sport 0 scen 1
+[05:44:04.019] RX<         info  Lux 183 Ymean 4466 nxtBV -625 bgBV 1194
+[05:44:04.019] RX< [exp]   norm  st18099 adg00400 ispg00100
+[05:44:04.019] RX<         short st10143 adg00207 ispg00100
+[05:44:04.019] RX<         long  st18099 adg00400 ispg00100
+[05:44:04.019] RX< [head]  frmID ref 
+[05:44:04.022] RX< 9 eff 13 sns 11 cdma 12 
+[05:44:04.022] RX< [AErlt] flags fid 9 isWdr 0 isConv 2 sport 0 scen 0
+[05:44:04.022] RX<         info  Lux 182 Ymean 4542 nxtBV 1124 bgBV 1192
+[05:44:04.022] RX< [exp]   norm  st18117 adg00400 ispg00100
+[05:44:04.022] RX<         short st00000 adg00000 ispg00100
+[05:44:04.022] RX<         long  st00000 adg00000 ispg00100
+[05:44:04.022] RX< 
+[05:44:04.022] RX< [head]  frmID ref 8 eff 12 sns 10 cdma 11 
+[05:44:04.022] RX< [AErlt] flags fid 8 isWdr 0 isConv 0 sport 0 scen 0
+[05:44:04.022] RX<         info  Lux 183 Ymean 4220 nxtBV 1124 bgBV 1195
+[05:44:04.022] RX< [exp]   norm  st18081 adg00400 ispg00100
+[05:44:04.022] RX<         short st00000 adg00000 ispg00100
+[05:44:04.022] RX<         long  st00000 
+[05:44:04.025] RX< adg00000 ispg00100
+[05:44:04.025] RX< [head]  frmID ref 7 eff 11 sns 9 cdma 10 
+[05:44:04.025] RX< [AErlt] flags fid 7 isWdr 0 isConv 0 sport 0 scen 0
+[05:44:04.025] RX<         info  Lux 181 Ymean 5481 nxtBV 1113 bgBV 1181
+[05:44:04.025] RX< [exp]   norm  st18261 adg00400 ispg00100
+[05:44:04.025] RX<         short st00000 adg00000 ispg00100
+[05:44:04.025] RX<     
+[05:44:04.025] RX<     long  st00000 adg00000 ispg00100
+[05:44:04.025] RX< [head]  frmID ref 6 eff 10 sns 8 cdma 9 
+[05:44:04.025] RX< [AErlt] flags fid 6 isWdr 0 isConv 0 sport 0 scen 0
+[05:44:04.025] RX<         info  Lux 183 Ymean 5550 nxtBV 1124 bgBV 1194
+[05:44:04.025] RX< [exp]   norm  st18099 adg00400 ispg00100
+[05:44:04.025] RX<         short st00000 adg000
+[05:44:04.027] RX< 00 ispg00100
+[05:44:04.027] RX<         long  st00000 adg00000 ispg00100
+[05:44:04.027] RX< [6] [cam] [108216][be0][be_core_irq_proc:326]thread release cid,0
+[05:44:04.027] RX< [6] [cam] [108216][DfsSend][cam_be_core_deinit:787]X
+[05:44:04.027] RX< [6] [cam] [108216][me0][me_core_thread:367]thread release cid,0
+[05:44:04.027] RX< [6] [cam] [108217
+[05:44:04.027] RX< ][DfsSend][cam_me_core_deinit:1502]X
+[05:44:04.027] RX< [6] [cam] [108217][fe0][fe_core_irq_proc:121]thread release cid,0
+[05:44:04.027] RX< [6] [cam] [108217][DfsSend][cam_fe_core_deinit:536]X
+[05:44:04.027] RX< [6] [cam] [108218][b_3a_sts][bayer_stats_core_irq_proc:193]thread release cid,0
+[05:44:04.027] RX< [6] [cam] [108218]
+[05:44:04.030] RX< [DfsSend][cam_bayer_stats_core_deinit:512]X
+[05:44:04.030] RX< [6] [cam] [108218][lite0][lite_core_irq_proc:190]thread release cid,0
+[05:44:04.030] RX< [6] [cam] [108219][DfsSend][cam_lite_core_deinit:556]X
+[05:44:04.030] RX< [6] [cam] [108219][b_ae0][a5_core_wrapper_task:315]thread release cid,0,algo,0
+[05:44:04.030] RX< [6] [c
+[05:44:04.030] RX< am] [108219][DfsSend][bayer_ae_wrapper_deinit:204]X
+[05:44:04.030] RX< [6] [cam] [108220][atf0][a5_core_wrapper_task:315]thread release cid,0,algo,1
+[05:44:04.030] RX< [6] [cam] [108220][DfsSend][atf_wrapper_deinit:153]X
+[05:44:04.030] RX< [6] [cam] [108221][awb0][a5_core_wrapper_task:315]thread release cid,0,
+[05:44:04.033] RX< algo,2
+[05:44:04.033] RX< [6] [cam] [108221][DfsSend][awb_wrapper_deinit:153]X
+[05:44:04.033] RX< [6] [cam] [108221][DfsSend][cam_5a_core_deinit:555]X
+[05:44:04.033] RX< [6] [cam] [108221][DfsSend][cam_5a_inf_deinit:149]X
+[05:44:04.033] RX< [6] [cam] [108222][qpc0][qpc_core_msg_proc:697]thread release cid,0
+[05:44:04.033] RX< [6] [cam] [108222][Df
+[05:44:04.033] RX< sSend][qpc_core_deinit:1330]X
+[05:44:04.033] RX< [6] [cam] [108223][DfsSend][cam_cpm_core_deinit:1107]X
+[05:44:04.033] RX< [6] [cam] [108223][DfsSend][csc_close:584]ok! phys_id[1], phys_num[1]
+[05:44:04.033] RX< [7] [cam] [108223][cer0][cer_recovery_proc:352]msg type = 254
+[05:44:04.033] RX< [6] [cam] [108223][cer0][cer_recovery
+[05:44:04.057] RX< _proc:454]thread release cid,0
+[05:44:04.057] RX< [6] [cam] [108224][DfsSend][cer_deinit:560]X
+[05:44:04.057] RX< [6] [cam] [108224][DfsSend][cam_close:750]close ok! logic_id[0]
+[05:44:04.057] RX< [34m[cam close] perf=18860(us)!
+[05:44:04.057] RX< [0m[6] [App Cam] cam close success
+[05:44:04.057] RX< [6] [cam] [108225][cpl0][cam_prelude_proc_ro
+[05:44:04.057] RX< utine:136]thread release
+[05:44:04.057] RX< [6] [cam] [108225][DfsSend][cam_exit:551]exit ok!
+[05:44:04.057] RX< [34m[cam exit] perf=663(us)!
+[05:44:04.057] RX< [0m[6] [App Cam] cam exit success
+[05:44:04.057] RX< [6] [App Cam] jpeg deinit success
+[05:44:04.057] RX< [6] [App Dfs] Save Photo Successful: /emmc/PIC/20260813_084402_7265/
+[05:44:04.057] RX< [6] [App Df
+[05:44:04.063] TX> ftp_server
+[05:44:04.063] TX> echo "__EVBTEST_END_d453eb89__"
+[05:44:05.965] RX< s] Capture completed successfully.
+[05:44:05.965] RX< ftp_server
+[05:44:05.965] RX< 
+[05:44:05.965] RX< [FTP] Ftp server init success!!!
+[05:44:05.965] RX< msh /emmc>echo "__EVBTEST_END_d453eb89__"
+[05:44:05.965] RX< __EVBTEST_END_d453eb89__
+[05:44:05.965] RX< msh /emmc>[33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:05.965] RX< [33m[W/ftp] service go wrong, now wai
+[05:44:07.966] RX< t restarting...[0m
+[05:44:07.966] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:09.967] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:09.967] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:09.967] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:11.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:11.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:11.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:11.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:11.954] RX< [33m[W/ftp] service go 
+[05:44:13.955] RX< wrong, now wait restarting...[0m
+[05:44:13.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:13.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:13.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:15.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:15.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:15.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:15.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:17.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:17.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:17.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:17.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:19.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:19.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:19.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:19.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:21.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:21.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:21.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:21.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:23.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:23.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:23.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:23.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:25.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:25.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:25.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:25.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:27.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:27.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:27.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:27.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:27.961] RX< [3
+[05:44:29.954] RX< 3m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:29.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:29.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:29.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:29.954] RX< [33m[W/ftp] service go wro
+[05:44:31.955] RX< ng, now wait restarting...[0m
+[05:44:31.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:31.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:31.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:33.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:33.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:33.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:33.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:35.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:35.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:35.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:35.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:37.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:37.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:37.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:37.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:39.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:39.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:39.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:39.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:41.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:41.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:41.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:41.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:43.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:43.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:43.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:43.961] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:45.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:45.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:45.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:45.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:45.951] RX< [33m[W/ftp] service go 
+[05:44:47.952] RX< wrong, now wait restarting...[0m
+[05:44:47.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:47.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:47.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:51.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:51.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:51.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:51.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:53.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:53.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:53.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:53.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:55.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:55.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:55.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:55.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:57.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:57.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:57.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:57.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:59.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:59.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:59.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:44:59.959] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:03.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:03.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:03.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:03.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:03.951] RX< [33m[W/ftp] service go 
+[05:45:05.952] RX< wrong, now wait restarting...[0m
+[05:45:05.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:05.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:05.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:07.953] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:07.953] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:07.953] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:07.953] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:08.385] TX> cam_set video 1080p
+[05:45:08.385] TX> echo "__EVBTEST_END_097615e5__"
+[05:45:08.398] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:08.398] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:08.398] RX< cam_set video 1080p
+[05:45:08.398] RX< [6] [App Dfs] w(1296) * h(2304) is 1080p, eis 0
+[05:45:08.398] RX< msh /emmc>echo "__EVBTEST_END_097615e5__"
+[05:45:08.398] RX< __EVBTEST_END_097615e5__
+[05:45:08.398] RX< msh /
+[05:45:08.405] TX> dfs_video_start
+[05:45:08.405] TX> echo "__EVBTEST_END_8569918d__"
+[05:45:08.491] RX< emmc>dfs_video_start
+[05:45:08.491] RX< [7] [cam] [172675][tshell][cgm_parse_bin:105]total logical camera num: 1
+[05:45:08.491] RX< [6] [cam] [172675][tshell][cam_prelude_create:187]E id, 0
+[05:45:08.491] RX< [7] [cam] [172676][cpl0][cam_prelude_proc_routine:101]thread start
+[05:45:08.491] RX< [6] [cam] [172676][tshell][cam_prelu
+[05:45:08.491] RX< de_create:214]X ctx size 124 addr 0x884717e8
+[05:45:08.491] RX< [6] [cam] [172682][tshell][sensor_probe:418]sensor [1]: identifing 0 success.
+[05:45:08.491] RX< [6] [cam] [172684][tshell][sensor_probe:441]sensor [1]: probe exit!
+[05:45:08.491] RX< [6] [cam] [172684][tshell][cam_prelude_fast_probe:251]cam: 0 pro
+[05:45:08.494] RX< be result: 0
+[05:45:08.494] RX< [6] [cam] [172684][tshell][cgm_parse_bin:215]cam(0) probe success
+[05:45:08.494] RX< [6] [cam] [172685][tshell][cam_entry:435]entry ok
+[05:45:08.494] RX< [34m[cam entry] perf=10035(us)!
+[05:45:08.494] RX< [0m[6] [App Cam] cam entry success
+[05:45:08.494] RX< [36mmem_laySolv: scenario=01 in=4032x3024, me_rotate=1
+[05:45:08.496] RX<  me_stripe=1 
+[05:45:08.496] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[05:45:08.496] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCfg for bound!
+[05:45:08.496] RX< [36mmem_laySolv: scen01 20 entries solved OK!
+[05:45:08.496] RX< [0m[36mmem_laySolv: scenario=02 in=2016x1512, me_rotate=0 me_stri
+[05:45:08.496] RX< pe=0 
+[05:45:08.496] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:45:08.496] RX< [0mscen2 type15 bufAdr 0x89ce3ef0 sz 0xd00000 reCfg for bound!
+[05:45:08.496] RX< [36mmem_laySolv: scen02 14 entries solved OK!
+[05:45:08.496] RX< [0m[36mmem_laySolv: scenario=03 in=4032x2268, me_rotate=1 me_stripe=0 
+[05:45:08.496] RX< [0
+[05:45:08.499] RX< m[36mmem_laySolv: me_rot 1, me_stripe 0, eis 0, be_rot 0
+[05:45:08.499] RX< [0m[36mmem_laySolv: scen03 14 entries solved OK!
+[05:45:08.499] RX< [0m[7] [cam] [172689][tshell][cam_solve_whole_layout:355]
+[05:45:08.499] RX< scen3: vol 0x8c000000 rbuf 0x89d6cdf0 sz 0xd00000 wbuf 0x8aa6cdf0 sz 0xd00000
+[05:45:08.499] RX<        
+[05:45:08.499] RX< rtmp txbuf 0x8bf80000 sz 0x80000 avcBuf 0x8bf00000 sz 0x80000
+[05:45:08.499] RX< [36mmem_laySolv: scenario=04 in=4032x3024, me_rotate=1 me_stripe=1 
+[05:45:08.499] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[05:45:08.499] RX< [0m[36mmem_laySolv: scen04 14 entries solved OK!
+[05:45:08.499] RX< [0m[36mme
+[05:45:08.502] RX< m_laySolv: scenario=05 in=1008x0756, me_rotate=0 me_stripe=0 
+[05:45:08.502] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:45:08.502] RX< [0m[36mmem_laySolv: scen05 17 entries solved OK!
+[05:45:08.502] RX< [0m[36mmem_laySolv: scenario=06 in=1008x0720, me_rotate=0 me_stripe=0 
+[05:45:08.502] RX< [0m[3
+[05:45:08.502] RX< 6mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[05:45:08.502] RX< [0m[36mmem_laySolv: scen06 12 entries solved OK!
+[05:45:08.502] RX< [0m[36mmem_laySolv: scenario=01 in=4032x3024, me_rotate=1 me_stripe=1 
+[05:45:08.502] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCfg for bound!
+[05:45:08.502] RX< [36mmem_la
+[05:45:08.505] RX< ySolv: scen01 20 entries solved OK!
+[05:45:08.505] RX< [0m[7] [cam] [172694][tshell][cam_solve_whole_layout:383]Solve Whole-layout Done!
+[05:45:08.505] RX< [6] [cam] [172695][tshell][cgm_parse_media_para:271]phy cam num: 1
+[05:45:08.505] RX< [7] [cam] [172695][cer0][cer_recovery_proc:343]thread start cid, 0
+[05:45:08.505] RX< [
+[05:45:08.505] RX< 6] [cam] [172696][tshell][csc_open:443]SENSOR MCLK cal: 24MHz
+[05:45:08.505] RX< [6] [cam] [172696][tshell][csc_isp_clk_cal:344]MIPI CLK cal: 277MHz
+[05:45:08.505] RX< [6] [cam] [172696][tshell][csc_isp_clk_cal:371]LITE CLK cal: 25MHz
+[05:45:08.505] RX< [7] [cam] [172697][tshell][cpc_csi_rx_power_on:633]E id: 2
+[05:45:08.511] RX< 
+[05:45:08.511] RX< [4] [cam] [172697][tshell][cpc_csi_rx_power_on:644]csi_2 has already power on, STATUS: 1
+[05:45:08.511] RX< [6] [cam] [172697][tshell][cpc_update_clock:603]actual SNS mclk: 24MHz
+[05:45:08.511] RX< [6] [cam] [172698][tshell][cpc_update_clock:608]actual MIPI0: 300MHz
+[05:45:08.511] RX< [6] [cam] [172698][tshel
+[05:45:08.511] RX< l][cpc_update_clock:598]actual LITE clk: 25MHz
+[05:45:08.511] RX< [7] [cam] [172699][tshell][cam_prelude_open:297][34msnsOpen camID1 csiID0 phyIdx0[0m
+[05:45:08.511] RX< [6] [cam] [172702][tshell][sensor_expo_gain_match:48]sensor get sensor expo gain of imx681_vst
+[05:45:08.511] RX< [6] [cam] [172702][tshell]
+[05:45:08.513] RX< [sensor_open:684]sensor [1] open OK.
+[05:45:08.513] RX< [6] [cam] [172703][tshell][cam_cpm_parse_media:298]video scenario:3, media para[fps:0, mirror_en:0, flip_en:0]
+[05:45:08.513] RX< [6] [cam] [172703][tshell][cam_cpm_parse_media:301]video scenario, media para[iso:0, gain:0, wb_mode:0]
+[05:45:08.513] RX< [6
+[05:45:08.513] RX< ] [cam] [172704][tshell][csc_isp_clk_cal:353]FE CLK cal: 373MHz, ME CLK cal: 371MHz, FE/ME CLK cal: 410MHz
+[05:45:08.513] RX< [6] [cam] [172705][tshell][csc_isp_clk_cal:360]BE CLK cal: 301MHz
+[05:45:08.513] RX< [4] [cam] [172705][tshell][cam_fe_core_power_on:269]fe pipe has already power on, 
+[05:45:08.518] RX< STATUS: 1
+[05:45:08.518] RX< [6] [cam] [172706][tshell][cpc_update_clock:588]actual FE/ME clk: 500MHz
+[05:45:08.518] RX< [7] [cam] [172706][tshell][cam_cpm_core_power_on:425]id,0 type,1 ret 0
+[05:45:08.518] RX< [6] [cam] [172706][tshell][cam_cpm_core_init:914]E id,0 sensor type,1
+[05:45:08.518] RX< [6] [cam] [172709][tshell][cpm
+[05:45:08.518] RX< _core_check_tuningbin:854]Tuning bin crc check PASS! sum 0x7fb15f, xor 0x4e593f47
+[05:45:08.518] RX< [6] [cam] [172709][tshell][qpc_tuning_check_iqbin_validness:396]IQ bin addr: 0x88646660, project_name: video_3M
+[05:45:08.518] RX< [6] [cam] [172710][tshell][qpc_tuning_check_iqbin_validness:3
+[05:45:08.521] RX< 97]total_size: 94208
+[05:45:08.521] RX< [6] [cam] [172711][tshell][qpc_tuning_check_iqbin_validness:398]id_count: 93. ID_TOTAL: 94
+[05:45:08.521] RX< [6] [cam] [172711][tshell][qpc_tuning_check_iqbin_validness:399]spinel tuning data ver: V1.30
+[05:45:08.521] RX< [6] [cam] [172712][tshell][cpm_core_check_tuningb
+[05:45:08.521] RX< in:868]IQ bin check success!
+[05:45:08.521] RX< [6] [cam] [172712][tshell][cam_bm_core_init:94]E
+[05:45:08.521] RX< [6] [cam] [172713][tshell][bm_lab_init:174]X ctx size 4 addr 0x8845e328
+[05:45:08.521] RX< [6] [cam] [172713][tshell][cam_bm_core_init:114]X ctx size 180 addr 0x8846e660
+[05:45:08.521] RX< [6] [cam] [172713][tshell
+[05:45:08.539] RX< ][qpc_core_init:1218]E id,0
+[05:45:08.539] RX< [6] [cam] [172714][tshell][qpc_queue_init:65]QPC init qnodes 8, size 508, pool 0x88472580
+[05:45:08.539] RX< [7] [cam] [172714][tshell][_qpc_get_cap_cfg_para:888][fallback]preset capCfg 0 0 0 invalid, use default
+[05:45:08.539] RX< [7] [cam] [172715][tshell][_qpc_
+[05:45:08.539] RX< cfg_hdr_frms:832][fallback]preset hdrCfg 0 32 7 25600 148508608 invalid, use default
+[05:45:08.539] RX< [6] [cam] [172730][tshell][qpc_core_init:1264]X ctx size 3800 addr 0x8846e728
+[05:45:08.539] RX< [6] [cam] [172731][tshell][cpm_core_get_param:666]cpm para chk: tunBin-w 4032 h 2266 img-w 40
+[05:45:08.544] RX< 32 h 2268
+[05:45:08.544] RX< [6] [cam] [172731][tshell][cam_fe_core_init:436]E id,0
+[05:45:08.544] RX< [6] [cam] [172732][tshell][cam_fe_core_init:490]X ctx size 100 addr 0x88481d60
+[05:45:08.544] RX< [7] [cam] [172733][tshell][qpc_core_fe_chords_init:1659][34mqpc fe init snsOut w 4032 h 2268, tbl w 28 h 20[
+[05:45:08.544] RX< 0m
+[05:45:08.544] RX< [6] [cam] [172733][tshell][cam_me_core_init:1474]X ctx size 1352 addr 0x8849e2e8
+[05:45:08.544] RX< [34m[ME SLICE CFG] perf=1309(us)!
+[05:45:08.544] RX< [0m[6] [cam] [172737][tshell][cam_bayer_fe_3a_stats_core_init:445]fe 3a id,0
+[05:45:08.544] RX< [6] [cam] [172737][tshell][cam_bayer_fe_3a_stats_core_init
+[05:45:08.552] RX< :490]X ctx size 132 addr 0x884a6d08
+[05:45:08.552] RX< [6] [cam] [172737][tshell][awb_wrapper_init:66]xxx awb_bin=0x88474a5c, awb_bin_length=8068
+[05:45:08.552] RX< [6] [cam] [172738][tshell][awb_wrapper_init:86]X algo_handle 0x884ac968
+[05:45:08.552] RX< [7] [cam] [172738][awb0][a5_core_wrapper_task:252]threa
+[05:45:08.552] RX< d start cid,0 algo type,2
+[05:45:08.552] RX< [6] [cam] [172738][tshell][a5_core_init_task:426]thread created: awb0 mq=0x884aec30 thread=0x884aed48 sem=0x884aebc0 ret=0
+[05:45:08.552] RX< [6] [cam] [172739][tshell][bayer_ae_wrapper_init:68]E id,0 proc mode 0 
+[05:45:08.552] RX< 
+[05:45:08.552] RX< [AEC Proc] @[allib_ae_set_debug_l
+[05:45:08.555] RX< og_flag] Line:129:[DEBUG] debug level/to_file/to_terminal: 22/1/1
+[05:45:08.555] RX< [AEC Proc] @[AeInit] Line:377:[INFO] AE ver: 2026_V2.269
+[05:45:08.555] RX< 
+[05:45:08.555] RX< [AEC Proc] @[allib_ae_loadfunc] Line:193:[INFO] camera ID: 0
+[05:45:08.555] RX< [AEC Proc] @[alAE_set_param] Line:575:[DEBUG] sw_maxtime 33004 ,pertli
+[05:45:08.555] RX< ne 10800, after check sensor step sw_max_time 33000.00
+[05:45:08.555] RX< [AEC Proc] @[alAE_set_param] Line:580:[DEBUG] sw_mintime 43 ,pertline 10800, after check sensor step sw_min_time 40.00
+[05:45:08.555] RX< [AEC Proc] @[alAE_set_param] Line:513:[DEBUG] DEBUG minbv exptime 11 gain 100, mi
+[05:45:08.558] RX< nExpBV 13810
+[05:45:08.558] RX< [AEC Proc] @[AeTuningParseSet] Line:167:[DEBUG] aeparam version 2.268 60530
+[05:45:08.558] RX< [AEC Proc] @[alAE_set_param] Line:340:[DEBUG] INITEXP gain 100, shutter 33242, midtonegain 100, bv 2247
+[05:45:08.558] RX< [6] [cam] [172749][tshell][bayer_ae_wrapper_init:119]X tline 
+[05:45:08.558] RX< 10800 max_exp 33004 alg_hdl 0x884b14f8 
+[05:45:08.558] RX< [7] [cam] [172749][b_ae0][a5_core_wrapper_task:252]thread start cid,0 algo type,0
+[05:45:08.558] RX< [6] [cam] [172750][tshell][a5_core_init_task:426]thread created: b_ae0 mq=0x884b25a8 thread=0x884b26c0 sem=0x884b2538 ret=0
+[05:45:08.558] RX< [6] [cam]
+[05:45:08.560] RX<  [172750][tshell][atf_wrapper_init:67]E id,0
+[05:45:08.560] RX< [6] [cam] [172751][tshell][atf_wrapper_init:107]X alg_ctx addr 0x884b27e8
+[05:45:08.560] RX< [7] [cam] [172751][atf0][a5_core_wrapper_task:252]thread start cid,0 algo type,1
+[05:45:08.560] RX< [6] [cam] [172752][tshell][a5_core_init_task:426]threa
+[05:45:08.560] RX< d created: atf0 mq=0x884bc720 thread=0x884bc838 sem=0x884b28b0 ret=0
+[05:45:08.560] RX< [6] [cam] [172752][tshell][cam_cpm_core_init:1030]X ctx size 1064 addr 0x8846e228
+[05:45:08.560] RX< [6] [cam] [172753][tshell][csc_open:527]ok! phys_id[1], phys_num[1] 
+[05:45:08.560] RX< [6] [cam] [172753][tshell][cam_open
+[05:45:08.576] RX< :699]open ok! camera_id[0]
+[05:45:08.576] RX< [34m[cam open] perf=68331(us)!
+[05:45:08.576] RX< [0m[6] [App Cam] cam open success
+[05:45:08.576] RX< [6] [App Cam] hevc init success
+[05:45:08.576] RX< [6] [cam] [172767][tshell][csc_init:637]sensor info:size:4032x2268, formt: 0x2b, bps: 1968, tline: 10800
+[05:45:08.576] RX< [6] [cam] [172768][tsh
+[05:45:08.577] RX< ell][cam_sif_mgr_init:261]E id,0
+[05:45:08.577] RX< [7] [cam] [172769][sif0][sif_irq_proc:151]thread start cid,0
+[05:45:08.577] RX< [6] [cam] [172769][tshell][cam_sif_mgr_init:293]X ctx size 52 addr 0x884edea0
+[05:45:08.577] RX< [6] [cam] [172769][tshell][cam_prelude_init_cfg:368]CSI ID is 0,  phy lanes is 2.
+[05:45:08.591] RX< [7] [cam] [172770][tshell][check_phy_ready:96]MIPI_PHY[0] is ready
+[05:45:08.591] RX< [6] [cam] [172770][tshell][sensor_init:348]sensor [1]: register ok
+[05:45:08.591] RX< [6] [cam] [172771][tshell][sensor_set_mode:852]sensor [1]: SetMode -> mode = 0.
+[05:45:08.591] RX< [6] [cam] [172771][tshell][sensor_send_re
+[05:45:08.608] RX< g_tab_to_sensor:704]sensor [1]: send_reg_tab_to_sensor E.
+[05:45:08.608] RX< [6] [cam] [172782][tshell][sensor_send_reg_tab_to_sensor:726]sensor [1]: reg_count = 77.
+[05:45:08.608] RX< [6] [cam] [172784][tshell][sensor_init:361]sensor [1]: init success.
+[05:45:08.608] RX< [6] [cam] [172784][tshell][sensor_set_m
+[05:45:08.608] RX< ode:852]sensor [1]: SetMode -> mode = 3.
+[05:45:08.608] RX< [6] [cam] [172785][tshell][sensor_send_reg_tab_to_sensor:704]sensor [1]: send_reg_tab_to_sensor E.
+[05:45:08.608] RX< [6] [cam] [172799][tshell][sensor_send_reg_tab_to_sensor:726]sensor [1]: reg_count = 83.
+[05:45:08.608] RX< [6] [cam] [172800][tshell]
+[05:45:08.611] RX< [csc_init:646]ok! phys_id[1], phys_num[1]
+[05:45:08.611] RX< [6] [cam] [172800][tshell][csc_get_bayer_single_buffer:1038]scenario_type: 3
+[05:45:08.611] RX< [6] [cam] [172800][tshell][csc_set_stats_fmt:98]index 0 w 1 h 1 bw 8 wcmp 255
+[05:45:08.611] RX< [7] [cam] [172801][tshell][bm_ioctl:201]BMIOC_STATS_FMT
+[05:45:08.611] RX< [
+[05:45:08.611] RX< 6] [cam] [172801][tshell][csc_set_fe_fmt:47]index 1 w 4032 h 2268 bw 10 wcmp 0
+[05:45:08.611] RX< [7] [cam] [172802][tshell][bm_ioctl:201]BMIOC_FE_FMT
+[05:45:08.611] RX< [6] [cam] [172802][tshell][csc_set_me_fmt:64]index 5 w 2268 h 4032 bw 10 wcmp 0, rdma_addr 0x894afe00, wdma_addr 0x894afe00
+[05:45:08.613] RX< 
+[05:45:08.613] RX< [7] [cam] [172803][tshell][bm_ioctl:201]BMIOC_ME_FMT
+[05:45:08.613] RX< [6] [cam] [172803][tshell][csc_set_video_fmt:966]meta_addr: 0x89d6c600
+[05:45:08.613] RX< [6] [cam] [172804][tshell][csc_set_me_fmt:64]index 6 w 1296 h 2304 bw 8 wcmp 255, rdma_addr 0x88795200, wdma_addr 0x8c000000
+[05:45:08.613] RX< [6] 
+[05:45:08.614] RX< [cam] [172804][tshell][cam_me_core_buffer_cfg:1367]
+[05:45:08.614] RX< ----ME PIPE INFO---
+[05:45:08.614] RX<  wdma_buf_num:1, rotation_en: 1
+[05:45:08.614] RX< [7] [cam] [172805][tshell][cam_me_core_buffer_cfg:1375]yuv wdma_addr 0:0x8c000000, meta_en: 1, 0x89d6c600
+[05:45:08.614] RX< [7] [cam] [172805][tshell][bm_ioctl:201]BMI
+[05:45:08.616] RX< OC_ME_FMT
+[05:45:08.616] RX< [6] [cam] [172806][tshell][csc_set_lite_fmt:115]index 13 w 400 h 400 bw 10 wcmp 255
+[05:45:08.616] RX< [7] [cam] [172806][tshell][bm_ioctl:201]BMIOC_LITE_FMT
+[05:45:08.616] RX< [6] [cam] [172807][tshell][csc_set_lite_fmt:115]index 14 w 400 h 400 bw 10 wcmp 255
+[05:45:08.616] RX< [7] [cam] [172807][ts
+[05:45:08.617] RX< hell][bm_ioctl:201]BMIOC_LITE_FMT
+[05:45:08.617] RX< [6] [cam] [172807][tshell][csc_init:654]get otp ok! phys_id[1], phys_num[1]
+[05:45:08.617] RX< [6] [cam] [172807][tshell][cam_init:789]init ok! logic_id[0]
+[05:45:08.617] RX< [34m[cam init] perf=40858(us)!
+[05:45:08.617] RX< [0m[6] [App Cam] cam init success
+[05:45:08.617] RX< [7] [cam] [1728
+[05:45:08.620] RX< 08][tshell][cam_cpm_core_stream_on:541]id 0 sensor type 1
+[05:45:08.620] RX< [6] [cam] [172809][tshell][sensor_stream_on:979]sensor [1]: stream_on
+[05:45:08.620] RX< [6] [cam] [172810][tshell][sensor_stream_on:1007]sensor [1]: REG: 0x100, W:0x1.
+[05:45:08.620] RX< [6] [cam] [172810][tshell][sensor_stream_on:100
+[05:45:08.620] RX< 9]sensor [1]: REG: 0x100, R:0x1.
+[05:45:08.620] RX< [6] [cam] [172810][tshell][csc_prv_start:783]ok! phys_id[1], phys_num[1], cam_ids[1]
+[05:45:08.620] RX< [6] [cam] [172811][tshell][cam_start:897]preview start ok! logic_id[0]
+[05:45:08.620] RX< [34m[cam start] perf=2640(us)!
+[05:45:08.620] RX< [0m[6] [App Cam] cam start succe
+[05:45:08.636] RX< ss
+[05:45:08.636] RX< [6] [App Dfs] Gravity_XR Record Start
+[05:45:08.636] RX< msh /emmc>echo "__EVBTEST_END_8569918d__"
+[05:45:08.636] RX< __EVBTEST_END_8569918d__
+[05:45:08.636] RX< msh /emmc>[7] [cam] [172813][b_3a_sts][bayer_stats_core_irq_proc:164]thread start cid,0
+[05:45:08.636] RX< [7] [cam] [172813][fe0][fe_core_irq_proc:98]thread start cid
+[05:45:08.926] RX< ,0
+[05:45:08.926] RX< [34m[AE] fid=0,exp=10060,adg=300,Y=3425,mtg=100,shg=100,bgbv=3684,iso=300,cnv0,hdr0
+[05:45:08.926] RX< [0m[34m[b_ae0 proc] perf=8078(us), max=8078(us)!
+[05:45:08.926] RX< [0m[34m[awb0 proc] perf=4455(us), max=4455(us)!
+[05:45:08.926] RX< [0m[6] [cam] [173104][me0][cpm_cb_fe2me_tikChk:152]frm_length 88
+[05:45:09.098] RX< 562us, fe2me delta 0
+[05:45:09.098] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:09.098] RX< [34m[ME INTP]fid=0, shutter=10060, perf=2953(us), max=2953(us)!
+[05:45:09.098] RX< [0m[33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:09.098] RX< [7] [cam] [173282][me0][me_core_thread:322]ME out 
+[05:45:10.059] RX< fid 0
+[05:45:10.059] RX< [6] [App Dfs] f_index = 0, f_len = 155726, cur_total_len = 155814
+[05:45:10.059] RX< [34m[AE] fid=30,exp=11240,adg=300,Y=3474,mtg=199,shg=100,bgbv=839,iso=300,cnv2,hdr0
+[05:45:10.059] RX< [0m[33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:10.059] RX< [33m[W/ftp] service go wrong, now wa
+[05:45:10.645] TX> dfs_video_stop
+[05:45:10.645] TX> echo "__EVBTEST_END_9e707860__"
+[05:45:10.683] RX< it restarting...[0m
+[05:45:10.683] RX< [7] [cam] [174283][me0][me_core_thread:322]ME out fid 30
+[05:45:10.683] RX< [34m[awb0 proc] perf=6579(us), max=6579(us)!
+[05:45:10.683] RX< [0mdfs_video_stop
+[05:45:10.683] RX< msh /emmc>echo "__EVBTEST_END_9e707860__"
+[05:45:10.683] RX< __EVBTEST_END_9e707860__
+[05:45:10.683] RX< msh /emmc>[6] [App Dfs]  Gravity_XR Record Sto
+[05:45:10.683] RX< p Success: total frames = 48
+[05:45:10.683] RX< [6] [cam] [174860][DfsSend][sensor_stream_off:1143]sensor [1]: stream_off
+[05:45:10.683] RX< [6] [cam] [174860][DfsSend][sensor_stream_off:1172]sensor [1]: REG: 0x100, W:0x0.
+[05:45:10.683] RX< [6] [cam] [174861][DfsSend][sensor_stream_off:1174]sensor [1]: REG: 0x1
+[05:45:10.698] RX< 00, R:0x0.
+[05:45:10.698] RX< [6] [cam] [174885][DfsSend][csc_prv_stop:893]ok! phys_id[1], phys_num[1], stop_type = 0
+[05:45:10.698] RX< [6] [cam] [174885][DfsSend][cam_stop:1017]preview stop ok! logic_id[0]
+[05:45:10.698] RX< [34m[cam stop] perf=26517(us)!
+[05:45:10.698] RX< [0m[6] [App Cam] cam stop success
+[05:45:10.698] RX< Total of 49 frame
+[05:45:10.703] RX< s encoded, 3715372 bytes, max_workbuffer_used: 4911104 bytes
+[05:45:10.703] RX< [6] [App Cam] hevc_encoder_deinit success
+[05:45:10.703] RX< [7] [cam] [174891][DfsSend][cam_cpm_core_power_off:457]id,0 type,1 ret 0
+[05:45:10.703] RX< [6] [cam] [174891][sif0][sif_irq_proc:174]thread release cid,0
+[05:45:10.703] RX< [6] [cam] [17489
+[05:45:10.703] RX< 2][DfsSend][cam_sif_mgr_deinit:316]X
+[05:45:10.703] RX< [6] [cam] [174892][DfsSend][cam_deinit:846]deinit ok! logic_id[0]
+[05:45:10.703] RX< [34m[cam deinit] perf=1299(us)!
+[05:45:10.703] RX< [0m[6] [App Cam] cam deinit success
+[05:45:10.703] RX< [6] [cam] [174893][DfsSend][sensor_close:1247]sensor [1]: close!
+[05:45:10.703] RX< [6] [cam] [1748
+[05:45:10.706] RX< 95][DfsSend][cam_bm_core_deinit:136]X
+[05:45:10.706] RX< [6] [cam] [174895][me0][me_core_thread:367]thread release cid,0
+[05:45:10.706] RX< [6] [cam] [174896][DfsSend][cam_me_core_deinit:1502]X
+[05:45:10.706] RX< [6] [cam] [174896][fe0][fe_core_irq_proc:121]thread release cid,0
+[05:45:10.706] RX< [6] [cam] [174896][DfsSend][cam_
+[05:45:10.706] RX< fe_core_deinit:536]X
+[05:45:10.706] RX< [6] [cam] [174896][b_3a_sts][bayer_stats_core_irq_proc:193]thread release cid,0
+[05:45:10.706] RX< [6] [cam] [174897][DfsSend][cam_bayer_stats_core_deinit:512]X
+[05:45:10.706] RX< [6] [cam] [174897][b_ae0][a5_core_wrapper_task:315]thread release cid,0,algo,0
+[05:45:10.706] RX< [6] [cam] [1
+[05:45:10.708] RX< 74898][DfsSend][bayer_ae_wrapper_deinit:204]X
+[05:45:10.708] RX< [6] [cam] [174898][atf0][a5_core_wrapper_task:315]thread release cid,0,algo,1
+[05:45:10.708] RX< [6] [cam] [174899][DfsSend][atf_wrapper_deinit:153]X
+[05:45:10.708] RX< [6] [cam] [174899][awb0][a5_core_wrapper_task:315]thread release cid,0,algo,2
+[05:45:10.708] RX< 
+[05:45:10.708] RX< [6] [cam] [174899][DfsSend][awb_wrapper_deinit:153]X
+[05:45:10.708] RX< [6] [cam] [174899][DfsSend][cam_5a_core_deinit:555]X
+[05:45:10.708] RX< [6] [cam] [174900][DfsSend][cam_5a_inf_deinit:149]X
+[05:45:10.708] RX< [6] [cam] [174900][qpc0][qpc_core_msg_proc:697]thread release cid,0
+[05:45:10.708] RX< [6] [cam] [174901][DfsSend]
+[05:45:10.713] RX< [qpc_core_deinit:1330]X
+[05:45:10.713] RX< [6] [cam] [174901][DfsSend][cam_cpm_core_deinit:1107]X
+[05:45:10.713] RX< [6] [cam] [174901][DfsSend][csc_close:584]ok! phys_id[1], phys_num[1]
+[05:45:10.713] RX< [7] [cam] [174901][cer0][cer_recovery_proc:352]msg type = 254
+[05:45:10.713] RX< [6] [cam] [174902][cer0][cer_recovery_proc:
+[05:45:10.713] RX< 454]thread release cid,0
+[05:45:10.713] RX< [6] [cam] [174902][DfsSend][cer_deinit:560]X
+[05:45:10.713] RX< [6] [cam] [174902][DfsSend][cam_close:750]close ok! logic_id[0]
+[05:45:10.713] RX< [34m[cam close] perf=9872(us)!
+[05:45:10.713] RX< [0m[6] [App Cam] cam close success
+[05:45:10.713] RX< [6] [cam] [174903][cpl0][cam_prelude_proc_routine:13
+[05:45:10.729] RX< 6]thread release
+[05:45:10.729] RX< [6] [cam] [174904][DfsSend][cam_exit:551]exit ok!
+[05:45:10.729] RX< [34m[cam exit] perf=615(us)!
+[05:45:10.729] RX< [0m[6] [App Cam] cam exit success
+[05:45:10.729] RX< [6] [App Dfs] Save Video Successful: /emmc/VIDEO/20260813_084508_2592/Video_2592_0.h265
+[05:45:10.729] RX< [6] [App Dfs] Save Imu Successful:
+[05:45:10.737] TX> ftp_server
+[05:45:10.737] TX> echo "__EVBTEST_END_98c9efba__"
+[05:45:10.955] RX<  /emmc/VIDEO/20260813_084508_2592/Imu_2592.bin
+[05:45:10.955] RX< [6] [App Dfs] Video recording completed successfully.
+[05:45:10.955] RX< ftp_server
+[05:45:10.955] RX< 
+[05:45:10.955] RX< [FTP] Ftp server init success!!!
+[05:45:10.955] RX< msh /emmc>echo "__EVBTEST_END_98c9efba__"
+[05:45:10.955] RX< __EVBTEST_END_98c9efba__
+[05:45:10.955] RX< msh /emmc>[33m[W/ftp] service go wrong,
+[05:45:12.956] RX<  now wait restarting...[0m
+[05:45:12.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:12.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:12.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:14.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:14.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:14.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:14.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:16.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:16.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:16.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:16.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:16.063] RX< [33m[W/ftp] service go 
+[05:45:17.745] RX< wrong, now wait restarting...[0m
+[05:45:17.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:17.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:17.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:17.745] RX< [33m[W/ftp] service go wrong, now wait restarti
+[05:45:19.058] RX< ng...[0m
+[05:45:19.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:19.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:19.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:19.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:19.058] RX< [33m[W/ftp] s
+[05:45:20.740] RX< ervice go wrong, now wait restarting...[0m
+[05:45:20.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:20.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:20.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:20.740] RX< [33m[W/ftp] service go wrong, now wai
+[05:45:22.069] RX< t restarting...[0m
+[05:45:22.069] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:22.069] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:22.069] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:22.069] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:22.069] RX< [33
+[05:45:23.734] RX< m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:23.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:23.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:23.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:23.734] RX< [33m[W/ftp] service go wron
+[05:45:24.951] RX< g, now wait restarting...[0m
+[05:45:24.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:24.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:24.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:24.951] RX< [33m[W/ftp] service go wrong, now wait restarting..
+[05:45:26.745] RX< .[0m
+[05:45:26.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:26.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:26.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:26.745] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:26.745] RX< [33m[W/ftp] servi
+[05:45:27.962] RX< ce go wrong, now wait restarting...[0m
+[05:45:27.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:27.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:27.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:27.962] RX< [33m[W/ftp] service go wrong, now wait re
+[05:45:29.740] RX< starting...[0m
+[05:45:29.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:29.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:29.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:29.740] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:29.740] RX< [33m[W/
+[05:45:30.956] RX< ftp] service go wrong, now wait restarting...[0m
+[05:45:30.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:30.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:30.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:30.956] RX< [33m[W/ftp] service go wrong, n
+[05:45:32.061] RX< ow wait restarting...[0m
+[05:45:32.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:32.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:32.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:32.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0
+[05:45:33.951] RX< m
+[05:45:33.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:33.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:33.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:33.951] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:33.951] RX< [33m[W/ftp] service g
+[05:45:35.072] RX< o wrong, now wait restarting...[0m
+[05:45:35.072] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:35.072] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:35.072] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:35.072] RX< [33m[W/ftp] service go wrong, now wait restar
+[05:45:36.962] RX< ting...[0m
+[05:45:36.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:36.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:36.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:36.962] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:36.962] RX< [33m[W/ftp]
+[05:45:38.067] RX<  service go wrong, now wait restarting...[0m
+[05:45:38.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:38.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:38.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:38.067] RX< [33m[W/ftp] service go wrong, now w
+[05:45:39.957] RX< ait restarting...[0m
+[05:45:39.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:39.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:39.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:39.957] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:39.957] RX< [
+[05:45:41.061] RX< 33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:41.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:41.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:41.061] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:41.061] RX< [33m[W/ftp] service go wr
+[05:45:42.743] RX< ong, now wait restarting...[0m
+[05:45:42.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:42.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:42.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:42.743] RX< [33m[W/ftp] service go wrong, now wait restarting
+[05:45:44.056] RX< ...[0m
+[05:45:44.056] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:44.056] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:44.056] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:44.056] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:44.056] RX< [33m[W/ftp] ser
+[05:45:45.738] RX< vice go wrong, now wait restarting...[0m
+[05:45:45.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:45.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:45.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:45.738] RX< [33m[W/ftp] service go wrong, now wait 
+[05:45:47.067] RX< restarting...[0m
+[05:45:47.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:47.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:47.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:47.067] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:47.067] RX< [33m[
+[05:45:48.732] RX< W/ftp] service go wrong, now wait restarting...[0m
+[05:45:48.732] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:48.732] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:48.732] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:48.732] RX< [33m[W/ftp] service go wrong,
+[05:45:49.949] RX<  now wait restarting...[0m
+[05:45:49.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:49.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:49.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:49.949] RX< [33m[W/ftp] service go wrong, now wait restarting...
+[05:45:51.743] RX< [0m
+[05:45:51.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:51.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:51.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:51.743] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:51.743] RX< [33m[W/ftp] service
+[05:45:52.960] RX<  go wrong, now wait restarting...[0m
+[05:45:52.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:52.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:52.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:52.960] RX< [33m[W/ftp] service go wrong, now wait rest
+[05:45:54.738] RX< arting...[0m
+[05:45:54.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:54.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:54.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:54.738] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:54.738] RX< [33m[W/ft
+[05:45:55.955] RX< p] service go wrong, now wait restarting...[0m
+[05:45:55.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:55.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:55.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:55.955] RX< [33m[W/ftp] service go wrong, now
+[05:45:57.060] RX<  wait restarting...[0m
+[05:45:57.060] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:57.060] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:57.060] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:57.060] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:58.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:58.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:58.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:58.949] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:45:58.949] RX< [33m[W/ftp] service go 
+[05:46:00.070] RX< wrong, now wait restarting...[0m
+[05:46:00.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:00.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:00.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:00.070] RX< [33m[W/ftp] service go wrong, now wait restarti
+[05:46:01.960] RX< ng...[0m
+[05:46:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:01.960] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:01.960] RX< [33m[W/ftp] s
+[05:46:03.065] RX< ervice go wrong, now wait restarting...[0m
+[05:46:03.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:03.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:03.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:03.065] RX< [33m[W/ftp] service go wrong, now wai
+[05:46:04.955] RX< t restarting...[0m
+[05:46:04.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:04.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:04.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:04.955] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:04.955] RX< [33
+[05:46:06.059] RX< m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:06.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:06.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:06.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:06.059] RX< [33m[W/ftp] service go wron
+[05:46:07.741] RX< g, now wait restarting...[0m
+[05:46:07.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:07.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:07.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:07.741] RX< [33m[W/ftp] service go wrong, now wait restarting..
+[05:46:09.070] RX< .[0m
+[05:46:09.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:09.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:09.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:09.070] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:09.070] RX< [33m[W/ftp] servi
+[05:46:10.736] RX< ce go wrong, now wait restarting...[0m
+[05:46:10.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:10.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:10.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:10.736] RX< [33m[W/ftp] service go wrong, now wait re
+[05:46:12.065] RX< starting...[0m
+[05:46:12.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:12.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:12.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:12.065] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:12.065] RX< [33m[W/
+[05:46:13.730] RX< ftp] service go wrong, now wait restarting...[0m
+[05:46:13.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:13.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:13.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:13.730] RX< [33m[W/ftp] service go wrong, n
+[05:46:14.947] RX< ow wait restarting...[0m
+[05:46:14.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:14.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:14.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:14.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0
+[05:46:16.741] RX< m
+[05:46:16.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:16.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:16.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:16.741] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:16.741] RX< [33m[W/ftp] service g
+[05:46:17.958] RX< o wrong, now wait restarting...[0m
+[05:46:17.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:17.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:17.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:17.958] RX< [33m[W/ftp] service go wrong, now wait restar
+[05:46:19.736] RX< ting...[0m
+[05:46:19.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:19.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:19.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:19.736] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:19.736] RX< [33m[W/ftp]
+[05:46:20.952] RX<  service go wrong, now wait restarting...[0m
+[05:46:20.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:20.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:20.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:20.952] RX< [33m[W/ftp] service go wrong, now w
+[05:46:22.730] RX< ait restarting...[0m
+[05:46:22.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:22.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:22.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:22.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:22.730] RX< [
+[05:46:23.947] RX< 33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:23.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:23.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:23.947] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:23.947] RX< [33m[W/ftp] service go wr
+[05:46:25.068] RX< ong, now wait restarting...[0m
+[05:46:25.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:25.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:25.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:25.068] RX< [33m[W/ftp] service go wrong, now wait restarting
+[05:46:26.958] RX< ...[0m
+[05:46:26.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:26.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:26.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:26.958] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:26.958] RX< [33m[W/ftp] ser
+[05:46:28.063] RX< vice go wrong, now wait restarting...[0m
+[05:46:28.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:28.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:28.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:28.063] RX< [33m[W/ftp] service go wrong, now wait 
+[05:46:29.952] RX< restarting...[0m
+[05:46:29.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:29.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:29.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:29.952] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:29.952] RX< [33m[
+[05:46:31.058] RX< W/ftp] service go wrong, now wait restarting...[0m
+[05:46:31.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:31.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:31.058] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:31.058] RX< [33m[W/ftp] service go wrong,
+[05:46:32.739] RX<  now wait restarting...[0m
+[05:46:32.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:32.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:32.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:32.739] RX< [33m[W/ftp] service go wrong, now wait restarting...
+[05:46:34.068] RX< [0m
+[05:46:34.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:34.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:34.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:34.068] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:34.068] RX< [33m[W/ftp] service
+[05:46:35.734] RX<  go wrong, now wait restarting...[0m
+[05:46:35.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:35.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:35.734] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:35.734] RX< [33m[W/ftp] service go wrong, now wait rest
+[05:46:37.063] RX< arting...[0m
+[05:46:37.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:37.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:37.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:37.063] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:37.063] RX< [33m[W/ft
+[05:46:38.728] RX< p] service go wrong, now wait restarting...[0m
+[05:46:38.728] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:38.728] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:38.728] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:38.728] RX< [33m[W/ftp] service go wrong, now
+[05:46:39.945] RX<  wait restarting...[0m
+[05:46:39.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:39.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:39.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:39.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:41.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:41.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:41.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:41.739] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:41.739] RX< [33m[W/ftp] service go 
+[05:46:42.956] RX< wrong, now wait restarting...[0m
+[05:46:42.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:42.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:42.956] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:42.956] RX< [33m[W/ftp] service go wrong, now wait restarti
+[05:46:44.701] RX< ng...[0m
+[05:46:44.701] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:44.701] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:44.701] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:44.701] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:44.701] RX< [32m[I/WLAN.m
+[05:46:45.726] RX< gnt] wifi connect success ssid:G-Demo[0m
+[05:46:45.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:45.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:45.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:45.726] RX< [33m[W/ftp] service go wrong, now wait 
+[05:46:47.055] RX< restarting...[0m
+[05:46:47.055] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:47.055] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:47.055] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:47.055] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:47.055] RX< [33m[
+[05:46:48.737] RX< W/ftp] service go wrong, now wait restarting...[0m
+[05:46:48.737] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:48.737] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:48.737] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:48.737] RX< [33m[W/ftp] service go wrong,
+[05:46:49.954] RX<  now wait restarting...[0m
+[05:46:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:49.954] RX< [33m[W/ftp] service go wrong, now wait restarting...
+[05:46:51.731] RX< [0m
+[05:46:51.731] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:51.731] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:51.731] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:51.731] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:51.731] RX< [33m[W/ftp] service
+[05:46:52.948] RX<  go wrong, now wait restarting...[0m
+[05:46:52.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:52.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:52.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:52.948] RX< [33m[W/ftp] service go wrong, now wait rest
+[05:46:54.726] RX< arting...[0m
+[05:46:54.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:54.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:54.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:54.726] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:54.726] RX< [33m[W/ft
+[05:46:55.943] RX< p] service go wrong, now wait restarting...[0m
+[05:46:55.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:55.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:55.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:55.943] RX< [33m[W/ftp] service go wrong, now
+[05:46:57.064] RX<  wait restarting...[0m
+[05:46:57.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:57.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:57.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:57.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:58.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:58.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:58.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:58.954] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:46:58.954] RX< [33m[W/ftp] service go 
+[05:47:00.059] RX< wrong, now wait restarting...[0m
+[05:47:00.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:00.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:00.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:00.059] RX< [33m[W/ftp] service go wrong, now wait restarti
+[05:47:01.948] RX< ng...[0m
+[05:47:01.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:01.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:01.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:01.948] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:01.948] RX< [33m[W/ftp] s
+[05:47:03.053] RX< ervice go wrong, now wait restarting...[0m
+[05:47:03.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:03.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:03.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:03.053] RX< [33m[W/ftp] service go wrong, now wai
+[05:47:04.943] RX< t restarting...[0m
+[05:47:04.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:04.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:04.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:04.943] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:04.943] RX< [33
+[05:47:06.064] RX< m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:06.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:06.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:06.064] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:06.064] RX< [33m[W/ftp] service go wron
+[05:47:07.730] RX< g, now wait restarting...[0m
+[05:47:07.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:07.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:07.730] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:07.730] RX< [33m[W/ftp] service go wrong, now wait restarting..
+[05:47:09.059] RX< .[0m
+[05:47:09.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:09.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:09.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:09.059] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:09.059] RX< [33m[W/ftp] servi
+[05:47:10.724] RX< ce go wrong, now wait restarting...[0m
+[05:47:10.724] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:10.724] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:10.724] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:10.724] RX< [33m[W/ftp] service go wrong, now wait re
+[05:47:12.053] RX< starting...[0m
+[05:47:12.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:12.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:12.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:12.053] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:12.053] RX< [33m[W/
+[05:47:13.735] RX< ftp] service go wrong, now wait restarting...[0m
+[05:47:13.735] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:13.735] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:13.735] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:13.735] RX< [33m[W/ftp] service go wrong, n
+[05:47:14.317] TX> ftp_server
+[05:47:14.317] TX> echo "__EVBTEST_END_2899d896__"
+[05:47:14.327] RX< ow wait restarting...[0m
+[05:47:14.327] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:14.327] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:14.327] RX< ftp_server
+[05:47:14.327] RX< 
+[05:47:14.327] RX< [FTP] Ftp server init success!!!
+[05:47:14.327] RX< msh /emmc>echo "__EVBTEST_END_2899d896__"
+[05:47:14.327] RX< __EVBTEST_END_2899d896__
+[05:47:15.945] RX< msh /emmc>[33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:15.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:15.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:15.945] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:15.945] RX< [33m[W/ftp] s
+[05:47:16.977] TX> rtmp_video_start rtmp://10.1.64.35/live/cam
+[05:47:16.977] TX> echo "__EVBTEST_END_a55eb011__"
+[05:47:17.946] RX< ervice go wrong, now wait restarting...[0m
+[05:47:17.946] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:17.946] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:17.946] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[05:47:17.946] RX< rtmp_v
+[05:47:32.969] TX> rtmp_video_stop
+[05:47:32.969] TX> echo "__EVBTEST_END_436a32d3__"

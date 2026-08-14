@@ -1,0 +1,29 @@
+wifi scan
+             SSID                      MAC            security    rssi chn Mbps
+------------------------------- -----------------  -------------- ---- --- ----
+gravityXR                       f4:e4:51:83:d5:80  WPA2_AES_PSK   -54    6  144
+ Gwireless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -54    6  144
+ftp_test_2_4G                   62:ed:11:f2:02:a7  WPA2_AES_PSK   -22   10  144
+ Gwireless                      f4:e4:51:83:e3:01  WPA2_AES_PSK   -57   11  144
+ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -26   11  144
+gravityXR                       f4:e4:51:83:d3:10  WPA2_AES_PSK   -76   11  144
+msh />
+msh />wifi scan
+             SSID                      MAC            security    rssi chn Mbps
+------------------------------- -----------------  -------------- ---- --- ----
+alk_guest                       2c:97:b1:17:2e:a1  WPA2_MIXED_PSK -53    6   72
+ Gwireless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -54    6  144
+G-Demo                          f4:e4:51:83:d5:82  WPA2_AES_PSK   -56    6  144
+ftp_test_2_4G                   62:ed:11:f2:02:a7  WPA2_AES_PSK   -20   10  144
+ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -26   11  144
+MTK_CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -38   13  300
+gravityXR                       f4:e4:51:83:d5:80  WPA2_AES_PSK   -58    6  144
+gravityXR                       f4:e4:51:83:e3:00  WPA2_AES_PSK   -63   11  144
+ Gwireless                      f4:e4:51:83:e3:01  WPA2_AES_PSK   -59   11  144
+G-Demo                          f4:e4:51:83:e3:02  WPA2_AES_PSK   -61   11  144
+msh />
+msh />wifi join G-Demo Gdemo@123
+[32m[I/WLAN.mgnt] wifi connect success ssid:G-Demo[0m
+msh />
+msh />[32m[I/WLAN.lwip] Got IP address : 10.1.90.71[0m
+[6] [SNTP] rtc synced: 2026-08-12 05:40:12 (tick=617203584)

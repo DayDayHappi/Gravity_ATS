@@ -1,0 +1,68 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 5,
+    "errored": 0,
+    "pass_rate": 0.0,
+    "total_elapsed_ms": 0
+  },
+  "results": [
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已交互连接，跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-12 22:30:41"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_scan']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:30:41"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "FAIL",
+      "elapsed_ms": 0,
+      "message": "无法进入 /emmc 目录",
+      "detail": "\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\nNo such directory: emmc",
+      "timestamp": "2026-08-12 22:30:41"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_join']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:30:41"
+    },
+    {
+      "name": "photo",
+      "module": "photo",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['ftp']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:30:41"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['ftp']",
+      "detail": "",
+      "timestamp": "2026-08-12 22:30:41"
+    }
+  ],
+  "generated_at": "2026-08-12 22:30:41"
+}

@@ -1,0 +1,143 @@
+[04:07:07.391] TX> 
+[04:07:08.391] TX> 
+[04:07:09.391] RX< 
+[04:07:09.391] RX< msh /emmc>
+[04:07:09.391] RX< msh /emmc>
+[04:07:09.392] TX> 
+[04:07:10.392] TX> 
+[04:07:11.393] RX< 
+[04:07:11.393] RX< msh /emmc>
+[04:07:11.393] RX< msh /emmc>
+[04:07:11.393] TX> 
+[04:07:12.394] TX> 
+[04:07:13.394] RX< 
+[04:07:13.394] RX< msh /emmc>
+[04:07:13.394] RX< msh /emmc>
+[04:07:13.394] TX> 
+[04:07:14.395] TX> 
+[04:07:15.395] TX> 
+[04:07:15.395] RX< 
+[04:07:15.395] RX< msh /emmc>
+[04:07:15.395] RX< msh /emmc>
+[04:07:15.401] TX> echo "EVBTEST_HELLO"
+[04:07:15.401] TX> echo "__EVBTEST_END_0bdf295f__"
+[04:07:17.397] RX< 
+[04:07:17.397] RX< msh /emmc>echo "EVBTEST_HELLO"
+[04:07:17.397] RX< EVBTEST_HELLO
+[04:07:17.397] RX< msh /emmc>echo "__EVBTEST_END_0bdf295f__"
+[04:07:17.397] RX< __EVBTEST_END_0bdf295f__
+[04:07:17.397] RX< msh /emmc>
+[04:07:17.405] TX> cd /
+[04:07:17.405] TX> echo "__EVBTEST_END_0a4e576c__"
+[04:07:19.398] RX< cd /
+[04:07:19.398] RX< msh />echo "__EVBTEST_END_0a4e576c__"
+[04:07:19.398] RX< __EVBTEST_END_0a4e576c__
+[04:07:19.398] RX< msh />
+[04:07:19.405] TX> dfs_video_stop
+[04:07:19.405] TX> echo "__EVBTEST_END_f358f7b1__"
+[04:07:21.401] RX< dfs_video_stop
+[04:07:21.401] RX< [6] [App Dfs] Please start recording the video first.
+[04:07:21.401] RX< msh />echo "__EVBTEST_END_f358f7b1__"
+[04:07:21.401] RX< __EVBTEST_END_f358f7b1__
+[04:07:21.401] RX< msh />
+[04:07:21.409] TX> ftp_server
+[04:07:21.409] TX> echo "__EVBTEST_END_4bae9ccc__"
+[04:07:23.403] RX< ftp_server
+[04:07:23.403] RX< 
+[04:07:23.403] RX< [FTP] Ftp server init success!!!
+[04:07:23.403] RX< msh />echo "__EVBTEST_END_4bae9ccc__"
+[04:07:23.403] RX< __EVBTEST_END_4bae9ccc__
+[04:07:23.403] RX< msh />
+[04:07:24.425] TX> ifconfig
+[04:07:24.425] TX> echo "__EVBTEST_END_5b8d497d__"
+[04:07:24.425] RX< ifconfig
+[04:07:24.425] RX< network interface device: w0 (Default)
+[04:07:24.425] RX< MTU: 1500
+[04:07:24.425] RX< MAC: 8c ea 12 ba a8 2c 
+[04:07:24.425] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[04:07:24.425] RX< ip address: 0.0.0.0
+[04:07:24.425] RX< gw address: 0.0.0.0
+[04:07:24.425] RX< net mask  : 0.0.0.0
+[04:07:24.425] RX< dns server #0: 0.0.0.0
+[04:07:24.425] RX< dns server #1: 0.0
+[04:07:24.438] RX< .0.0
+[04:07:24.438] RX< 
+[04:07:24.438] RX< network interface device: w1
+[04:07:24.438] RX< MTU: 1500
+[04:07:24.438] RX< MAC: 8e ea 12 ba a8 2c 
+[04:07:24.438] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[04:07:24.438] RX< ip address: 0.0.0.0
+[04:07:24.438] RX< gw address: 0.0.0.0
+[04:07:24.438] RX< net mask  : 0.0.0.0
+[04:07:24.438] RX< dns server #0: 0.0.0.0
+[04:07:24.438] RX< dns server #1: 0.0.0.0
+[04:07:24.438] RX< msh />e
+[04:07:26.438] RX< cho "__EVBTEST_END_5b8d497d__"
+[04:07:26.438] RX< __EVBTEST_END_5b8d497d__
+[04:07:26.438] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:26.445] TX> wifi scan
+[04:07:26.445] TX> echo "__EVBTEST_END_ffacba7b__"
+[04:07:26.491] RX< wifi scan
+[04:07:26.491] RX<              SSID                      MAC            security    rssi chn Mbps
+[04:07:26.491] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[04:07:26.491] RX< gravityXR                       f4:e4:51:83:d5:80  WPA2_AES_PSK   -57    1  144
+[04:07:26.491] RX<  Gwi
+[04:07:27.165] RX< reless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -59    1  144
+[04:07:27.165] RX< G-Demo                          f4:e4:51:83:d5:82  WPA2_AES_PSK   -57    1  144
+[04:07:27.165] RX< ftp_test_2_4G                   62:ed:11:f2:02:a7  WPA2_AES_PSK   -25    7  144
+[04:07:27.165] RX< alk              
+[04:07:28.405] RX<                2c:97:b1:17:2e:a0  WPA2_AES_PSK   -56    1   72
+[04:07:28.405] RX< ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -33    1  144
+[04:07:28.405] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:28.405] RX< [33m[W/ftp] service go wrong, now wait restarting...
+[04:07:30.406] RX< [0m
+[04:07:30.406] RX< MTK_CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -46   13  300
+[04:07:30.406] RX< msh />echo "__EVBTEST_END_ffacba7b__"
+[04:07:30.406] RX< __EVBTEST_END_ffacba7b__
+[04:07:30.406] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:30.413] TX> wifi join G-Demo Gdemo@123
+[04:07:30.413] TX> echo "__EVBTEST_END_c85653fa__"
+[04:07:32.407] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:32.407] RX< wifi join G-Demo Gdemo@123
+[04:07:32.407] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:33.412] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:33.412] RX< [33m[W/WLAN.mgnt] F:rt_wlan_connect L:935 not find ap! ssid:G-Demo,info.ssid.len=6[0m
+[04:07:33.412] RX< msh />echo "__EVBTEST_END_c85653fa__"
+[04:07:33.412] RX< __EVBTEST_END_c85653fa__
+[04:07:33.412] RX< msh />[33m[W/ftp] service go wrong, now wait r
+[04:07:35.413] RX< estarting...[0m
+[04:07:35.413] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:37.414] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:37.414] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:39.415] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:39.415] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:41.415] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:41.415] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:41.415] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:43.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:43.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:45.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:45.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:47.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:47.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:49.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:49.416] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:51.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:51.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:53.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:53.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:55.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:55.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:57.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:57.417] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:59.418] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:07:59.418] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:08:00.421] TX> cd /emmc
+[04:08:00.421] TX> echo "__EVBTEST_END_b78efb74__"
+[04:08:01.418] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:08:01.418] RX< cd /emmc
+[04:08:01.418] RX< msh /emmc>echo "__EVBTEST_END_b78efb74__"
+[04:08:01.418] RX< __EVBTEST_END_b78efb74__
+[04:08:01.418] RX< msh /emmc>[33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:08:03.418] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[04:08:03.418] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m

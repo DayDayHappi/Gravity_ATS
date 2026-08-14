@@ -1,0 +1,12 @@
+[06:34:55.030] TX> 
+[06:34:56.032] TX> echo "HELLO_TOKEN_123"
+[06:34:56.529] RX< 
+[06:34:56.529] RX< msh />echo "HELLO_TOKEN_123"
+[06:34:56.529] RX< HELLO_TOKEN_123
+[06:34:56.529] RX< msh />
+[06:34:57.533] TX> wifi status
+[06:34:58.530] RX< wifi status
+[06:34:58.530] RX< wifi disconnected!
+[06:34:58.530] RX< wifi ap not start!
+[06:34:58.530] RX< Auto Connect status:Disable!
+[06:34:58.530] RX< msh />

@@ -1,0 +1,12 @@
+[06:59:31.547] TX> 
+[06:59:32.548] TX> 
+[06:59:33.548] RX< 
+[06:59:33.548] RX< msh />
+[06:59:33.548] RX< msh />
+[06:59:33.549] TX> wifi join G-Demo Gdemo@123
+[06:59:33.549] TX> echo "__EVBTEST_END_3cb54c25__"
+[06:59:35.550] RX< wifi join G-Demo Gdemo@123
+[06:59:35.550] RX< [32m[I/WLAN.mgnt] wifi is connect ssid:G-Demo[0m
+[06:59:35.550] RX< msh />echo "__EVBTEST_END_3cb54c25__"
+[06:59:35.550] RX< __EVBTEST_END_3cb54c25__
+[06:59:35.550] RX< msh />

@@ -1,0 +1,47 @@
+[07:20:21.232] TX> 
+[07:20:22.233] TX> 
+[07:20:23.233] RX< 
+[07:20:23.233] RX< msh />
+[07:20:23.233] RX< msh />
+[07:20:23.234] TX> ping 10.1.64.35
+[07:20:23.234] TX> echo "__EVBTEST_END_10234204__"
+[07:20:25.234] RX< ping 10.1.64.35
+[07:20:25.234] RX< ping: not found specified netif, using default netdev w0.
+[07:20:25.234] RX< 60 bytes from 10.1.64.35 icmp_seq=1 ttl=63 time=9 ms
+[07:20:25.234] RX< 60 bytes from 10.1.64.35 icmp_seq=2 ttl=63 time=19 ms
+[07:20:27.235] RX< 60 bytes from 10.1.64.35 icmp_seq=3 ttl=63 time=24 ms
+[07:20:27.235] RX< 60 bytes from 10.1.64.35 icmp_seq=4 ttl=63 time=13 ms
+[07:20:29.237] RX< 
+[07:20:29.237] RX< --- 10.1.64.35 ping statistics ---
+[07:20:29.237] RX< 4 packets transmitted, 4 received, 0% packet loss
+[07:20:29.237] RX< minimum = 13ms, maximum = 24ms, average = 16ms
+[07:20:29.237] RX< msh />echo "__EVBTEST_END_10234204__"
+[07:20:29.237] RX< __EVBTEST_END_10234204__
+[07:20:29.237] RX< msh />
+[07:20:29.245] RX< ifconfig
+[07:20:29.245] RX< network interface device: w0 (Default)
+[07:20:29.245] RX< MTU: 1500
+[07:20:29.245] RX< MAC: 8c ea 12 ba a8 2c 
+[07:20:29.245] RX< FLAGS: UP LINK_UP INTERNET_UP DHCP_ENABLE ETHARP BROADCAST IGMP
+[07:20:29.245] RX< ip address: 10.1.90.71
+[07:20:29.245] RX< gw address: 10.1.90.254
+[07:20:29.245] RX< net mask  : 255.255.255.0
+[07:20:29.245] RX< dns server #0: 10.10.252.1
+[07:20:29.245] RX< dns s
+[07:20:29.245] TX> ifconfig
+[07:20:29.245] TX> echo "__EVBTEST_END_b1cd1577__"
+[07:20:29.258] RX< erver #1: 10.10.252.2
+[07:20:29.258] RX< 
+[07:20:29.258] RX< network interface device: w1
+[07:20:29.258] RX< MTU: 1500
+[07:20:29.258] RX< MAC: 8e ea 12 ba a8 2c 
+[07:20:29.258] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[07:20:29.258] RX< ip address: 0.0.0.0
+[07:20:29.258] RX< gw address: 0.0.0.0
+[07:20:29.258] RX< net mask  : 0.0.0.0
+[07:20:29.258] RX< dns server #0: 10.10.252.1
+[07:20:29.258] RX< dns serve
+[07:20:31.260] RX< r #1: 10.10.252.2
+[07:20:31.260] RX< msh />echo "__EVBTEST_END_b1cd1577__"
+[07:20:31.260] RX< __EVBTEST_END_b1cd1577__
+[07:20:31.260] RX< msh />

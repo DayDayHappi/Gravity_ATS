@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="6" failures="1" errors="0" skipped="0" time="52.59">
+  <testcase name="wifi_scan" classname="wifi_scan" time="2.12">
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="8.00">
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="0.00">
+    <failure message="无法进入 /emmc 目录"><![CDATA[No such directory: emmc]]></failure>
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="2.82">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="29.06">
+  </testcase>
+  <testcase name="video" classname="video" time="10.60">
+  </testcase>
+</testsuite>

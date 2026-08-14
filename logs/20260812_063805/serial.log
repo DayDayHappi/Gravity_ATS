@@ -1,0 +1,45 @@
+[06:38:05.504] TX> 
+[06:38:06.505] TX> 
+[06:38:07.505] RX< 
+[06:38:07.505] RX< msh />
+[06:38:07.505] RX< msh />
+[06:38:07.506] TX> 
+[06:38:08.507] TX> 
+[06:38:09.507] RX< 
+[06:38:09.507] RX< msh />
+[06:38:09.507] RX< msh />
+[06:38:09.513] TX> echo "EVBTEST_HELLO"
+[06:38:09.513] TX> echo "__EVBTEST_END_2f256dd2__"
+[06:38:11.509] RX< echo "EVBTEST_HELLO"
+[06:38:11.509] RX< EVBTEST_HELLO
+[06:38:11.509] RX< msh />echo "__EVBTEST_END_2f256dd2__"
+[06:38:11.509] RX< __EVBTEST_END_2f256dd2__
+[06:38:11.509] RX< msh />
+[06:38:11.510] TX> wifi status
+[06:38:11.510] TX> echo "__EVBTEST_END_98da3c77__"
+[06:38:13.511] RX< wifi status
+[06:38:13.511] RX< wifi disconnected!
+[06:38:13.511] RX< wifi ap not start!
+[06:38:13.511] RX< Auto Connect status:Disable!
+[06:38:13.511] RX< msh />echo "__EVBTEST_END_98da3c77__"
+[06:38:13.511] RX< __EVBTEST_END_98da3c77__
+[06:38:13.511] RX< msh />
+[06:38:13.512] TX> wifi scan
+[06:38:13.512] TX> echo "__EVBTEST_END_8e9277ad__"
+[06:38:13.800] RX< wifi scan
+[06:38:13.800] RX<              SSID                      MAC            security    rssi chn Mbps
+[06:38:13.800] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[06:38:13.800] RX< TP-LINK_5G_756B                 c2:45:86:39:8c:5f  WPA2_AES_PSK   -55    1  300
+[06:38:13.800] RX< alk_
+[06:38:13.800] RX< guest                       2c:97:b1:17:2e:a1  WPA2_MIXED_PSK -52    6   72
+[06:38:13.800] RX< gravityXR                       f4:e4:51:83:d5:80  WPA2_AES_PSK   -55    6  144
+[06:38:13.800] RX<  Gwireless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -56    6  144
+[06:38:13.800] RX< G-Demo           
+[06:38:15.376] RX<                f4:e4:51:83:d5:82  WPA2_AES_PSK   -55    6  144
+[06:38:15.376] RX< ftp_test_2_4G                   62:ed:11:f2:02:a7  WPA2_AES_PSK   -27    9  144
+[06:38:15.376] RX< gravityXR                       f4:e4:51:83:e3:00  WPA2_AES_PSK   -62   11  144
+[06:38:15.376] RX< ZJ-WY-WiFi                    
+[06:38:17.377] RX<   cc:20:8c:ad:19:40  WPA2_AES_PSK   -80   11  144
+[06:38:17.377] RX< msh />echo "__EVBTEST_END_8e9277ad__"
+[06:38:17.377] RX< __EVBTEST_END_8e9277ad__
+[06:38:17.377] RX< msh />

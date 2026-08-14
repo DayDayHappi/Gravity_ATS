@@ -1,0 +1,98 @@
+[05:10:54.415] TX> 
+[05:10:55.416] TX> 
+[05:10:56.416] RX< 
+[05:10:56.416] RX< msh />
+[05:10:56.416] RX< msh />
+[05:10:56.416] TX> 
+[05:10:57.417] TX> 
+[05:10:58.418] TX> 
+[05:10:58.418] RX< 
+[05:10:58.418] RX< msh />
+[05:10:58.418] RX< msh />
+[05:10:58.425] TX> echo "EVBTEST_HELLO"
+[05:10:58.425] TX> echo "__EVBTEST_END_0d818bce__"
+[05:11:00.420] RX< 
+[05:11:00.420] RX< msh />echo "EVBTEST_HELLO"
+[05:11:00.420] RX< EVBTEST_HELLO
+[05:11:00.420] RX< msh />echo "__EVBTEST_END_0d818bce__"
+[05:11:00.420] RX< __EVBTEST_END_0d818bce__
+[05:11:00.420] RX< msh />
+[05:11:00.429] TX> cd /
+[05:11:00.429] TX> echo "__EVBTEST_END_041112f9__"
+[05:11:02.421] RX< cd /
+[05:11:02.421] RX< msh />echo "__EVBTEST_END_041112f9__"
+[05:11:02.421] RX< __EVBTEST_END_041112f9__
+[05:11:02.421] RX< msh />
+[05:11:02.429] TX> dfs_video_stop
+[05:11:02.429] TX> echo "__EVBTEST_END_0610a94b__"
+[05:11:04.423] RX< dfs_video_stop
+[05:11:04.423] RX< [6] [App Dfs] Please start recording the video first.
+[05:11:04.423] RX< msh />echo "__EVBTEST_END_0610a94b__"
+[05:11:04.423] RX< __EVBTEST_END_0610a94b__
+[05:11:04.423] RX< msh />
+[05:11:04.429] TX> ftp_server
+[05:11:04.429] TX> echo "__EVBTEST_END_7616f735__"
+[05:11:06.425] RX< ftp_server
+[05:11:06.425] RX< 
+[05:11:06.425] RX< [FTP] Ftp server init success!!!
+[05:11:06.425] RX< msh />echo "__EVBTEST_END_7616f735__"
+[05:11:06.425] RX< __EVBTEST_END_7616f735__
+[05:11:06.425] RX< msh />
+[05:11:07.445] TX> ifconfig
+[05:11:07.445] TX> echo "__EVBTEST_END_b54f2cbb__"
+[05:11:07.445] RX< ifconfig
+[05:11:07.445] RX< network interface device: w0 (Default)
+[05:11:07.445] RX< MTU: 1500
+[05:11:07.445] RX< MAC: 8c ea 12 ba a8 2c 
+[05:11:07.445] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[05:11:07.445] RX< ip address: 0.0.0.0
+[05:11:07.445] RX< gw address: 0.0.0.0
+[05:11:07.445] RX< net mask  : 0.0.0.0
+[05:11:07.445] RX< dns server #0: 0.0.0.0
+[05:11:07.445] RX< dns server #1: 0.0
+[05:11:07.459] RX< .0.0
+[05:11:07.459] RX< 
+[05:11:07.459] RX< network interface device: w1
+[05:11:07.459] RX< MTU: 1500
+[05:11:07.459] RX< MAC: 8e ea 12 ba a8 2c 
+[05:11:07.459] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[05:11:07.459] RX< ip address: 0.0.0.0
+[05:11:07.459] RX< gw address: 0.0.0.0
+[05:11:07.459] RX< net mask  : 0.0.0.0
+[05:11:07.459] RX< dns server #0: 0.0.0.0
+[05:11:07.459] RX< dns server #1: 0.0.0.0
+[05:11:07.459] RX< msh />e
+[05:11:09.460] RX< cho "__EVBTEST_END_b54f2cbb__"
+[05:11:09.460] RX< __EVBTEST_END_b54f2cbb__
+[05:11:09.460] RX< msh />[32m[I/ftp] service launched success.[0m
+[05:11:09.465] TX> wifi scan
+[05:11:09.465] TX> echo "__EVBTEST_END_0bc34098__"
+[05:11:09.514] RX< wifi scan
+[05:11:09.514] RX<              SSID                      MAC            security    rssi chn Mbps
+[05:11:09.514] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[05:11:09.514] RX< TP-LINK_5G_756B                 c2:45:86:39:8c:5f  WPA2_AES_PSK   -54    1  300
+[05:11:09.514] RX< alk_
+[05:11:10.045] RX< guest                       2c:97:b1:17:2e:a1  WPA2_MIXED_PSK -52    1   72
+[05:11:10.045] RX<  Gwireless                      f4:e4:51:83:d5:81  WPA2_AES_PSK   -57    1  144
+[05:11:10.045] RX< ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -41    1  144
+[05:11:10.045] RX< MTK_CHEETAH_AP_2.
+[05:11:11.590] RX< 4G             e0:ef:02:71:f5:71  OPEN           -51   13  300
+[05:11:11.590] RX< alk                             2c:97:b1:17:2e:a0  WPA2_AES_PSK   -57    1   72
+[05:11:11.590] RX< alk_guest                       2c:97:b1:17:2a:81  WPA2_MIXED_PSK -66    6   72
+[05:11:11.590] RX< msh />echo "__EVBTEST_END_0bc3
+[05:11:13.592] RX< 4098__"
+[05:11:13.592] RX< __EVBTEST_END_0bc34098__
+[05:11:13.592] RX< msh />
+[05:11:13.601] TX> wifi join G-Demo Gdemo@123
+[05:11:13.601] TX> echo "__EVBTEST_END_b1b6c45e__"
+[05:11:15.593] RX< wifi join G-Demo Gdemo@123
+[05:11:17.595] RX< [33m[W/WLAN.mgnt] F:rt_wlan_connect L:935 not find ap! ssid:G-Demo,info.ssid.len=6[0m
+[05:11:17.595] RX< msh />echo "__EVBTEST_END_b1b6c45e__"
+[05:11:17.595] RX< __EVBTEST_END_b1b6c45e__
+[05:11:17.595] RX< msh />
+[05:11:43.609] TX> cd /emmc
+[05:11:43.609] TX> echo "__EVBTEST_END_87eb7f3b__"
+[05:11:43.619] RX< cd /emmc
+[05:11:43.619] RX< msh /emmc>echo "__EVBTEST_END_87eb7f3b__"
+[05:11:43.619] RX< __EVBTEST_END_87eb7f3b__
+[05:11:43.619] RX< msh /emmc>

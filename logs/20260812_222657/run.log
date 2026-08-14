@@ -1,0 +1,5 @@
+[22:26:57.145] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260812_222657
+[22:26:57.145] [INFO] 启用模块: ['wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[22:26:57.146] [WARN] 未找到 ffprobe (可选，缺失时仅校验文件大小)，RTMP 验证将降级为仅校验文件大小
+[22:26:57.146] [ERROR] 缺少依赖:
+[22:26:57.146] [ERROR]   - ffmpeg (sudo apt install ffmpeg 或 pip install imageio-ffmpeg)

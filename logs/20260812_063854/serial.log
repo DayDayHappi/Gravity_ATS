@@ -1,0 +1,11 @@
+[06:38:54.201] TX> 
+[06:38:55.202] TX> 
+[06:38:56.202] RX< 
+[06:38:56.202] RX< msh />
+[06:38:56.202] RX< msh />
+[06:38:56.204] TX> 
+[06:38:56.705] TX> wifi join G-Demo Gdemo@123
+[06:38:58.204] RX< 
+[06:38:58.204] RX< msh />wifi join G-Demo Gdemo@123
+[06:38:58.204] RX< [32m[I/WLAN.mgnt] wifi is connect ssid:G-Demo[0m
+[06:38:58.204] RX< msh />
