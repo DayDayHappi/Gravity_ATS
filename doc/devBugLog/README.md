@@ -29,6 +29,13 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-17 | [20260817_0309_rtmp移除ftp_server前置压制.md](20260817_0309_rtmp移除ftp_server前置压制.md) | rtmp 模块删除 run() 里 ensure_ftp(force=True) 前置调用：rtmp 不依赖 FTP 且重发 ftp_server 会加剧固件 FTP 崩溃循环/线程堆积拖慢推流 |
+| 2026-08-17 | [20260817_0248_ffplay画面确认改用独立终端窗口播放.md](20260817_0248_ffplay画面确认改用独立终端窗口播放.md) | ffplay 画面确认改用 gnome-terminal 独立终端窗口播放(去 -rw_timeout 耐心等关键帧)；窗口生命周期独立于脚本，teardown 不再 kill |
+| 2026-08-17 | [20260817_0203_RTMP探测失败_板子编码慢关键帧稀疏加大超时.md](20260817_0203_RTMP探测失败_板子编码慢关键帧稀疏加大超时.md) | rtmp 探测失败根因是板子推1080p编码慢+FTP刷屏抢CPU→关键帧IDR稀疏(600帧/57s一个)；ffprobe -rw_timeout 3s→15s、analyzeduration/probesize放宽、重试加大，耐心等IDR |
+| 2026-08-17 | [20260817_0141_ffplay画面确认增强_stderr落日志与展示延长.md](20260817_0141_ffplay画面确认增强_stderr落日志与展示延长.md) | ffplay 画面确认 stderr 从 DEVNULL 改落 logs/<ts>/ffplay.log；探测到流后、stop 前延长展示窗口(新增 ffplay_show_duration 配置)，解决"启动了但看不到窗口" |
+| 2026-08-17 | [20260817_0115_RTMP命令串口溢出丢字节_长命令分片写入修复.md](20260817_0115_RTMP命令串口溢出丢字节_长命令分片写入修复.md) | rtmp 推流命令(45B+哨兵77B)超板子串口缓冲RT_SERIAL_RB_BUFSZ(64B)溢出丢字节，命令截断报command not found；serial_console 新增 _write_cmd 分片+片间延时写入 |
+| 2026-08-14 | [20260814_0500_MediaMTX换nginx-rtmp.md](20260814_0500_MediaMTX换nginx-rtmp.md) | 删除内置 MediaMTX，RTMP 服务端改用系统 nginx-rtmp（仅检查就绪不启停）；验证改 ffprobe 实时探测+可选ffplay，去存盘；cam1→cam 统一 |
+| 2026-08-14 | [20260814_0010_新增migrate迁移脚本.md](20260814_0010_新增migrate迁移脚本.md) | 新增 `migrate.sh` 一键迁移脚本(8项检查+收集sudo命令)+`迁移指南.md`，用于换 Ubuntu PC 时初始化环境 |
 | 2026-08-13 | [20260813_0535_新增串口终端模式.md](20260813_0535_新增串口终端模式.md) | 新增 `--terminal` 交互式串口终端(类Xcom)：手动发命令、实时看TX/RX、Tab切ANSI，用于RTMP等调试 |
 | 2026-08-13 | [20260813_0500_RTMP服务端与拉流时序修复.md](20260813_0500_RTMP服务端与拉流时序修复.md) | RTMP 真机验证打通：引入 MediaMTX 服务端中转 + 修 ffmpeg 拉流参数(-reconnect 不兼容) + 先推后拉时序 + exec_async 抗 FTP 刷屏（4 层根因） |
 | 2026-08-13 | [20260813_0400_内置ffmpeg打通RTMP依赖.md](20260813_0400_内置ffmpeg打通RTMP依赖.md) | 引入预编译静态 ffmpeg/ffprobe 到 tools/ffmpeg/，配置指向内置二进制，打通 RTMP 离线依赖（零代码改动） |

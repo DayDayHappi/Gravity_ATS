@@ -1,0 +1,109 @@
+[03:02:58.400] TX> 
+[03:02:59.401] TX> 
+[03:03:00.400] RX< 
+[03:03:00.400] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:00.400] RX< 
+[03:03:00.400] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:00.602] TX> echo "EVBTEST_HELLO"
+[03:03:00.602] TX> echo "__EVBTEST_END_8cd1e562__"
+[03:03:02.400] RX< echo "EVBTEST_HELLO"
+[03:03:02.400] RX< EVBTEST_HELLO
+[03:03:02.400] RX< msh />echo "__EVBTEST_END_8cd1e562__"
+[03:03:02.400] RX< __EVBTEST_END_8cd1e562__
+[03:03:02.400] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:02.400] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:02.602] TX> cd /
+[03:03:02.602] TX> echo "__EVBTEST_END_016dfb28__"
+[03:03:04.401] RX< cd /
+[03:03:04.401] RX< msh />echo "__EVBTEST_END_016dfb28__"
+[03:03:04.401] RX< __EVBTEST_END_016dfb28__
+[03:03:04.401] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:04.401] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:04.603] TX> dfs_video_stop
+[03:03:04.603] TX> echo "__EVBTEST_END_55d8b67b__"
+[03:03:06.401] RX< dfs_video_stop
+[03:03:06.401] RX< [6] [App Dfs] Please start recording the video first.
+[03:03:06.401] RX< msh />echo "__EVBTEST_END_55d8b67b__"
+[03:03:06.401] RX< __EVBTEST_END_55d8b67b__
+[03:03:06.401] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:06.401] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:06.603] TX> ftp_server
+[03:03:06.603] TX> echo "__EVBTEST_END_b86b9a34__"
+[03:03:08.402] RX< ftp_server
+[03:03:08.402] RX< 
+[03:03:08.402] RX< [FTP] Ftp server init success!!!
+[03:03:08.402] RX< msh />echo "__EVBTEST_END_b86b9a34__"
+[03:03:08.402] RX< __EVBTEST_END_b86b9a34__
+[03:03:08.402] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:08.402] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:09.619] TX> wifi join G-Demo Gdemo@123
+[03:03:09.619] TX> echo "__EVBTEST_END_939ea0af__"
+[03:03:10.402] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:10.402] RX< wifi join G-Demo Gdemo@123
+[03:03:10.402] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:11.551] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:11.551] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:11.551] RX< [33m[W/WLAN.mgnt] F:rt_wlan_connect L:935 not find ap! ssid:G-Demo,info.ssid.len=6[0m
+[03:03:11.551] RX< msh />echo "__EVBTEST_END_939ea0af__"
+[03:03:11.551] RX< __EVBTEST_END_
+[03:03:13.552] RX< 939ea0af__
+[03:03:13.552] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:13.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:13.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:13.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:15.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:15.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:15.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:15.552] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:17.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:17.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:17.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:17.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:19.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:19.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:19.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:19.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:21.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:21.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:21.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:21.553] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:23.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:23.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:23.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:23.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:25.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:25.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:25.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:25.554] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:27.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:27.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:27.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:27.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:29.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:29.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:29.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:29.555] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:31.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:31.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:31.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:31.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:33.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:33.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:33.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:33.556] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:35.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:35.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:35.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:35.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:37.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:37.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:37.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:37.557] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:39.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:39.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:39.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:39.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:41.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:41.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:41.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:03:41.558] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m

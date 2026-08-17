@@ -1,0 +1,4 @@
+//ubuntu
+./tools/ffmpeg/ffplay rtmp://127.0.0.1/live/test
+./tools/ffmpeg/ffmpeg     -re     -f lavfi     -i testsrc=size=1280x720:rate=30     -c:v libx264     -preset ultrafast     -tune zerolatency     -pix_fmt yuv420p     -f flv     rtmp://127.0.0.1/live/test
+//

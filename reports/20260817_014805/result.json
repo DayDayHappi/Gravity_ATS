@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 62.5,
+    "total_elapsed_ms": 80379
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 644,
+      "message": "已联网，IP=10.1.90.71（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-17 01:48:57"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=10.1.90.71），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-17 01:48:57"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (G-Demo/10.1.90.71)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-17 01:48:57"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 209,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-17 01:48:57"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 1931,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 4 项",
+      "detail": "",
+      "timestamp": "2026-08-17 01:48:59"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 34505,
+      "message": "JPEG OK 761KB | 拍照成功，保存到 /emmc/PIC/20260817_044901_4907 | 已下载到 logs/20260817_014805/photos/auto_20260817_044901_4907_Image_20260817_044901_4907_0.jpg",
+      "detail": "含 5 个 jpg",
+      "timestamp": "2026-08-17 01:49:35"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 8541,
+      "message": "录像成功，文件 /emmc/VIDEO/20260817_044935_9787/V（大小校验跳过）",
+      "detail": "e:136]thread release\r\n[6] [cam] [332090][DfsSend][cam_exit:551]exit ok!\n[cam exit] perf=569(us)!\r\n[6] [App Cam] cam exit success\n[6] [App Dfs] Save Video Successful: /emmc/VIDEO/20260817_044935_9787/V",
+      "timestamp": "2026-08-17 01:49:43"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "FAIL",
+      "elapsed_ms": 34549,
+      "message": "推流验证失败: ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error",
+      "detail": "{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'ok': False, 'reason': 'ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error'}",
+      "timestamp": "2026-08-17 01:50:21"
+    }
+  ],
+  "generated_at": "2026-08-17 01:50:21"
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="0" errors="0" skipped="2" time="43.64">
+  <testcase name="wifi_check" classname="wifi_check" time="2.02">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="0.00">
+    <skipped message="WiFi 已连接（IP=10.1.90.71），跳过扫描测试" />
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="0.00">
+    <skipped message="WiFi 已连接 (G-Demo/10.1.90.71)，跳过 join 测试" />
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="2.00">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="2.67">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="16.05">
+  </testcase>
+  <testcase name="video" classname="video" time="9.71">
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="11.19">
+  </testcase>
+</testsuite>

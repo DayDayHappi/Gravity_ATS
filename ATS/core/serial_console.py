@@ -48,6 +48,13 @@ _ERROR_RE = re.compile(
 # 哨兵 token 前缀，避免与正常输出混淆
 _SENTINEL_PREFIX = "__EVBTEST_END_"
 
+# 分片发送参数：板子串口接收环形缓冲 RT_SERIAL_RB_BUFSZ 偏小（默认约 64 字节），
+# 且 rtmp 阶段 FTP 崩溃刷屏使板子 CPU 忙、来不及搬移接收字节，一次性写入长命令
+# （如 rtmp_video_start <url> + echo 哨兵，约 77 字节）会溢出丢字节，命令被截断报
+# "command not found"。故按固定字节分片 + 片间延时写入，见 devBugLog 记录。
+_WRITE_CHUNK_BYTES = 32     # 每片最大字节数（< RT_SERIAL_RB_BUFSZ 默认 64，留余量）
+_WRITE_CHUNK_DELAY = 0.1    # 片间延时（秒），给板子接收/搬移字节时间
+
 # 探测候选波特率（默认值优先，回退到手册值与常见值）
 DEFAULT_BAUD_CANDIDATES = [2000000, 250000, 115200, 921600]
 
@@ -171,6 +178,25 @@ class SerialConsole:
             self._ser.flush()
         logger.log_serial("TX>", text.rstrip("\n"))
 
+    def _write_cmd(self, cmd: str, sentinel: str):
+        """分片写入「命令 + 哨兵」，每片后延时，避免板子串口接收缓冲溢出丢字节。
+
+        与 ``_write`` 的区别：命令 + echo 哨兵可能达几十字节，板子串口接收环形缓冲
+        （RT_SERIAL_RB_BUFSZ，默认约 64 字节）偏小，且 FTP 崩溃刷屏时板子 CPU 忙、
+        来不及搬移接收字节，一次性写入会溢出导致命令被截断（"command not found"）。
+        分片后每片字节数远小于缓冲，且片间延时给板子搬移时间。
+        """
+        if self._ser is None:
+            raise SerialError("串口未打开")
+        data = (f'{cmd}\necho "{sentinel}"\n').encode("utf-8")
+        for i in range(0, len(data), _WRITE_CHUNK_BYTES):
+            chunk = data[i:i + _WRITE_CHUNK_BYTES]
+            with self._lock:
+                self._ser.write(chunk)
+                self._ser.flush()
+            time.sleep(_WRITE_CHUNK_DELAY)
+        logger.log_serial("TX>", f'{cmd}\necho "{sentinel}"')
+
     def send_raw(self, data):
         """裸发送（如复位后发回车唤醒 shell）。"""
         if isinstance(data, str):
@@ -250,10 +276,10 @@ class SerialConsole:
         # 记录发命令前的缓冲快照，作为"新输出"起点
         snapshot = self._buffer_text()
         # 该 msh 不支持 `;` 分隔命令，改用换行分隔：先发 cmd，再发 echo "TOKEN"
-        # echo 必须带引号（固件 echo "string" 用法）
-        full_cmd = f'{cmd}\necho "{sentinel}"\n'
+        # echo 必须带引号（固件 echo "string" 用法）。
+        # 用 _write_cmd 分片写入（命令+哨兵可能达几十字节，避免板子串口接收缓冲溢出）
         try:
-            self._write(full_cmd)
+            self._write_cmd(cmd, sentinel)
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
@@ -296,9 +322,9 @@ class SerialConsole:
         timer = Timer().start()
         sentinel = self._gen_sentinel()
         snapshot = self._buffer_text()
-        full_cmd = f'{cmd}\necho "{sentinel}"\n'
+        # 用 _write_cmd 分片写入，避免长命令（如 rtmp_video_start <url>）溢出丢字节
         try:
-            self._write(full_cmd)
+            self._write_cmd(cmd, sentinel)
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 

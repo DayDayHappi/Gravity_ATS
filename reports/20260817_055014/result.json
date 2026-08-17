@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 75.0,
+    "total_elapsed_ms": 79367
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 201,
+      "message": "已联网，IP=172.20.10.3（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-17 05:50:31"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=172.20.10.3），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-17 05:50:31"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (未知SSID/172.20.10.3)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-17 05:50:31"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 960,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-17 05:50:32"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 870,
+      "message": "FTP 已连接 172.20.10.3，/emmc 列出 4 项",
+      "detail": "",
+      "timestamp": "2026-08-17 05:50:33"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 12014,
+      "message": "JPEG OK 709KB | 拍照成功，保存到 /emmc/PIC/20260101_000315_5172 | 已下载到 logs/20260817_055014/photos/auto_20260101_000315_5172_Image_20260101_000315_5172_0.jpg",
+      "detail": "含 8 个 jpg",
+      "timestamp": "2026-08-17 05:50:45"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 37667,
+      "message": "录像成功，文件 /emmc/VIDEO/20260101_000328_8054/Video_8054_0.h265，3604KB | 已下载到 logs/20260817_055014/videos/Video_8054_0.h265",
+      "detail": "/emmc/VIDEO/20260101_000328_8054/Video_8054_0.h265",
+      "timestamp": "2026-08-17 05:51:23"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "PASS",
+      "elapsed_ms": 27655,
+      "message": "推流验证通过: h264 1296x2304 (ffprobe 实时探测)",
+      "detail": "",
+      "timestamp": "2026-08-17 05:51:51"
+    }
+  ],
+  "generated_at": "2026-08-17 05:51:51"
+}

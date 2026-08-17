@@ -1,0 +1,23 @@
+[05:38:49.316] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260817_053849
+[05:38:49.316] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[05:38:49.317] [INFO] 开始自动探测 EVB 串口，候选端口 ['/dev/ttyUSB0']，候选波特率 [2000000, 250000, 115200, 921600]
+[05:38:49.317] [DEBUG] 探测 /dev/ttyUSB0 @ 2000000 ...
+[05:38:51.626] [INFO]   命中 EVB 指纹: /dev/ttyUSB0 @ 2000000
+[05:38:51.626] [INFO] 探测到 EVB: /dev/ttyUSB0 @ 2000000
+[05:38:51.628] [INFO] 串口已打开: /dev/ttyUSB0 @ 2000000 bps
+[05:38:53.629] [INFO] EVB 已就绪
+[05:38:55.631] [DEBUG] 串口自检通过
+[05:38:55.631] [INFO] 预清理板子状态...
+[05:39:11.334] [INFO] 扫描 WiFi 网络...
+[05:39:35.971] [ERROR] SSID 为空
+[05:39:35.971] [WARN] WiFi 交互连接失败，将依赖 wifi_join 用例连接
+[05:39:35.971] [INFO] 本次执行模块顺序: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[05:39:35.971] >>> 执行模块: wifi_check
+[05:39:37.993] [PASS] wifi_check (2021ms) - 未联网，将继续 scan/join
+[05:39:37.993] >>> 执行模块: wifi_scan
+[05:39:42.121] [PASS] wifi_scan (4128ms) - 扫描到 11 个 AP
+[05:39:42.121] >>> 执行模块: wifi_join
+[05:39:50.126] [PASS] wifi_join (8004ms) - 已连接 G-Demo，IP=10.1.90.71
+[05:39:50.126] >>> 执行模块: emmc
+[05:39:52.128] [PASS] emmc (2001ms) - 已进入 /emmc（自动挂载）
+[05:39:52.129] >>> 执行模块: ftp

@@ -114,7 +114,8 @@ modules/   功能模块（每模块一文件，可增删）
   base.py             TestModule 基类 + @register 装饰器
 drivers/   PC 端辅助
   ftp_client.py       ftplib 封装（重试 + 下载）
-  rtmp_receiver.py    ffmpeg 拉流 + ffprobe 验证
+  rtmp_receiver.py    ffprobe 实时探测 RTMP 流
+  rtmp_server.py      nginx-rtmp 就绪检查（不启停 nginx）
 ```
 
 **新增一个测试项**：`modules/` 新建文件 + `@register("xxx")` + `__init__.py` 加一行 + 配置 `enabled_modules` 加一行。无需改 core 或其他模块。
@@ -145,7 +146,6 @@ logs/<时间戳>/
   run.log         框架运行日志
   photos/         下载的拍照文件
   videos/         下载的录像文件
-  rtmp/           ffmpeg 拉流存盘文件
 ```
 
 ---
@@ -203,11 +203,13 @@ logs/<时间戳>/
 - `Got IP address` 正则：`Got IP address\s*:\s*([0-9.]+)`（注意冒号前后有空格）
 - `wifi status` 查连接状态；`wifi disc` 断开
 
-### 7.7 ⏳ RTMP 推流（待测）
+### 7.7 ✅ RTMP 推流
 
-- 需装 ffmpeg（当前未装）
-- 命令：`rtmp_video_start rtmp://<pc_ip>/live/cam1`、`rtmp_video_stop`
-- PC 的 IP 自动检测
+- PC 端需起 **nginx-rtmp** 服务端（`systemctl start nginx`，监听 1935，配 `application live { live on; record off; }`）
+- 命令：`rtmp_video_start rtmp://<pc_ip>/live/cam`、`rtmp_video_stop`
+- PC 的 IP 自动检测（多网卡建议在 `test_config.yaml` 写死 EVB 可达的 `rtmp.pc_ip`）
+- 验证：`ffprobe` 实时探测 `rtmp://<pc_ip>/live/cam`（探到 h264 + 分辨率即 PASS），可选 `ffplay` 画面确认（无 DISPLAY 自动跳过）
+- ★ 关键时序：ffprobe 探测必须在 `rtmp_video_stop` 之前（探测的是实时流）
 
 ### 7.8 ✅ eMMC
 

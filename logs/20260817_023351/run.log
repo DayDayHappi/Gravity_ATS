@@ -1,0 +1,66 @@
+[02:33:51.795] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260817_023351
+[02:33:51.795] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[02:33:51.796] [INFO] 开始自动探测 EVB 串口，候选端口 ['/dev/ttyUSB0']，候选波特率 [2000000, 250000, 115200, 921600]
+[02:33:51.796] [DEBUG] 探测 /dev/ttyUSB0 @ 2000000 ...
+[02:33:54.105] [INFO]   命中 EVB 指纹: /dev/ttyUSB0 @ 2000000
+[02:33:54.105] [INFO] 探测到 EVB: /dev/ttyUSB0 @ 2000000
+[02:33:54.107] [INFO] 串口已打开: /dev/ttyUSB0 @ 2000000 bps
+[02:33:56.108] [INFO] EVB 已就绪
+[02:33:58.111] [DEBUG] 串口自检通过
+[02:33:58.111] [INFO] 预清理板子状态...
+[02:34:08.247] [INFO] 使用默认 WiFi: G-Demo
+[02:34:38.461] [ERROR] WiFi 连接失败: 期望结果未出现(30.0s): Got IP address\s*:\s*([0-9.]+)
+[02:34:38.461] [ERROR] 输出: wifi join G-Demo Gdemo@123
+whd_wifi_join_wait_for_complete: not ready to transceive (err 33555456); left network
+Function whd_wifi_join failed at line 2164 checkres = 33555456 
+msh />echo "__EVBTEST_END_00fc747d__"
+__EVBTEST_END_00fc747d__
+msh />
+[02:34:38.461] [WARN] WiFi 交互连接失败，将依赖 wifi_join 用例连接
+[02:34:38.461] [INFO] 本次执行模块顺序: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[02:34:38.461] >>> 执行模块: wifi_check
+[02:34:40.483] [PASS] wifi_check (2022ms) - 未联网，将继续 scan/join
+[02:34:40.484] >>> 执行模块: wifi_scan
+[02:34:44.375] [PASS] wifi_scan (3891ms) - 扫描到 8 个 AP
+[02:34:44.375] >>> 执行模块: wifi_join
+[02:34:52.381] [PASS] wifi_join (8005ms) - 已连接 G-Demo，IP=10.1.90.71
+[02:34:52.381] >>> 执行模块: emmc
+[02:34:54.383] [PASS] emmc (2001ms) - 已进入 /emmc（自动挂载）
+[02:34:54.383] >>> 执行模块: ftp
+[02:34:57.714] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:35:00.892] [PASS] ftp (6509ms) - FTP 已连接 10.1.90.71，/emmc 列出 0 项
+[02:35:00.892] >>> 执行模块: photo
+[02:35:00.893]   拍照测试: 模式 auto
+[02:35:06.405] [DEBUG] 强制重连 FTP
+[02:35:10.328] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:35:10.328] [INFO] FTP 已恢复
+[02:36:01.237] [PASS] photo[auto] (60344ms) - JPEG OK 673KB | 拍照成功，保存到 /emmc/PIC/20260817_053502_2795 | 已下载到 logs/20260817_023351/photos/auto_20260817_053502_2795_Image_20260817_053502_2795_0.jpg
+[02:36:01.237] >>> 执行模块: video
+[02:36:07.803]   录像测试: 1080p / 2s
+[02:36:11.877] [DEBUG] 强制重连 FTP
+[02:36:14.317] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:36:14.317] [INFO] FTP 已恢复
+[02:37:12.510] [WARN] 下载异常(尝试1/6)，已传355KB: timed out
+[02:37:22.520] [DEBUG] FTP 连接失败(尝试 1/3): timed out
+[02:37:26.597] [DEBUG] FTP 连接失败(尝试 2/3): [Errno 113] No route to host
+[02:37:28.829] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 3)
+[02:40:44.467] [PASS] video (276664ms) - 录像成功，文件 /emmc/VIDEO/20260817_053608_8702/Video_8702_0.h265，3494KB | 已下载到 logs/20260817_023351/videos/Video_8702_0.h265
+[02:40:44.468] [INFO] 自动检测到 PC IP: 10.1.90.128
+[02:40:44.468] >>> 执行模块: rtmp
+[02:40:44.468] [INFO] 检查 RTMP 服务端 (nginx-rtmp) 是否监听 :1935
+[02:40:44.468] [INFO] nginx-rtmp 就绪，RTMP 监听 :1935
+[02:40:44.468] [DEBUG] 强制重连 FTP
+[02:40:46.513] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[02:40:46.513] [INFO] FTP 已恢复
+[02:40:47.514]   RTMP 推流测试: rtmp://10.1.90.128/live/cam / 10s
+[02:40:50.828] [INFO] ffplay 画面确认已启动 (pid=109365)
+[02:40:50.828] [INFO] ffprobe 探测 RTMP 流: rtmp://10.1.90.128/live/cam
+[02:41:35.878] [WARN] ffprobe 探测超时(1/5)，3.0s 后重试
+[02:42:09.498] [PASS] rtmp (81984ms) - 推流验证通过: h264 1296x2304 (ffprobe 实时探测)
+[02:42:09.548] ==================================================
+[02:42:09.548] 测试完成：共 8 项 | 通过 8 | 失败 0 | 跳过 0 | 错误 0 | 通过率 100.0% | 总耗时 441.4s
+[02:42:09.548] ==================================================
+[02:42:09.548] [INFO]   json 报告: reports/20260817_023351/result.json
+[02:42:09.548] [INFO]   junit 报告: reports/20260817_023351/junit.xml
+[02:42:09.548] [INFO]   html 报告: reports/20260817_023351/report.html
+[02:42:10.430] [DEBUG] 串口已关闭

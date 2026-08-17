@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 3,
+    "failed": 1,
+    "skipped": 4,
+    "errored": 0,
+    "pass_rate": 37.5,
+    "total_elapsed_ms": 7720
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 2019,
+      "message": "未联网，将继续 scan/join",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:11"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "PASS",
+      "elapsed_ms": 3883,
+      "message": "扫描到 11 个 AP",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:14"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "FAIL",
+      "elapsed_ms": 0,
+      "message": "连接失败或未获取 IP (G-Demo)",
+      "detail": "wifi join G-Demo Gdemo@123\n[I/WLAN.mgnt] wifi connect success ssid:G-Demo\nwhd_wifi_join_wait_for_complete: not ready to transceive (err 33555457); left network\nFunction whd_wifi_join failed at line 2164 checkres = 33555457 \r\nmsh />echo \"__EVBTEST_END_bd5c5e14__\"\n__EVBTEST_END_bd5c5e14__\nmsh />",
+      "timestamp": "2026-08-17 01:18:45"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 1818,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:46"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_join']",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:46"
+    },
+    {
+      "name": "photo",
+      "module": "photo",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "FTP 客户端不可用，跳过拍照",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:46"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "FTP 客户端不可用，跳过录像",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:46"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "依赖模块未通过: ['wifi_join']",
+      "detail": "",
+      "timestamp": "2026-08-17 01:18:46"
+    }
+  ],
+  "generated_at": "2026-08-17 01:18:46"
+}

@@ -69,20 +69,15 @@ def check_dependencies(config):
     except ImportError:
         missing.append("pyserial (pip install pyserial)")
 
-    # ffmpeg 仅在启用 rtmp 时必需；ffprobe 可选（缺失时降级校验大小）
+    # ffprobe 在启用 rtmp 时必需（实时探测 RTMP 流，无存盘降级可用）
     enabled = config.get("test", {}).get("enabled_modules", [])
     if any("rtmp" in m for m in enabled):
         rtmp_cfg = config.get("rtmp", {})
         tool_missing = RtmpReceiver.check_tools(
-            rtmp_cfg.get("ffmpeg_path", "ffmpeg"),
             rtmp_cfg.get("ffprobe_path", "ffprobe"),
         )
         for t in tool_missing:
-            if t == "ffmpeg":
-                missing.append(f"{t} (sudo apt install ffmpeg 或 pip install imageio-ffmpeg)")
-            else:
-                # ffprobe 可选，仅警告不阻断
-                logger.warn(f"未找到 {t}，RTMP 验证将降级为仅校验文件大小")
+            missing.append(t)
 
     if missing:
         logger.error("缺少依赖:")

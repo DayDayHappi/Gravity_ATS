@@ -1,0 +1,71 @@
+[03:01:47.328] TX> 
+[03:01:48.328] TX> 
+[03:01:49.329] RX< 
+[03:01:49.329] RX< msh />
+[03:01:49.329] RX< msh />
+[03:01:49.530] TX> echo "EVBTEST_HELLO"
+[03:01:49.530] TX> echo "__EVBTEST_END_bbd3fab9__"
+[03:01:51.331] RX< echo "EVBTEST_HELLO"
+[03:01:51.331] RX< EVBTEST_HELLO
+[03:01:51.331] RX< msh />echo "__EVBTEST_END_bbd3fab9__"
+[03:01:51.331] RX< __EVBTEST_END_bbd3fab9__
+[03:01:51.331] RX< msh />
+[03:01:51.533] TX> cd /
+[03:01:51.533] TX> echo "__EVBTEST_END_7697598c__"
+[03:01:53.333] RX< cd /
+[03:01:53.333] RX< msh />echo "__EVBTEST_END_7697598c__"
+[03:01:53.333] RX< __EVBTEST_END_7697598c__
+[03:01:53.333] RX< msh />
+[03:01:53.535] TX> dfs_video_stop
+[03:01:53.535] TX> echo "__EVBTEST_END_d73911a3__"
+[03:01:55.335] RX< dfs_video_stop
+[03:01:55.335] RX< [6] [App Dfs] Please start recording the video first.
+[03:01:55.335] RX< msh />echo "__EVBTEST_END_d73911a3__"
+[03:01:55.335] RX< __EVBTEST_END_d73911a3__
+[03:01:55.335] RX< msh />
+[03:01:55.537] TX> ftp_server
+[03:01:55.537] TX> echo "__EVBTEST_END_b826efe9__"
+[03:01:57.337] RX< ftp_server
+[03:01:57.337] RX< 
+[03:01:57.337] RX< [FTP] Ftp server init success!!!
+[03:01:57.337] RX< msh />echo "__EVBTEST_END_b826efe9__"
+[03:01:57.337] RX< __EVBTEST_END_b826efe9__
+[03:01:57.337] RX< msh />
+[03:01:58.554] TX> wifi join G-Demo Gdemo@123
+[03:01:58.554] TX> echo "__EVBTEST_END_083a261e__"
+[03:01:59.339] RX< wifi join G-Demo Gdemo@123
+[03:02:01.340] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:03.341] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:03.341] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:05.343] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:05.343] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:07.344] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:07.344] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:09.345] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:09.345] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:09.492] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:09.492] RX< whd_wifi_join_wait_for_complete: not ready to transceive (err 33555456); left network
+[03:02:09.492] RX< Function whd_wifi_join failed at line 2164 checkres = 33555456 
+[03:02:09.492] RX< msh />echo "__EVBTEST_END_083a261e__"
+[03:02:09.492] RX< __EVBTEST
+[03:02:11.492] RX< _END_083a261e__
+[03:02:11.492] RX< msh />[33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:11.492] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:13.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:13.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:15.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:15.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:17.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:17.493] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:19.494] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:19.494] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:21.494] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:21.494] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:23.495] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:23.495] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:25.495] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:25.495] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:27.496] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:27.496] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:29.496] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m
+[03:02:29.496] RX< [33m[W/ftp] service go wrong, now wait restarting...[0m

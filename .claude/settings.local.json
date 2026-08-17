@@ -99,7 +99,25 @@
       "Bash(tar -xJf /home/gravity/Downloads/ffmpeg-master-latest-linux64-gpl.tar.xz -C tools/ffmpeg --strip-components=2 ffmpeg-master-latest-linux64-gpl/bin/ffplay)",
       "Bash(chmod +x tools/ffmpeg/ffplay)",
       "Bash(./tools/ffmpeg/ffplay -version)",
-      "Bash(grep -niB1 -A2 \"reorder\" tools/mediamtx/mediamtx.yml)"
+      "Bash(grep -niB1 -A2 \"reorder\" tools/mediamtx/mediamtx.yml)",
+      "Bash(chmod +x migrate.sh)",
+      "Bash(bash -n migrate.sh)",
+      "Bash(./migrate.sh)",
+      "Bash(awk '{print \"  \"$NF, $5}')",
+      "Bash(awk '{print \"  \"$NF}')",
+      "Bash(ldd tools/ffmpeg/ffplay)",
+      "Bash(ps -p 107438 -o pid,stat,cmd)",
+      "Bash(unset DISPLAY)",
+      "Bash(timeout 5 tools/ffmpeg/ffplay -rw_timeout 3000000 -x 480 -y 360 rtmp://127.0.0.1/live/nonexist)",
+      "Bash(grep -v -E \"^\\\\s*$\" logs/20260817_014422/ffplay.log)",
+      "Bash(grep -v -E \"^\\\\s*$\" logs/20260817_014805/ffplay.log)",
+      "Read(//var/log/nginx/**)",
+      "Bash(sudo tail -40 /var/log/nginx/error.log)",
+      "Bash(sudo tail -30 /var/log/nginx/access.log)",
+      "Bash(sudo cat /var/log/nginx/error.log.1)",
+      "Bash(sudo cat /var/log/nginx/access.log)",
+      "Bash(gnome-terminal --version)",
+      "Bash(gnome-terminal --help)"
     ]
   }
 }

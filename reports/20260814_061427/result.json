@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 5,
+    "failed": 3,
+    "skipped": 0,
+    "errored": 0,
+    "pass_rate": 62.5,
+    "total_elapsed_ms": 98072
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 2020,
+      "message": "未联网，将继续 scan/join",
+      "detail": "",
+      "timestamp": "2026-08-14 06:14:42"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "PASS",
+      "elapsed_ms": 3859,
+      "message": "扫描到 15 个 AP（其中 1 个 RSSI<-70 信号弱）",
+      "detail": "",
+      "timestamp": "2026-08-14 06:14:46"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "PASS",
+      "elapsed_ms": 8004,
+      "message": "已连接 G-Demo，IP=10.1.90.71",
+      "detail": "",
+      "timestamp": "2026-08-14 06:14:54"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2002,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-14 06:14:56"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 2543,
+      "message": "FTP 已连接 10.1.90.71，/emmc 列出 4 项",
+      "detail": "",
+      "timestamp": "2026-08-14 06:14:59"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "FAIL",
+      "elapsed_ms": 32146,
+      "message": "拍照未完成保存",
+      "detail": "ng...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n",
+      "timestamp": "2026-08-14 06:15:31"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "FAIL",
+      "elapsed_ms": 25017,
+      "message": "开始录像失败",
+      "detail": "ng...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n[W/ftp] service go wrong, now wait restarting...\n",
+      "timestamp": "2026-08-14 06:15:56"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "FAIL",
+      "elapsed_ms": 22481,
+      "message": "推流验证失败: ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error",
+      "detail": "{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'ok': False, 'reason': 'ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error'}",
+      "timestamp": "2026-08-14 06:16:22"
+    }
+  ],
+  "generated_at": "2026-08-14 06:16:22"
+}

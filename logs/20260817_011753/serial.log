@@ -1,0 +1,105 @@
+[01:17:55.969] TX> 
+[01:17:56.970] TX> 
+[01:17:57.970] RX< 
+[01:17:57.970] RX< msh />
+[01:17:57.970] RX< msh />
+[01:17:57.970] TX> 
+[01:17:58.971] TX> 
+[01:17:59.971] TX> 
+[01:17:59.972] RX< 
+[01:17:59.972] RX< msh />
+[01:17:59.972] RX< msh />
+[01:18:00.177] TX> echo "EVBTEST_HELLO"
+[01:18:00.177] TX> echo "__EVBTEST_END_986c8b34__"
+[01:18:01.973] RX< 
+[01:18:01.973] RX< msh />echo "EVBTEST_HELLO"
+[01:18:01.973] RX< EVBTEST_HELLO
+[01:18:01.973] RX< msh />echo "__EVBTEST_END_986c8b34__"
+[01:18:01.973] RX< __EVBTEST_END_986c8b34__
+[01:18:01.973] RX< msh />
+[01:18:02.185] TX> cd /
+[01:18:02.185] TX> echo "__EVBTEST_END_bceac94b__"
+[01:18:03.975] RX< cd /
+[01:18:03.975] RX< msh />echo "__EVBTEST_END_bceac94b__"
+[01:18:03.975] RX< __EVBTEST_END_bceac94b__
+[01:18:03.975] RX< msh />
+[01:18:04.181] TX> dfs_video_stop
+[01:18:04.181] TX> echo "__EVBTEST_END_58ada60d__"
+[01:18:05.977] RX< dfs_video_stop
+[01:18:05.977] RX< [6] [App Dfs] Please start recording the video first.
+[01:18:05.977] RX< msh />echo "__EVBTEST_END_58ada60d__"
+[01:18:05.977] RX< __EVBTEST_END_58ada60d__
+[01:18:05.977] RX< msh />
+[01:18:06.185] TX> ftp_server
+[01:18:06.185] TX> echo "__EVBTEST_END_36a25046__"
+[01:18:07.979] RX< ftp_server
+[01:18:07.979] RX< 
+[01:18:07.979] RX< [FTP] Ftp server init success!!!
+[01:18:07.979] RX< msh />echo "__EVBTEST_END_36a25046__"
+[01:18:07.979] RX< __EVBTEST_END_36a25046__
+[01:18:07.979] RX< msh />
+[01:18:09.001] RX< ifconfig
+[01:18:09.001] RX< network interface device: w0 (Default)
+[01:18:09.001] RX< MTU: 1500
+[01:18:09.001] RX< MAC: 8c ea 12 ba a8 2c 
+[01:18:09.001] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[01:18:09.001] RX< ip address: 0.0.0.0
+[01:18:09.001] RX< gw address: 0.0.0.0
+[01:18:09.001] RX< net mask  : 0.0.0.0
+[01:18:09.001] RX< dns server #0: 0.0.0.0
+[01:18:09.001] RX< dns server #1: 0.0
+[01:18:09.013] RX< .0.0
+[01:18:09.013] RX< 
+[01:18:09.013] RX< network interface device: w1
+[01:18:09.013] RX< MTU: 1500
+[01:18:09.013] RX< MAC: 8e ea 12 ba a8 2c 
+[01:18:09.013] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[01:18:09.013] RX< ip address: 0.0.0.0
+[01:18:09.013] RX< gw address: 0.0.0.0
+[01:18:09.013] RX< net mask  : 0.0.0.0
+[01:18:09.013] RX< dns server #0: 0.0.0.0
+[01:18:09.013] RX< dns server #1: 0.0.0.0
+[01:18:09.013] RX< msh />e
+[01:18:09.201] TX> ifconfig
+[01:18:09.201] TX> echo "__EVBTEST_END_8293f864__"
+[01:18:11.013] RX< cho "__EVBTEST_END_8293f864__"
+[01:18:11.013] RX< __EVBTEST_END_8293f864__
+[01:18:11.013] RX< msh />[32m[I/ftp] service launched success.[0m
+[01:18:11.221] TX> wifi scan
+[01:18:11.221] TX> echo "__EVBTEST_END_7fbcf4eb__"
+[01:18:11.604] RX< wifi scan
+[01:18:11.604] RX<              SSID                      MAC            security    rssi chn Mbps
+[01:18:11.604] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[01:18:11.604] RX< ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -32    1  144
+[01:18:11.604] RX< MTK_
+[01:18:11.676] RX< CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -45   13  300
+[01:18:11.676] RX< SW-test-2.4G                    f8:ce:21:8b:a6:fc  WPA2_AES_PSK   -47   13  600
+[01:18:11.676] RX< TP-LINK_5G_756B                 c2:45:86:39:8c:5f  WPA2_AES_PSK   -45    1  300
+[01:18:11.676] RX< ZJ-DBGT          
+[01:18:12.304] RX<                cc:20:8c:ae:49:60  OPEN           -68    1  144
+[01:18:12.304] RX< HUAWEI-AX2                      02:25:74:39:4e:47  WPA2_AES_PSK   -55    1  300
+[01:18:12.304] RX< alk                             2c:97:b1:17:2e:a0  WPA2_AES_PSK   -50    6   72
+[01:18:12.304] RX< alk                           
+[01:18:12.895] RX<   2c:97:b1:17:46:40  WPA2_AES_PSK   -62    6   72
+[01:18:12.895] RX< alk_guest                       2c:97:b1:17:2e:a1  WPA2_MIXED_PSK -48    6   72
+[01:18:12.895] RX< alk_guest                       2c:97:b1:17:2a:81  WPA2_MIXED_PSK -67   11   72
+[01:18:12.895] RX< GTS_24G                         a4:a9:30:fb
+[01:18:14.897] RX< :94:34  WPA2_AES_PSK   -58   11  288
+[01:18:14.897] RX< msh />echo "__EVBTEST_END_7fbcf4eb__"
+[01:18:14.897] RX< __EVBTEST_END_7fbcf4eb__
+[01:18:14.897] RX< msh />
+[01:18:15.105] TX> wifi join G-Demo Gdemo@123
+[01:18:15.105] TX> echo "__EVBTEST_END_bd5c5e14__"
+[01:18:16.899] RX< wifi join G-Demo Gdemo@123
+[01:18:20.901] RX< [32m[I/WLAN.mgnt] wifi connect success ssid:G-Demo[0m
+[01:18:26.905] RX< whd_wifi_join_wait_for_complete: not ready to transceive (err 33555457); left network
+[01:18:26.905] RX< Function whd_wifi_join failed at line 2164 checkres = 33555457 
+[01:18:26.905] RX< msh />echo "__EVBTEST_END_bd5c5e14__"
+[01:18:26.905] RX< __EVBTEST_END_bd5c5e14__
+[01:18:26.905] RX< msh />
+[01:18:45.313] TX> cd /emmc
+[01:18:45.313] TX> echo "__EVBTEST_END_5765faec__"
+[01:18:46.924] RX< cd /emmc
+[01:18:46.924] RX< msh /emmc>echo "__EVBTEST_END_5765faec__"
+[01:18:46.924] RX< __EVBTEST_END_5765faec__
+[01:18:46.924] RX< msh /emmc>

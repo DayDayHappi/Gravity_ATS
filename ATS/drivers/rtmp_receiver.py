@@ -1,25 +1,23 @@
-"""RTMP 接收端：PC 上用 ffmpeg 拉流 + ffprobe 验证。
+"""RTMP 接收端：PC 上用 ffprobe 实时探测 RTMP 流 + 可选 ffplay 播放画面验证。
 
 流程：
-1. ``start()``：subprocess 启动 ffmpeg 拉流存盘（用 -rw_timeout 防挂起；拉流端晚于
-   推流启动的时序由调用方保证，verify() 时长校验兜底流未到达）。
-2. ``verify()``：用 ffprobe 解析存盘文件，确认有视频流、分辨率、编码。
-   无独立 ffprobe 时，降级用 ``ffmpeg -i`` 解析或仅校验文件大小。
-3. ``stop()``：终止 ffmpeg（保留存盘文件供回放）。
+1. ``probe(url)``：subprocess.run ffprobe 实时探测 RTMP url，确认有视频流、编码、
+   分辨率。带 ``-rw_timeout`` 防挂起（无流时 ffprobe 会立即 I/O error 退出，有流时
+   才解析成功），外层 subprocess timeout 双保险。带重试——推流上线有缓冲延迟。
+2. ``verify()``：用最近一次 probe 的结果判据通过与否（有视频流 + codec + 分辨率）。
 
-注：当前内置 ffmpeg（BtbN master 构建）的 RTMP 协议不接受 -reconnect 系列参数
-（报 "Option not found"），故未使用。
+注：不再 ffmpeg 拉流存盘（MediaMTX 时代用存盘 + ffprobe 解析文件验证流可解码；
+nginx-rtmp 方案改为 ffprobe 直接探测实时 url，更轻量，无需落盘文件）。
+ffprobe 由脚本自动调用（subprocess），无人值守。
+ffplay 画面确认由模块层（modules/rtmp.py）管理，不在此类。
 
-ffmpeg/ffprobe 由脚本自动启停（subprocess），无人值守。
-依赖：``ffmpeg`` 可执行文件。自动查找顺序：
+依赖：``ffprobe`` 可执行文件（必需）。自动查找顺序：
   1. 配置指定的路径
-  2. PATH 中的 ffmpeg/ffprobe（apt install ffmpeg）
-  3. imageio-ffmpeg 包自带的二进制（pip install imageio-ffmpeg）
-  4. 常见绝对路径
+  2. PATH 中的 ffprobe（apt install ffmpeg 自带）
+  3. 常见绝对路径
 """
 import os
 import json
-import re as _re
 import time
 import shutil
 import subprocess
@@ -27,38 +25,9 @@ import subprocess
 from ..core import logger
 
 
-def _find_ffmpeg(preferred=None) -> str:
-    """按优先级查找 ffmpeg 可执行文件。
-
-    顺序：preferred -> PATH -> imageio-ffmpeg -> 常见路径。
-    找不到返回 ""。
-    """
-    # 1. 指定路径
-    if preferred and shutil.which(preferred):
-        return preferred
-    # 2. PATH
-    p = shutil.which("ffmpeg")
-    if p:
-        return p
-    # 3. imageio-ffmpeg 包（自带静态二进制）
-    try:
-        import imageio_ffmpeg
-        exe = imageio_ffmpeg.get_ffmpeg_exe()
-        if exe and os.path.isfile(exe):
-            return exe
-    except Exception:
-        pass
-    # 4. 常见绝对路径
-    for cand in ("/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg",
-                 os.path.expanduser("~/bin/ffmpeg")):
-        if os.path.isfile(cand):
-            return cand
-    return ""
-
-
 def _find_ffprobe(preferred=None) -> str:
-    """查找 ffprobe。imageio-ffmpeg 不带 ffprobe，故无包级回退。"""
-    if preferred and shutil.which(preferred):
+    """查找 ffprobe 可执行文件。顺序：preferred -> PATH -> 常见绝对路径。"""
+    if preferred and (shutil.which(preferred) or os.path.isfile(preferred)):
         return preferred
     p = shutil.which("ffprobe")
     if p:
@@ -75,210 +44,154 @@ class RtmpReceiverError(Exception):
 
 
 class RtmpReceiver:
-    """PC 端 RTMP 拉流接收器。
+    """PC 端 RTMP 实时流探测器（ffprobe）。
 
-    一次实例对应一次推流测试：start -> (EVB 推流) -> verify -> stop。
-    ffmpeg/ffprobe 路径未指定时自动查找。
+    一次实例对应一次推流测试：probe -> (判据)。
+    ffprobe 路径未指定时自动查找。
     """
 
-    def __init__(self, ffmpeg_path="ffmpeg", ffprobe_path="ffprobe",
-                 work_dir=None):
+    def __init__(self, ffprobe_path="ffprobe"):
         # 自动解析实际路径（找不到则保留原值，check_tools 会报缺失）
-        self.ffmpeg_path = _find_ffmpeg(ffmpeg_path if ffmpeg_path != "ffmpeg" else None) or ffmpeg_path
         self.ffprobe_path = _find_ffprobe(ffprobe_path if ffprobe_path != "ffprobe" else None) or ffprobe_path
-        self.work_dir = work_dir or os.path.join(os.getcwd(), "logs", "rtmp")
-        self._proc = None
-        self._outfile = None
+        self._last_result = None  # 最近一次 probe 的结果
 
     @staticmethod
-    def check_tools(ffmpeg_path="ffmpeg", ffprobe_path="ffprobe") -> list:
-        """检查 ffmpeg/ffprobe 是否可用，返回缺失项列表。
+    def check_tools(ffprobe_path="ffprobe") -> list:
+        """检查 ffprobe 是否可用，返回缺失项列表。
 
-        ffprobe 缺失不致命（verify 会降级为仅校验大小）。
+        ffprobe 在 nginx-rtmp 方案下是必需的（无存盘文件可降级，探测必须靠它）。
         """
         missing = []
-        if not _find_ffmpeg(ffmpeg_path if ffmpeg_path != "ffmpeg" else None):
-            missing.append("ffmpeg")
         if not _find_ffprobe(ffprobe_path if ffprobe_path != "ffprobe" else None):
-            missing.append("ffprobe (可选，缺失时仅校验文件大小)")
+            missing.append("ffprobe (必需，验证 RTMP 流)"
+                           " — apt install ffmpeg 或用内置 tools/ffmpeg/ffprobe")
         return missing
 
-    @property
-    def is_running(self) -> bool:
-        """ffmpeg 拉流进程是否仍在运行（未退出）。
+    def probe(self, url: str, timeout: float = 45.0,
+              attempts: int = 4, interval: float = 2.0) -> dict:
+        """ffprobe 实时探测 RTMP url，返回流信息 + 判据。
 
-        拉流端连上无流的 RTMP 源会立即退出(~150ms)，调用方据此判断是否需重试。
-        """
-        return self._proc is not None and self._proc.poll() is None
-
-    def start(self, url: str, duration: int) -> str:
-        """启动 ffmpeg 拉流存盘。
+        推流上线有缓冲延迟（nginx-rtmp 中转约 4-6s），故带重试：失败时间隔后重试。
+        ffprobe 连无流的源会立即 I/O error 退出（-rw_timeout 兜底防永久挂起）。
 
         Args:
-            url: RTMP 推流地址（如 ``rtmp://10.1.64.35/live/cam1``）。
-            duration: 预期拉流时长（秒），ffmpeg ``-t`` 限制。
+            url: RTMP 推流地址（如 ``rtmp://10.1.64.35/live/cam``）。
+            timeout: 单次 ffprobe subprocess 超时（秒）。
+            attempts: 探测重试次数（推流可能上线稍晚）。
+            interval: 重试间隔（秒）。
 
         Returns:
-            存盘文件路径。
+            dict: {has_video, width, height, codec, ok, reason}
         """
-        if self._proc is not None and self._proc.poll() is None:
-            logger.warn("ffmpeg 已在运行，先停止")
-            self.stop()
+        if not self.ffprobe_path or not (shutil.which(self.ffprobe_path)
+                                          or os.path.isfile(self.ffprobe_path)):
+            self._last_result = {
+                "has_video": False, "width": 0, "height": 0,
+                "codec": "", "ok": False, "reason": f"ffprobe 不可用: {self.ffprobe_path!r}",
+            }
+            return self._last_result
 
-        os.makedirs(self.work_dir, exist_ok=True)
-        self._outfile = os.path.join(self.work_dir, f"stream_{int(time.time())}.flv")
-
-        # 拉流参数说明：
-        # - 不用 -reconnect/-reconnect_streamed：当前内置 ffmpeg（BtbN master 构建）
-        #   的 RTMP 协议实现不接受这组参数，会报 "Option not found" 直接退出。
-        #   拉流端晚于推流启动的时序由调用方保证（rtmp 模块先 start 拉流再
-        #   rtmp_video_start），且 verify() 的时长校验兜底流未到达的情况。
-        # -rw_timeout：给 RTMP 读一个超时，避免推流异常时 ffmpeg 永久挂起。
+        # 参数说明：
+        # -rw_timeout 15000000(微秒=15s)：RTMP 读超时。板子推 1080p(1296x2304) 编码慢，
+        #   关键帧(IDR)稀疏（严重时数秒~57s 才一个），太短会等不到 IDR 报 Input/output error。
+        #   代价：无流时 ffprobe 也会多等，故外层 subprocess timeout 作双保险。
+        # -analyzeduration/-probesize：放宽分析窗口与探测缓冲，容忍大帧/慢流首帧（IDR 可达 100KB）。
         cmd = [
-            self.ffmpeg_path,
-            "-rw_timeout", str(int(duration * 1000000) + 5000000),
-            "-y",
+            self.ffprobe_path,
+            "-v", "error",
+            "-rw_timeout", "15000000",
+            "-analyzeduration", "10000000",
+            "-probesize", "3000000",
             "-i", url,
-            "-t", str(duration),
-            "-c", "copy",
-            "-f", "flv",
-            self._outfile,
+            "-select_streams", "v:0",
+            "-show_entries", "stream=codec_name,width,height",
+            "-of", "json",
         ]
-        logger.info(f"启动 ffmpeg 拉流: {' '.join(cmd)}")
-        try:
-            self._proc = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-            )
-        except FileNotFoundError as e:
-            raise RtmpReceiverError(f"ffmpeg 不可用: {e}")
-        return self._outfile
+        logger.info(f"ffprobe 探测 RTMP 流: {url}")
 
-    def verify(self, min_duration: float = 1.0) -> dict:
-        """验证拉到的流。
-
-        优先用 ffprobe 解析（有视频流/分辨率/编码/时长）；
-        ffprobe 不可用时降级为 ``ffmpeg -i`` 解析 stderr；
-        两者都不可用时仅校验文件大小。
-
-        Args:
-            min_duration: 流的最小有效时长（秒）。
-
-        Returns:
-            dict: {has_video, width, height, codec, duration, ok, reason}
-        """
-        # 等 ffmpeg 自然结束（-t duration）
-        if self._proc is not None and self._proc.poll() is None:
+        for i in range(1, attempts + 1):
             try:
-                self._proc.wait(timeout=15)
+                out = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=timeout,
+                )
+                result = self._parse_probe(out)
+                if result["ok"]:
+                    self._last_result = result
+                    return result
+                # 未通过：推流可能还没上线，间隔后重试
+                if i < attempts:
+                    logger.warn(f"ffprobe 未探测到流({i}/{attempts}): "
+                                f"{result['reason']}，{interval}s 后重试")
+                    time.sleep(interval)
+                else:
+                    self._last_result = result
             except subprocess.TimeoutExpired:
-                self._proc.terminate()
+                if i < attempts:
+                    logger.warn(f"ffprobe 探测超时({i}/{attempts})，{interval}s 后重试")
+                    time.sleep(interval)
+                else:
+                    self._last_result = {
+                        "has_video": False, "width": 0, "height": 0,
+                        "codec": "", "ok": False, "reason": f"ffprobe 探测超时({timeout}s)",
+                    }
+            except Exception as e:
+                if i < attempts:
+                    logger.warn(f"ffprobe 异常({i}/{attempts}): {e}，{interval}s 后重试")
+                    time.sleep(interval)
+                else:
+                    self._last_result = {
+                        "has_video": False, "width": 0, "height": 0,
+                        "codec": "", "ok": False, "reason": f"ffprobe 异常: {e}",
+                    }
+        return self._last_result
 
+    def _parse_probe(self, out) -> dict:
+        """解析 ffprobe JSON 输出为判据结果。"""
         result = {
             "has_video": False, "width": 0, "height": 0,
-            "codec": "", "duration": 0.0, "ok": False, "reason": "",
+            "codec": "", "ok": False, "reason": "",
         }
-        if not self._outfile or not os.path.isfile(self._outfile):
-            result["reason"] = "拉流文件未生成"
+        if out.returncode != 0:
+            err = (out.stderr or "").strip()
+            # 无流时常见的 I/O error / Connection refused
+            result["reason"] = f"ffprobe 退出码 {out.returncode}: {err[:200]}"
             return result
-        size = os.path.getsize(self._outfile)
-        if size < 1024:
-            result["reason"] = f"文件过小({size}B)，推流未到达"
+        try:
+            data = json.loads(out.stdout or "{}")
+        except Exception as e:
+            result["reason"] = f"ffprobe 输出解析失败: {e}"
             return result
-
-        # 优先 ffprobe
-        if shutil.which(self.ffprobe_path) or os.path.isfile(self.ffprobe_path):
-            return self._verify_with_ffprobe(result, min_duration)
-        # 降级 ffmpeg -i
-        if shutil.which(self.ffmpeg_path) or os.path.isfile(self.ffmpeg_path):
-            return self._verify_with_ffmpeg(result, min_duration, size)
-        # 仅大小校验
-        result["has_video"] = True  # 无法确认，保守认为有
-        result["ok"] = True
-        result["reason"] = f"仅校验大小 {size//1024}KB（无 ffprobe/ffmpeg）"
+        streams = data.get("streams", [])
+        if not streams:
+            result["reason"] = "无视频流（推流未到达）"
+            return result
+        s = streams[0]
+        result["has_video"] = True
+        result["codec"] = s.get("codec_name", "") or ""
+        result["width"] = int(s.get("width", 0) or 0)
+        result["height"] = int(s.get("height", 0) or 0)
+        if not result["codec"]:
+            result["reason"] = "未识别编码"
+        elif not result["width"] or not result["height"]:
+            result["reason"] = "未识别分辨率"
+        else:
+            result["ok"] = True
+            result["reason"] = (f"{result['codec']} {result['width']}x{result['height']}"
+                                f" (ffprobe 实时探测)")
         return result
 
-    def _verify_with_ffprobe(self, result: dict, min_duration: float) -> dict:
-        try:
-            out = subprocess.run(
-                [self.ffprobe_path, "-v", "error",
-                 "-select_streams", "v:0",
-                 "-show_entries", "stream=codec_name,width,height:format=duration",
-                 "-of", "json", self._outfile],
-                capture_output=True, text=True, timeout=15,
-            )
-            if out.returncode != 0:
-                result["reason"] = f"ffprobe 失败: {out.stderr[:200]}"
-                return result
-            data = json.loads(out.stdout or "{}")
-            streams = data.get("streams", [])
-            fmt = data.get("format", {})
-            if not streams:
-                result["reason"] = "无视频流"
-                return result
-            s = streams[0]
-            result["has_video"] = True
-            result["codec"] = s.get("codec_name", "")
-            result["width"] = int(s.get("width", 0) or 0)
-            result["height"] = int(s.get("height", 0) or 0)
-            result["duration"] = float(fmt.get("duration", 0) or 0)
-            if result["duration"] < min_duration:
-                result["reason"] = f"时长不足: {result['duration']:.1f}s < {min_duration}s"
-            elif not result["codec"]:
-                result["reason"] = "未识别编码"
-            else:
-                result["ok"] = True
-                result["reason"] = f"{result['codec']} {result['width']}x{result['height']} {result['duration']:.1f}s"
-            return result
-        except Exception as e:
-            result["reason"] = f"ffprobe 异常: {e}"
-            return result
+    def verify(self) -> dict:
+        """返回最近一次 probe 的结果（供模块层取判据）。
 
-    def _verify_with_ffmpeg(self, result: dict, min_duration: float, size: int) -> dict:
-        """无 ffprobe 时，用 ffmpeg -i 从 stderr 解析流信息。"""
-        try:
-            out = subprocess.run(
-                [self.ffmpeg_path, "-i", self._outfile],
-                capture_output=True, text=True, timeout=15,
-            )
-            # ffmpeg -i 不带输出文件会返回非0，但 stderr 含流信息
-            err = out.stderr or ""
-            # 解析 "Video: h264, yuv420p, 1920x1080, ... Duration: 00:00:05.00"
-            res_m = _re.search(r"(\d{2,5})x(\d{2,5})", err)
-            codec_m = _re.search(r"Video:\s*(\w+)", err)
-            dur_m = _re.search(r"Duration:\s*(\d+):(\d+):(\d+\.\d+)", err)
-            result["has_video"] = "Video:" in err
-            if codec_m:
-                result["codec"] = codec_m.group(1)
-            if res_m:
-                result["width"] = int(res_m.group(1))
-                result["height"] = int(res_m.group(2))
-            if dur_m:
-                h, mi, se = dur_m.group(1), dur_m.group(2), dur_m.group(3)
-                result["duration"] = int(h) * 3600 + int(mi) * 60 + float(se)
-            if not result["has_video"]:
-                result["reason"] = "无视频流"
-            elif result["duration"] < min_duration:
-                result["reason"] = f"时长不足: {result['duration']:.1f}s < {min_duration}s"
-            else:
-                result["ok"] = True
-                result["reason"] = (f"{result['codec']} {result['width']}x{result['height']} "
-                                    f"{result['duration']:.1f}s (ffmpeg -i)")
-            return result
-        except Exception as e:
-            result["reason"] = f"ffmpeg 解析异常: {e}"
-            return result
+        必须先调用 ``probe(url)``，否则返回未探测。
+        """
+        if self._last_result is None:
+            return {
+                "has_video": False, "width": 0, "height": 0,
+                "codec": "", "ok": False, "reason": "未执行 probe",
+            }
+        return self._last_result
 
     def stop(self):
-        """终止 ffmpeg 进程（保留存盘文件供回放）。"""
-        if self._proc is not None and self._proc.poll() is None:
-            try:
-                self._proc.terminate()
-                self._proc.wait(timeout=5)
-            except Exception:
-                try:
-                    self._proc.kill()
-                except Exception:
-                    pass
-        self._proc = None
+        """兼容旧接口：探测类无需管理常驻进程，空实现保留以便模块层统一调 stop。"""
+        pass
