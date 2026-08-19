@@ -57,6 +57,8 @@ class VideoModule(TestModule):
             return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
 
         # 3. 开始录像。录像命令输出海量日志会打乱哨兵，用 exec_async 等正则。
+        logger.info(f"拍摄开始（{resolution} / {duration}s）...")
+        rec_start = time.monotonic()
         r = console.exec_async("dfs_video_start", expect=r"Record Start", result_timeout=25.0)
         if not r.success:
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
@@ -67,8 +69,11 @@ class VideoModule(TestModule):
         r = console.exec_async("dfs_video_stop",
                                expect=r"Save Video Successful:\s*(\S+)",
                                result_timeout=25.0)
+        rec_elapsed = time.monotonic() - rec_start
         if not r.success:
+            logger.info(f"拍摄结束（失败），耗时 {rec_elapsed:.1f}s")
             return self._mk("FAIL", "停止录像失败", r.clean[-300:], timer)
+        logger.info(f"拍摄结束，耗时 {rec_elapsed:.1f}s")
 
         # 5. 录像已成功落盘（串口确认）。FTP 校验文件大小作辅助
         import re
@@ -95,9 +100,15 @@ class VideoModule(TestModule):
         # 下载录像到本地（断点续传，FTP 卡死后自动从断点继续）
         fname = video_path.rsplit("/", 1)[-1]
         local = os.path.join(tmp_dir, fname)
+        logger.info(f"FTP 开始下载视频: {video_path} ({sz//1024}KB) -> {local}")
+        dl_start = time.monotonic()
         if ftp2.download(video_path, local, timeout=20, retries=6):
+            dl_elapsed = time.monotonic() - dl_start
+            logger.info(f"FTP 下载完成，耗时 {dl_elapsed:.1f}s")
             msg = f"{msg_base}，{sz//1024}KB | 已下载到 {local}"
         else:
+            dl_elapsed = time.monotonic() - dl_start
+            logger.info(f"FTP 下载未完成，耗时 {dl_elapsed:.1f}s")
             local_sz = os.path.getsize(local) if os.path.exists(local) else 0
             msg = f"{msg_base}，{sz//1024}KB | 下载不完整({local_sz//1024}KB/{sz//1024}KB)"
         return self._mk("PASS", msg, video_path, timer)

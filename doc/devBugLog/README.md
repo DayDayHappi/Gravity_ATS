@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-19 | [20260819_0231_录像模块拍摄与下载阶段日志及耗时.md](20260819_0231_录像模块拍摄与下载阶段日志及耗时.md) | video 模块加拍摄开始/结束、FTP 开始下载/下载完成日志及各自耗时，避免录像静默期和 FTP 大文件传输让人误判卡住 |
 | 2026-08-18 | [20260818_2202_ffplay低延迟参数与模块计时进度日志.md](20260818_2202_ffplay低延迟参数与模块计时进度日志.md) | ffplay 参数换成低延迟直播(-rtmp_live live -rtmp_buffer 0 -fflags nobuffer -flags low_delay -framedrop -sync ext)，URL 复用运行时 pc_ip 不写死；runner 用 time.monotonic+try/finally 给各模块开始/结束计时打印；rtmp 600s 推流改每 30s 打进度防误判卡住 |
 | 2026-08-18 | [20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md](20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md) | rtmp 推流时长与 ffplay 展示都改 10 分钟(stream_duration=600)；原 stream_duration 是死配置、真正时长藏在 ffplay_show_duration，统一到 stream_duration 控制推流持续，删除冗余 ffplay_show_duration；ffplay 独立窗口跟随流播放、用户可手动关 |
 | 2026-08-17 | [20260817_2311_ftp冷启动必须等service_launched再connect.md](20260817_2311_ftp冷启动必须等service_launched再connect.md) | 删预清理后 ftp 冷启动：init success 到 service launched 有约 3.4s 延迟，脚本只等 init success 就 connect 撞上未 listen 窗口 Connection refused；改 exec_async 等 service launched 再连 |

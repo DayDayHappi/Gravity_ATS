@@ -117,7 +117,12 @@
       "Bash(sudo cat /var/log/nginx/error.log.1)",
       "Bash(sudo cat /var/log/nginx/access.log)",
       "Bash(gnome-terminal --version)",
-      "Bash(gnome-terminal --help)"
+      "Bash(gnome-terminal --help)",
+      "Bash(sort -t= -k2 -n)",
+      "Bash(grep -nE \"slow send frame [0-9]+ len=[0-9]+ dt=[0-9]{3,4}ms|discontinuous frame|interp not finish|Ringbuf|RINGBUF|slow send frame.*dt=1[0-9]{3}ms\" /home/gravity/AutoTestScripts_JX009/logs/20260819_031823/serial.log)",
+      "Bash(awk '{split\\($1,t,\":\"\\); sec=t[1]*3600+t[2]*60+t[3]; if\\(sec>12030\\) print sec, $2}')",
+      "Bash(awk '{split\\($1,t,\":\"\\); sec=t[1]*3600+t[2]*60+t[3]; if\\(sec>=12300\\) printf \"%s frame=%s dt=%sms\\\\n\", $1, $2, $3}')",
+      "Bash(awk '/03:28:1[3-9]/,/rtmp_video_stop/' /home/gravity/AutoTestScripts_JX009/logs/20260819_031823/serial.log)"
     ]
   }
 }
