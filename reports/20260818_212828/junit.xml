@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="3" errors="0" skipped="2" time="149.14">
+  <testcase name="wifi_check" classname="wifi_check" time="1.46">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="0.00">
+    <skipped message="WiFi 已连接（IP=10.1.90.71），跳过扫描测试" />
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="0.00">
+    <skipped message="WiFi 已连接 (G-Demo/10.1.90.71)，跳过 join 测试" />
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="0.25">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="6.88">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="32.19">
+    <failure message="拍照未完成保存"><![CDATA[CLK cal: 24MHz
+[6] [cam] [315424][tshell][csc_isp_clk_cal:344]MIPI CLK cal: 346MHz
+[6] [cam] [315425][tshell][csc_isp_clk_cal:374]LITE CLK cal: 28MHz
+[7] [cam] [315425][tshell][cpc_csi_rx_power_on:633]E id: 2
+[4] [cam] [315426][tshell][cpc_csi_rx_power_on:644]csi_2 has already power on, STATUS: 1
+]]></failure>
+  </testcase>
+  <testcase name="video" classname="video" time="0.00">
+    <failure message="FTP 不可用且恢复失败，跳过录像"><![CDATA[]]></failure>
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="108.36">
+    <failure message="推流验证失败: ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error"><![CDATA[{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'ok': False, 'reason': 'ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error'}]]></failure>
+  </testcase>
+</testsuite>

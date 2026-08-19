@@ -1,0 +1,233 @@
+[21:28:28.007] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260818_212828
+[21:28:28.007] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[21:28:28.007] [INFO] 开始自动探测 EVB 串口，候选端口 ['/dev/ttyUSB0', '/dev/ttyUSB2']，候选波特率 [2000000, 250000, 115200, 921600]
+[21:28:28.007] [DEBUG] 探测 /dev/ttyUSB0 @ 2000000 ...
+[21:28:30.317] [DEBUG] 探测 /dev/ttyUSB0 @ 250000 ...
+[21:28:32.630] [DEBUG] 探测 /dev/ttyUSB0 @ 115200 ...
+[21:28:34.942] [DEBUG] 探测 /dev/ttyUSB0 @ 921600 ...
+[21:28:37.253] [DEBUG] 探测 /dev/ttyUSB2 @ 2000000 ...
+[21:28:39.558] [INFO]   命中 EVB 指纹: /dev/ttyUSB2 @ 2000000
+[21:28:39.559] [INFO] 探测到 EVB: /dev/ttyUSB2 @ 2000000
+[21:28:39.561] [INFO] 串口已打开: /dev/ttyUSB2 @ 2000000 bps
+[21:28:40.278] [INFO] EVB 已就绪
+[21:28:41.205] [DEBUG] 串口自检通过
+[21:28:41.205] [INFO] 预清理板子状态...
+[21:28:46.488] [INFO] 扫描 WiFi 网络...
+[21:29:27.484] [ERROR] WiFi 连接失败: 期望结果未出现(30.0s): Got IP address\s*:\s*([0-9.]+)
+[21:29:27.485] [ERROR] 输出: 7,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[ME INTP]fid=5880, shutter=10000, perf=6(us), max=827(us)!
+wifi join G-Demo Gdemo@123
+[I/WLAN.mgnt] wifi is connect ssid:G-Demo
+msh />echo "__EVBTEST_END_89455f89__"
+__EVBTEST_END_89455f89__
+msh />[7] [cam] [274745][me0][me_core_thread:359]ME out fid 5880
+[AE] fid=5910,exp=10000,adg=294,Y=4660,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[7] [cam] [275745][me0][me_core_thread:359]ME out fid 5910
+[RTMP] slow send frame 5911 len=63131 dt=119ms (IDR)
+[AE] fid=5940,exp=10000,adg=294,Y=4645,mtg=180,shg=100,bgbv=1465,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=1008(us), max=2236(us)!
+[awb0 proc] perf=3918(us), max=4569(us)!
+[RTMP] f_index = 5940, f_len = 7032
+[7] [cam] [276745][me0][me_core_thread:359]ME out fid 5940
+[RTMP] slow send frame 5942 len=31493 dt=125ms
+[RTMP] slow send frame 5951 len=24324 dt=55ms
+[RTMP] slow send frame 5954 len=6897 dt=106ms
+[AE] fid=5970,exp=10030,adg=294,Y=4631,mtg=180,shg=100,bgbv=1461,iso=294,cnv2,hdr0
+[RTMP] slow send frame 5962 len=16366 dt=68ms
+[RTMP] slow send frame 5969 len=24514 dt=53ms
+[7] [cam] [277745][me0][me_core_thread:359]ME out fid 5970
+[RTMP] slow send frame 5974 len=19005 dt=83ms
+[RTMP] slow send frame 5981 len=16533 dt=87ms
+[AE] fid=6000,exp=10070,adg=294,Y=4611,mtg=180,shg=100,bgbv=1449,iso=294,cnv2,hdr0
+[ME INTP]fid=6000, shutter=10070, perf=232(us), max=650(us)!
+[7] [cam] [278745][me0][me_core_thread:359]ME out fid 6000
+[AE] fid=6030,exp=10070,adg=294,Y=4613,mtg=180,shg=100,bgbv=1453,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=955(us), max=1209(us)!
+[awb0 proc] perf=3910(us), max=3937(us)!
+[RTMP] slow send frame 6019 len=16853 dt=74ms
+[RTMP] f_index = 6030, f_len = 19296
+[7] [cam] [279745][me0][me_core_thread:359]ME out fid 6030
+[RTMP] slow send frame 6031 len=62917 dt=134ms (IDR)
+[RTMP] slow send frame 6038 len=18312 dt=150ms
+[RTMP] slow send frame 6045 len=16461 dt=125ms
+[AE] fid=6060,exp=10070,adg=294,Y=4642,mtg=180,shg=100,bgbv=1461,iso=294,cnv2,hdr0
+[7] [cam] [280744][me0][me_core_thread:359]ME out fid 6060
+[AE] fid=6090,exp=10070,adg=294,Y=4673,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6054 len=16516 dt=1206ms
+[7] [cam] [281745][me0][me_core_thread:359]ME out fid 6090
+[RTMP] slow send frame 6058 len=24587 dt=59ms
+[RTMP] slow send frame 6061 len=63544 dt=108ms (IDR)
+[RTMP] slow send frame 6066 len=16525 dt=87ms
+[AE] fid=6120,exp=10030,adg=294,Y=4674,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=862(us), max=1996(us)!
+[awb0 proc] perf=3832(us), max=3945(us)!
+[ME INTP]fid=6120, shutter=10030, perf=6(us), max=651(us)!
+[RTMP] slow send frame 6091 len=63259 dt=69ms (IDR)
+[RTMP] slow send frame 6092 len=31006 dt=76ms
+[7] [cam] [282747][me0][me_core_thread:359]ME out fid 6120
+[RTMP] f_index = 6120, f_len = 6928
+[RTMP] slow send frame 6121 len=60862 dt=71ms (IDR)
+[RTMP] slow send frame 6122 len=31467 dt=78ms
+[AE] fid=6150,exp=10030,adg=294,Y=4680,mtg=180,shg=100,bgbv=1476,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6124 len=18260 dt=51ms
+[RTMP] slow send frame 6131 len=24344 dt=55ms
+[RTMP] slow send frame 6133 len=24471 dt=53ms
+[7] [cam] [283744][me0][me_core_thread:359]ME out fid 6150
+[RTMP] slow send frame 6143 len=7016 dt=84ms
+[RTMP] slow send frame 6147 len=16427 dt=62ms
+[AE] fid=6180,exp=10030,adg=294,Y=4683,mtg=180,shg=100,bgbv=1476,iso=294,cnv2,hdr0
+[7] [cam] [284744][me0][me_core_thread:359]ME out fid 6180
+[AE] fid=6210,exp=10000,adg=294,Y=4671,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=1021(us), max=1050(us)!
+[awb0 proc] perf=3923(us), max=3938(us)!
+[7] [cam] [285744][me0][me_core_thread:359]ME out fid 6210
+[RTMP] slow send frame 6150 len=16611 dt=2231ms
+[AE] fid=6240,exp=10000,adg=294,Y=4674,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6151 len=63424 dt=151ms (IDR)
+[ME INTP]fid=6240, shutter=10000, perf=248(us), max=344(us)!
+[RTMP] slow send frame 6156 len=10738 dt=52ms
+[7] [cam] [286744][me0][me_core_thread:359]ME out fid 6240
+[RTMP] slow send frame 6181 len=63393 dt=101ms (IDR)
+[AE] fid=6270,exp=10000,adg=294,Y=4667,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[RTMP] f_index = 6210, f_len = 24042
+[7] [cam] [287744][me0][me_core_thread:359]ME out fid 6270
+[AE] fid=6300,exp=10000,adg=294,Y=4670,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=958(us), max=1026(us)!
+[awb0 proc] perf=3909(us), max=3928(us)!
+[7] [cam] [288743][me0][me_core_thread:359]ME out fid 6300
+[RTMP] slow send frame 6211 len=63530 dt=1541ms (IDR)
+[RTMP] slow send frame 6213 len=19765 dt=58ms
+[AE] fid=6330,exp=10000,adg=294,Y=4669,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6219 len=24418 dt=253ms
+[7] [cam] [289743][me0][me_core_thread:359]ME out fid 6330
+[RTMP] slow send frame 6221 len=24595 dt=79ms
+[RTMP] slow send frame 6223 len=24577 dt=69ms
+[RTMP] slow send frame 6230 len=24759 dt=135ms
+[RTMP] slow send frame 6233 len=16090 dt=52ms
+[AE] fid=6360,exp=10000,adg=294,Y=4663,mtg=180,shg=100,bgbv=1473,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6237 len=24241 dt=61ms
+[RTMP] slow send frame 6239 len=24282 dt=52ms
+[ME INTP]fid=6360, shutter=10000, perf=6(us), max=289(us)!
+[RTMP] slow send frame 6241 len=60184 dt=118ms (IDR)
+[7] [cam] [290743][me0][me_core_thread:359]ME out fid 6360
+[AE] fid=6390,exp=10000,adg=294,Y=4658,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=862(us), max=1052(us)!
+[awb0 proc] perf=3905(us), max=3932(us)!
+[7] [cam] [291743][me0][me_core_thread:359]ME out fid 6390
+[AE] fid=6420,exp=10000,adg=294,Y=4659,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6242 len=30323 dt=2107ms
+[7] [cam] [292743][me0][me_core_thread:359]ME out fid 6420
+[RTMP] slow send frame 6248 len=24659 dt=54ms
+[AE] fid=6450,exp=10000,adg=294,Y=4658,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[7] [cam] [293743][me0][me_core_thread:359]ME out fid 6450
+[RTMP] slow send frame 6258 len=7042 dt=1134ms
+[RTMP] slow send frame 6260 len=16594 dt=58ms
+[AE] fid=6480,exp=10000,adg=294,Y=4656,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=1025(us), max=1044(us)!
+[RTMP] slow send frame 6261 len=10280 dt=77ms
+[awb0 proc] perf=3824(us), max=3928(us)!
+[RTMP] slow send frame 6262 len=23803 dt=76ms
+[ME INTP]fid=6480, shutter=10000, perf=6(us), max=283(us)!
+[7] [cam] [294743][me0][me_core_thread:359]ME out fid 6480
+[AE] fid=6510,exp=10000,adg=294,Y=4656,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[7] [cam] [295742][me0][me_core_thread:359]ME out fid 6510
+[RTMP] slow send frame 6271 len=63282 dt=1526ms (IDR)
+[RTMP] slow send frame 6277 len=10692 dt=57ms
+[AE] fid=6540,exp=10000,adg=294,Y=4655,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6285 len=24996 dt=51ms
+[RTMP] slow send frame 6287 len=16820 dt=69ms
+[7] [cam] [296745][me0][me_core_thread:359]ME out fid 6540
+[RTMP] slow send frame 6291 len=16064 dt=61ms
+[RTMP] f_index = 6300, f_len = 6686
+[RTMP] slow send frame 6301 len=60940 dt=82ms (IDR)
+[AE] fid=6570,exp=10000,adg=294,Y=4658,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=832(us), max=1048(us)!
+[awb0 proc] perf=3821(us), max=3937(us)!
+[RTMP] slow send frame 6327 len=24565 dt=54ms
+[7] [cam] [297742][me0][me_core_thread:359]ME out fid 6570
+[RTMP] slow send frame 6331 len=60782 dt=86ms (IDR)
+[RTMP] slow send frame 6332 len=31889 dt=62ms
+[RTMP] slow send frame 6339 len=14338 dt=98ms
+[RTMP] slow send frame 6340 len=14319 dt=75ms
+[AE] fid=6600,exp=10000,adg=294,Y=4657,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[ME INTP]fid=6600, shutter=10000, perf=6(us), max=19(us)!
+[RTMP] slow send frame 6353 len=24890 dt=92ms
+[7] [cam] [298742][me0][me_core_thread:359]ME out fid 6600
+[RTMP] slow send frame 6361 len=62827 dt=71ms (IDR)
+[RTMP] slow send frame 6376 len=24322 dt=55ms
+[RTMP] f_index = 6390, f_len = 6784
+[AE] fid=6630,exp=10000,adg=294,Y=4660,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[RTMP] slow send frame 6391 len=60495 dt=138ms (IDR)
+[7] [cam] [299742][me0][me_core_thread:359]ME out fid 6630
+[RTMP] slow send frame 6400 len=25083 dt=86ms
+[RTMP] slow send frame 6412 len=10503 dt=55ms
+[RTMP] slow send frame 6417 len=16242 dt=128ms
+[AE] fid=6660,exp=10000,adg=294,Y=4656,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=866(us), max=1101(us)!
+[awb0 proc] perf=3839(us), max=4156(us)!
+[7] [cam] [300742][me0][me_core_thread:359]ME out fid 6660
+[RTMP] slow send frame 6445 len=16613 dt=57ms
+[RTMP] slow send frame 6451 len=63356 dt=117ms (IDR)
+[AE] fid=6690,exp=10000,adg=294,Y=4657,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[RTMP] f_index = 6480, f_len = 10452
+[RTMP] slow send frame 6481 len=62969 dt=51ms (IDR)
+[7] [cam] [301744][me0][me_core_thread:359]ME out fid 6690
+[RTMP] slow send frame 6495 len=24528 dt=52ms
+[RTMP] slow send frame 6499 len=16506 dt=54ms
+[RTMP] slow send frame 6502 len=24659 dt=75ms
+[RTMP] slow send frame 6511 len=63443 dt=110ms (IDR)
+[AE] fid=6720,exp=10000,adg=294,Y=4662,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[ME INTP]fid=6720, shutter=10000, perf=6(us), max=967(us)!
+[7] [cam] [302741][me0][me_core_thread:359]ME out fid 6720
+[AE] fid=6750,exp=10000,adg=294,Y=4661,mtg=180,shg=100,bgbv=1469,iso=294,cnv2,hdr0
+[b_ae0 proc] perf=901(us), max=1318(us)!
+[awb0 proc] perf=3811(us), max=4228(us)!
+[RTMP] slow send frame 6522 len=16442 dt=1282ms
+[7] [cam] [303743][me0][me_core_thread:359]ME out fid 6750
+[RTMP] slow send frame 6526 len=16585 dt=57ms
+[RTMP] slow send frame 6527 len=16236 dt=57ms
+[RTMP] slow send frame 6535 len=24804 dt=77ms
+[
+[21:29:27.485] [WARN] WiFi 交互连接失败，将依赖 wifi_join 用例连接
+[21:29:27.485] [INFO] 本次执行模块顺序: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[21:29:27.486] >>> 执行模块: wifi_check
+[21:29:28.947] [PASS] wifi_check (1461ms) - 已联网，IP=10.1.90.71（跳过 wifi scan/join）
+[21:29:28.948] >>> 执行模块: wifi_scan
+[21:29:28.948] [SKIP] wifi_scan (0ms) - WiFi 已连接（IP=10.1.90.71），跳过扫描测试
+[21:29:28.948] >>> 执行模块: wifi_join
+[21:29:28.948] [SKIP] wifi_join (0ms) - WiFi 已连接 (G-Demo/10.1.90.71)，跳过 join 测试
+[21:29:28.948] >>> 执行模块: emmc
+[21:29:29.195] [PASS] emmc (246ms) - 已进入 /emmc（自动挂载）
+[21:29:29.195] >>> 执行模块: ftp
+[21:29:35.387] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[21:29:36.080] [PASS] ftp (6885ms) - FTP 已连接 10.1.90.71，/emmc 列出 4 项
+[21:29:36.081] >>> 执行模块: photo
+[21:29:36.204] [DEBUG] FTP 已连接 10.1.90.71:21 (尝试 1)
+[21:29:36.204] [DEBUG] FTP 已重新连接
+[21:29:36.205]   拍照测试: 模式 auto
+[21:30:08.395] [FAIL] photo[auto] (32189ms) - 拍照未完成保存
+[21:30:08.395] >>> 执行模块: video
+[21:30:18.406] [DEBUG] FTP 连接失败(尝试 1/3): timed out
+[21:30:29.419] [DEBUG] FTP 连接失败(尝试 2/3): timed out
+[21:30:33.500] [DEBUG] FTP 连接失败(尝试 3/3): [Errno 113] No route to host
+[21:30:34.501] [ERROR] FTP 重连失败: FTP 连接失败（重试 3 次）: [Errno 113] No route to host
+[21:30:34.502] [FAIL] video (0ms) - FTP 不可用且恢复失败，跳过录像
+[21:30:34.502] [INFO] 自动检测到 PC IP: 10.1.90.128
+[21:30:34.502] >>> 执行模块: rtmp
+[21:30:34.502] [INFO] 检查 RTMP 服务端 (nginx-rtmp) 是否监听 :1935
+[21:30:34.503] [INFO] nginx-rtmp 就绪，RTMP 监听 :1935
+[21:30:34.503]   RTMP 推流测试: rtmp://10.1.90.128/live/cam / 600s
+[21:30:45.814] [INFO] 已在独立终端窗口启动 ffplay 画面确认 (/usr/bin/gnome-terminal)
+[21:30:45.814] [INFO] ffprobe 探测 RTMP 流: rtmp://10.1.90.128/live/cam
+[21:31:01.191] [WARN] ffprobe 未探测到流(1/5): ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error，3.0s 后重试
+[21:31:19.559] [WARN] ffprobe 未探测到流(2/5): ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error，3.0s 后重试
+[21:31:37.927] [WARN] ffprobe 未探测到流(3/5): ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error，3.0s 后重试
+[21:31:56.292] [WARN] ffprobe 未探测到流(4/5): ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error，3.0s 后重试
+[21:32:22.858] [FAIL] rtmp (108355ms) - 推流验证失败: ffprobe 退出码 1: rtmp://10.1.90.128/live/cam: Input/output error
+[21:32:22.894] ==================================================
+[21:32:22.894] 测试完成：共 8 项 | 通过 3 | 失败 3 | 跳过 2 | 错误 0 | 通过率 37.5% | 总耗时 149.1s
+[21:32:22.894] ==================================================
+[21:32:22.894] [INFO]   json 报告: reports/20260818_212828/result.json
+[21:32:22.894] [INFO]   junit 报告: reports/20260818_212828/junit.xml
+[21:32:22.894] [INFO]   html 报告: reports/20260818_212828/report.html
+[21:32:24.400] [DEBUG] 串口已关闭

@@ -13,6 +13,7 @@
 runner 不感知具体模块逻辑，只通过 TestModule 接口和 ctx 调度，保持与模块解耦。
 """
 import datetime as _dt
+import time
 
 from . import logger
 from .result import TestResult, PASSED, FAILED, SKIPPED, ERROR
@@ -74,55 +75,66 @@ class TestRunner:
         return self.results
 
     def _run_module(self, name, cls):
-        """执行单个模块：实例化 -> setup -> run(带重试) -> teardown。"""
-        # 取该模块的配置段（按模块名取小写段，如 wifi/emmc/ftp/camera/rtmp）
-        mod_cfg = self._module_config(name, cls)
-        module = cls(mod_cfg)
+        """执行单个模块：实例化 -> setup -> run(带重试) -> teardown。
 
-        # setup
+        开始时打印并计时，结束时（无论成功/失败/异常）打印本模块总耗时，
+        便于确认脚本在持续推进、定位慢模块或疑似卡住。
+        """
+        mod_start = time.monotonic()
+        logger.step(f">>> 模块 [{name}] 开始执行")
         try:
-            module.setup(self.ctx, self.console)
-        except Exception as e:
-            logger.error(f"[{name}] setup 异常: {e}")
-            self._record(TestResult(name=name, module=name, status=ERROR,
-                                    message=f"setup 异常: {e}"))
-            self.module_status[name] = ERROR
-            return
+            # 取该模块的配置段（按模块名取小写段，如 wifi/emmc/ftp/camera/rtmp）
+            mod_cfg = self._module_config(name, cls)
+            module = cls(mod_cfg)
 
-        # run（带重试）
-        result = None
-        last_err = None
-        for attempt in range(1, self.retry + 1):
+            # setup
             try:
-                logger.step(f">>> 执行模块: {name}" + (f" (尝试 {attempt})" if attempt > 1 else ""))
-                result = module.run(self.ctx, self.console)
-                # 判定本次是否整体通过
-                if self._overall_pass(result):
-                    break
+                module.setup(self.ctx, self.console)
             except Exception as e:
-                last_err = e
-                logger.warn(f"[{name}] 第 {attempt} 次执行异常: {e}")
-                result = TestResult(name=name, module=name, status=ERROR,
-                                    message=f"执行异常: {e}")
-            if attempt < self.retry:
-                logger.info(f"[{name}] 失败，重试中...")
+                logger.error(f"[{name}] setup 异常: {e}")
+                self._record(TestResult(name=name, module=name, status=ERROR,
+                                        message=f"setup 异常: {e}"))
+                self.module_status[name] = ERROR
+                return
 
-        # teardown
-        try:
-            module.teardown(self.ctx, self.console)
-        except Exception as e:
-            logger.warn(f"[{name}] teardown 异常: {e}")
+            # run（带重试）
+            result = None
+            last_err = None
+            for attempt in range(1, self.retry + 1):
+                try:
+                    logger.step(f"    - 执行模块: {name}" + (f" (尝试 {attempt})" if attempt > 1 else ""))
+                    result = module.run(self.ctx, self.console)
+                    # 判定本次是否整体通过
+                    if self._overall_pass(result):
+                        break
+                except Exception as e:
+                    last_err = e
+                    logger.warn(f"[{name}] 第 {attempt} 次执行异常: {e}")
+                    result = TestResult(name=name, module=name, status=ERROR,
+                                        message=f"执行异常: {e}")
+                if attempt < self.retry:
+                    logger.info(f"[{name}] 失败，重试中...")
 
-        # 记录结果
-        self._record_results(name, result, last_err)
-        # 模块状态：取返回结果的真实状态（PASS/SKIP 视为通过，不阻断依赖）
-        if isinstance(result, list):
-            st = PASSED if any(r.status in (PASSED, SKIPPED) for r in result) else FAILED
-        elif result is not None:
-            st = result.status
-        else:
-            st = FAILED
-        self.module_status[name] = st
+            # teardown
+            try:
+                module.teardown(self.ctx, self.console)
+            except Exception as e:
+                logger.warn(f"[{name}] teardown 异常: {e}")
+
+            # 记录结果
+            self._record_results(name, result, last_err)
+            # 模块状态：取返回结果的真实状态（PASS/SKIP 视为通过，不阻断依赖）
+            if isinstance(result, list):
+                st = PASSED if any(r.status in (PASSED, SKIPPED) for r in result) else FAILED
+            elif result is not None:
+                st = result.status
+            else:
+                st = FAILED
+            self.module_status[name] = st
+        finally:
+            elapsed = time.monotonic() - mod_start
+            status = self.module_status.get(name, "?")
+            logger.step(f"<<< 模块 [{name}] 结束，耗时 {elapsed:.1f}s（结果 {status}）")
 
     def _record_results(self, name, result, last_err):
         """把模块返回的结果（单条或多条）记录进 self.results 并打印。"""

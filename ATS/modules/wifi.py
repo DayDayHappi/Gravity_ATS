@@ -10,6 +10,7 @@
 - 否则 wifi_scan 扫描 AP，wifi_join 连接并获取 IP
 """
 import re
+import time
 
 from .base import TestModule, register
 from ..core import logger
@@ -128,6 +129,7 @@ class WifiJoinModule(TestModule):
             return self._fail(f"连接失败或未获取 IP ({ssid})", detail=r.clean)
         ctx.evb_ip = r.matched
         ctx.wifi_ssid = ssid
+        time.sleep(5.0)  # 等 wifi join 后板子状态稳定，再发下一条命令
         res = self._pass(f"已连接 {ssid}，IP={r.matched}")
         res.elapsed_ms = timer.elapsed_ms()
         return res

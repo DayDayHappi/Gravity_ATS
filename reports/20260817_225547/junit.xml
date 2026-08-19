@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="1" errors="0" skipped="4" time="26.99">
+  <testcase name="wifi_check" classname="wifi_check" time="2.02">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="0.00">
+    <skipped message="WiFi 已连接（IP=172.20.10.3），跳过扫描测试" />
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="0.00">
+    <skipped message="WiFi 已连接 (KhalilFong/172.20.10.3)，跳过 join 测试" />
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="2.00">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="0.00">
+    <failure message="FTP 客户端连接失败: FTP 连接失败（重试 3 次）: [Errno 111] Connection refused"><![CDATA[
+[FTP] Ftp server init success!!!]]></failure>
+  </testcase>
+  <testcase name="photo" classname="photo" time="0.00">
+    <skipped message="依赖模块未通过: ['ftp']" />
+  </testcase>
+  <testcase name="video" classname="video" time="0.00">
+    <skipped message="依赖模块未通过: ['ftp']" />
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="22.97">
+  </testcase>
+</testsuite>

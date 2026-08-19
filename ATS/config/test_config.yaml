@@ -12,8 +12,8 @@ serial:
   detect_timeout: 2.0      # 自动探测时每端口读响应超时
 
 wifi:
-  default_ssid: "KhalilFong"
-  default_password: "12345678"   # 默认密码(可用 ${WIFI_PASSWORD} 覆盖)
+  default_ssid: "SW-test-2.4G"
+  default_password: "tuf@3600"   # 默认密码(可用 ${WIFI_PASSWORD} 覆盖)
   interactive: true        # 启动时交互选择 WiFi
 
 emmc:
@@ -34,20 +34,19 @@ camera:
   photo_settle_delay: 1.0  # 模式切换后稳定延时(秒)
   photo_capture_timeout: 10
   video_resolution: "1080p"
-  video_duration: 10        # 录像时长(秒)——2秒约3.6MB，FTP可完整下载；5秒(10MB)会因固件FTP卡死下不完
+  video_duration: 180        # 录像时长(秒)——2秒约3.6MB，FTP可完整下载；5秒(10MB)会因固件FTP卡死下不完
   video_min_size_kb: 100
   video_capture_timeout: 15
 
 rtmp:
   stream_url: "rtmp://{pc_ip}/live/cam"   # application=live, stream key=cam（对齐 nginx.conf）
-  stream_duration: 10                     # 推流持续窗口(秒)：探测期间推流须在线，stop 前完成探测
+  stream_duration: 600                    # 推流持续时长(秒)：600=10分钟；探测到流后保持推流，ffplay 跟随播放，窗口可手动关闭
   pc_ip: "auto"            # auto=自动检测，或填具体 IP（建议写死 EVB 可达的 IP，见迁移指南）
   # 使用项目内置的静态构建 ffmpeg 套件 (tools/ffmpeg/)，不依赖系统安装
   # 相对路径基于运行时 cwd（python -m ATS.main 在项目根目录执行）
   ffprobe_path: "tools/ffmpeg/ffprobe"   # ★ 必需：ffprobe 实时探测 RTMP 流（主判据）
   ffmpeg_path: "tools/ffmpeg/ffmpeg"      # 套件就绪代理（不再用于拉流存盘）
   ffplay_path: "tools/ffmpeg/ffplay"      # 可选：画面确认，无 DISPLAY 环境自动跳过
-  ffplay_show_duration: 10                 # ffplay 展示窗口停留秒数：探测到流后、stop 前保持供人眼确认
   # RTMP 服务端：nginx-rtmp，由用户/系统手动启动（systemctl start nginx），脚本仅检查 1935 就绪
   # nginx.conf 需配 application live { live on; record off; } 监听 1935
 

@@ -157,6 +157,7 @@ def interactive_wifi(console, config, ctx):
         ctx.evb_ip = r.matched
         ctx.skip_wifi = True
         logger.info(f"WiFi 连接成功: {ssid} / IP={r.matched}")
+        time.sleep(5.0)  # 等 wifi join 后板子状态稳定，再发下一条命令
         return True
     logger.error(f"WiFi 连接失败: {r.error}")
     logger.error(f"输出: {r.clean}")
@@ -275,18 +276,18 @@ def main(argv=None) -> int:
         logger.close()
         return 2
 
-    # 6. 板子状态预清理（确保干净起点：回根目录、停录像、恢复FTP服务）
+    # 6. 板子状态预清理（确保干净起点：回根目录、停录像）
     #    不主动 wifi disc：若板子还连着 WiFi，由 wifi_check 模块检测后跳过 scan/join
-    #    上次运行可能残留：当前目录在 /emmc、录像进行中、FTP 崩溃循环刷屏
+    #    不在此处碰 FTP：ftp_server 全程只在 wifi 连接后由 ftp 模块发一次
+    #    上次运行可能残留：当前目录在 /emmc、录像进行中
     logger.info("预清理板子状态...")
     try:
         console.exec_sync("cd /", timeout=5.0)             # 回根目录，避免 cd emmc 残留
         console.exec_async("dfs_video_stop",               # 停录像（未在录则忽略）
                            expect=r"Save Video|Please start|recording completed",
                            result_timeout=8.0)
-        # 恢复 FTP 服务（若在崩溃循环，重发 ftp_server 触发恢复）
-        console.exec_sync("ftp_server", expect=r"init success|service launched", timeout=8.0)
-        time.sleep(1.0)                                     # 等服务稳定，避免日志刷屏干扰后续命令
+        # 不在此处发 ftp_server：全程只在 wifi 连接后由 ftp 模块启动一次，
+        # 避免重复触发固件 "service go wrong, now wait restarting" 崩溃循环刷屏日志。
     except Exception as e:
         logger.warn(f"预清理异常(可忽略): {e}")
 

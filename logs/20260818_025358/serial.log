@@ -1,0 +1,419 @@
+[02:54:00.740] TX> 
+[02:54:01.741] TX> 
+[02:54:02.741] RX< 
+[02:54:02.741] RX< msh />
+[02:54:02.741] RX< msh />
+[02:54:02.942] TX> echo "EVBTEST_HELLO"
+[02:54:02.942] TX> echo "__EVBTEST_END_fef4f3eb__"
+[02:54:04.743] RX< echo "EVBTEST_HELLO"
+[02:54:04.743] RX< EVBTEST_HELLO
+[02:54:04.743] RX< msh />echo "__EVBTEST_END_fef4f3eb__"
+[02:54:04.743] RX< __EVBTEST_END_fef4f3eb__
+[02:54:04.743] RX< msh />
+[02:54:04.945] TX> cd /
+[02:54:04.945] TX> echo "__EVBTEST_END_bd7020bd__"
+[02:54:06.745] RX< cd /
+[02:54:06.745] RX< msh />echo "__EVBTEST_END_bd7020bd__"
+[02:54:06.745] RX< __EVBTEST_END_bd7020bd__
+[02:54:06.745] RX< msh />
+[02:54:06.947] TX> dfs_video_stop
+[02:54:06.947] TX> echo "__EVBTEST_END_e04fa59a__"
+[02:54:08.747] RX< dfs_video_stop
+[02:54:08.747] RX< [6] [App Dfs] Please start recording the video first.
+[02:54:08.747] RX< msh />echo "__EVBTEST_END_e04fa59a__"
+[02:54:08.747] RX< __EVBTEST_END_e04fa59a__
+[02:54:08.747] RX< msh />
+[02:54:10.748] RX< wifi scan
+[02:54:10.855] TX> wifi scan
+[02:54:10.855] TX> echo "__EVBTEST_END_1e06907f__"
+[02:54:11.159] RX<              SSID                      MAC            security    rssi chn Mbps
+[02:54:11.159] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[02:54:11.159] RX< ftp_test_2_4G                   62:ed:11:f2:02:a7  WPA2_AES_PSK   -39    5  144
+[02:54:11.159] RX< DIRECT-9Q-客�
+[02:54:11.159] RX< ��电视          66:6b:e7:66:5c:be  WPA2_AES_PSK   -47   11  144
+[02:54:11.159] RX< gravityXR                       f4:e4:51:83:d3:10  WPA2_AES_PSK   -46   11  144
+[02:54:11.159] RX<  Gwireless                      f4:e4:51:83:d3:11  WPA2_AES_PSK   -44   11  144
+[02:54:11.159] RX< G-Demo                     
+[02:54:11.239] RX<      f4:e4:51:83:d3:12  WPA2_AES_PSK   -46   11  144
+[02:54:11.239] RX< SW-test-2.4G                    f8:ce:21:8b:a6:fc  WPA2_AES_PSK   10    13  600
+[02:54:11.239] RX< gravityXR                       f4:e4:51:83:d5:50  WPA2_AES_PSK   -47   13  144
+[02:54:11.239] RX<  Gwireless                      f4:e4:51
+[02:54:11.380] RX< :83:d5:51  WPA2_AES_PSK   -46   13  144
+[02:54:11.380] RX< G-Demo                          f4:e4:51:83:d5:52  WPA2_AES_PSK   -46   13  144
+[02:54:11.380] RX<  Gwireless                      f4:e4:51:83:d5:b1  WPA2_AES_PSK   -68    1  144
+[02:54:11.380] RX< HUAWEI-X1E3WU                   42:17:a3:f1:cf:49  WP
+[02:54:13.381] RX< A2_AES_PSK   -53    1  144
+[02:54:13.381] RX< MTK_CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -61   13  300
+[02:54:13.381] RX< msh />echo "__EVBTEST_END_1e06907f__"
+[02:54:13.381] RX< __EVBTEST_END_1e06907f__
+[02:54:13.381] RX< msh />
+[02:54:34.370] TX> wifi join SW-test-2.4G tuf@3600
+[02:54:34.370] TX> echo "__EVBTEST_END_2241f3ea__"
+[02:54:35.404] RX< wifi join SW-test-2.4G tuf@3600
+[02:54:39.406] RX< [32m[I/WLAN.mgnt] wifi connect success ssid:SW-test-2.4G[0m
+[02:54:39.406] RX< msh />echo "__EVBTEST_END_2241f3ea__"
+[02:54:39.406] RX< __EVBTEST_END_2241f3ea__
+[02:54:39.406] RX< msh />
+[02:54:43.410] RX< [32m[I/WLAN.lwip] Got IP address : 192.168.1.101[0m
+[02:54:48.428] RX< ifconfig
+[02:54:48.428] RX< network interface device: w0 (Default)
+[02:54:48.428] RX< MTU: 1500
+[02:54:48.428] RX< MAC: 8c ea 12 ba a8 2c 
+[02:54:48.428] RX< FLAGS: UP LINK_UP INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[02:54:48.428] RX< ip address: 192.168.1.101
+[02:54:48.428] RX< gw address: 192.168.1.3
+[02:54:48.428] RX< net mask  : 255.255.255.0
+[02:54:48.428] RX< dns server #0: 192.168.1.3
+[02:54:48.443] RX< dns server #1: 0.0.0.0
+[02:54:48.443] RX< 
+[02:54:48.443] RX< network interface device: w1
+[02:54:48.443] RX< MTU: 1500
+[02:54:48.443] RX< MAC: 8e ea 12 ba a8 2c 
+[02:54:48.443] RX< FLAGS: UP LINK_DOWN INTERNET_DOWN DHCP_ENABLE ETHARP BROADCAST IGMP
+[02:54:48.443] RX< ip address: 0.0.0.0
+[02:54:48.443] RX< gw address: 0.0.0.0
+[02:54:48.443] RX< net mask  : 0.0.0.0
+[02:54:48.443] RX< dns server #0: 192.168.1.3
+[02:54:48.443] RX< dns serv
+[02:54:48.625] TX> ifconfig
+[02:54:48.625] TX> echo "__EVBTEST_END_10e8cc33__"
+[02:54:50.445] RX< er #1: 0.0.0.0
+[02:54:50.445] RX< msh />echo "__EVBTEST_END_10e8cc33__"
+[02:54:50.445] RX< __EVBTEST_END_10e8cc33__
+[02:54:50.445] RX< msh />
+[02:54:50.647] TX> cd /emmc
+[02:54:50.647] TX> echo "__EVBTEST_END_4366a59d__"
+[02:54:52.447] RX< cd /emmc
+[02:54:52.447] RX< msh /emmc>echo "__EVBTEST_END_4366a59d__"
+[02:54:52.447] RX< __EVBTEST_END_4366a59d__
+[02:54:52.447] RX< msh /emmc>
+[02:54:52.649] TX> ftp_server
+[02:54:52.649] TX> echo "__EVBTEST_END_eb13614d__"
+[02:54:54.448] RX< ftp_server
+[02:54:54.448] RX< 
+[02:54:54.448] RX< [FTP] Ftp server init success!!!
+[02:54:54.448] RX< msh /emmc>echo "__EVBTEST_END_eb13614d__"
+[02:54:54.448] RX< __EVBTEST_END_eb13614d__
+[02:54:54.448] RX< msh /emmc>
+[02:54:58.452] RX< [32m[I/ftp] service launched success.[0m
+[02:55:08.876] RX< rtmp_video_start rtmp://192.168.1.99/live/cam
+[02:55:08.876] RX< [7] [cam] [229065][tshell][cgm_parse_bin:105]total logical camera num: 1
+[02:55:08.876] RX< [6] [cam] [229065][tshell][cam_prelude_create:187]E id, 0
+[02:55:08.876] RX< [7] [cam] [229066][cpl0][cam_prelude_proc_routine:101]thread start
+[02:55:08.876] RX< [6] [cam] [
+[02:55:08.876] RX< 229066][tshell][cam_prelude_create:214]X ctx size 124 addr 0x88484ff0
+[02:55:08.876] RX< [6] [cam] [229072][tshell][sensor_probe:418]sensor [1]: identifing 0 success.
+[02:55:08.876] RX< [6] [cam] [229074][tshell][sensor_probe:441]sensor [1]: probe exit!
+[02:55:08.876] RX< [6] [cam] [229074][tshell][cam_prelude_
+[02:55:08.879] RX< fast_probe:251]cam: 0 probe result: 0
+[02:55:08.879] RX< [6] [cam] [229075][tshell][cgm_parse_bin:215]cam(0) probe success
+[02:55:08.879] RX< [6] [cam] [229075][tshell][cam_entry:435]entry ok
+[02:55:08.879] RX< [34m[cam entry] perf=10603(us)!
+[02:55:08.879] RX< [0m[6] [App Cam] cam entry success
+[02:55:08.879] RX< [36mmem_laySolv: scenario=01 
+[02:55:08.879] RX< in=4032x3024, me_rotate=1 me_stripe=1 
+[02:55:08.879] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[02:55:08.879] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCfg for bound!
+[02:55:08.879] RX< [36mmem_laySolv: scen01 20 entries solved OK!
+[02:55:08.879] RX< [0m[36mmem_laySolv: scenario=02 in=2016x
+[02:55:08.882] RX< 1512, me_rotate=0 me_stripe=0 
+[02:55:08.882] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[02:55:08.882] RX< [0mscen2 type15 bufAdr 0x89ce3ef0 sz 0xd00000 reCfg for bound!
+[02:55:08.882] RX< [36mmem_laySolv: scen02 14 entries solved OK!
+[02:55:08.882] RX< [0m[36mmem_laySolv: scenario=03 in=4032x2268, me_
+[02:55:08.884] RX< rotate=1 me_stripe=0 
+[02:55:08.884] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 0, eis 0, be_rot 0
+[02:55:08.884] RX< [0m[36mmem_laySolv: scen03 14 entries solved OK!
+[02:55:08.884] RX< [0m[7] [cam] [229080][tshell][cam_solve_whole_layout:355]
+[02:55:08.884] RX< scen3: vol 0x8c000000 rbuf 0x89d6cdf0 sz 0xd00000 wbuf 0x8aa6
+[02:55:08.884] RX< cdf0 sz 0xd00000
+[02:55:08.884] RX<        rtmp txbuf 0x8bf80000 sz 0x80000 avcBuf 0x8bf00000 sz 0x80000
+[02:55:08.884] RX< [36mmem_laySolv: scenario=04 in=4032x3024, me_rotate=1 me_stripe=1 
+[02:55:08.884] RX< [0m[36mmem_laySolv: me_rot 1, me_stripe 1, eis 0, be_rot 0
+[02:55:08.884] RX< [0m[36mmem_laySolv: scen04 14 entrie
+[02:55:08.887] RX< s solved OK!
+[02:55:08.887] RX< [0m[36mmem_laySolv: scenario=05 in=1008x0756, me_rotate=0 me_stripe=0 
+[02:55:08.887] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[02:55:08.887] RX< [0m[36mmem_laySolv: scen05 17 entries solved OK!
+[02:55:08.887] RX< [0m[36mmem_laySolv: scenario=06 in=1008x0720, me_rotat
+[02:55:08.887] RX< e=0 me_stripe=0 
+[02:55:08.887] RX< [0m[36mmem_laySolv: me_rot 0, me_stripe 0, eis 0, be_rot 0
+[02:55:08.887] RX< [0m[36mmem_laySolv: scen06 12 entries solved OK!
+[02:55:08.887] RX< [0m[36mmem_laySolv: scenario=01 in=4032x3024, me_rotate=1 me_stripe=1 
+[02:55:08.887] RX< [0mscen1 type26 bufAdr 0x89d40b70 sz 0x1400000 reCf
+[02:55:08.890] RX< g for bound!
+[02:55:08.890] RX< [36mmem_laySolv: scen01 20 entries solved OK!
+[02:55:08.890] RX< [0m[7] [cam] [229085][tshell][cam_solve_whole_layout:383]Solve Whole-layout Done!
+[02:55:08.890] RX< [6] [cam] [229086][tshell][cgm_parse_media_para:271]phy cam num: 1
+[02:55:08.890] RX< [7] [cam] [229086][cer0][cer_recovery_proc:3
+[02:55:08.890] RX< 43]thread start cid, 0
+[02:55:08.890] RX< [6] [cam] [229086][tshell][csc_open:443]SENSOR MCLK cal: 24MHz
+[02:55:08.890] RX< [6] [cam] [229086][tshell][csc_isp_clk_cal:344]MIPI CLK cal: 277MHz
+[02:55:08.890] RX< [6] [cam] [229087][tshell][csc_isp_clk_cal:371]LITE CLK cal: 25MHz
+[02:55:08.890] RX< [7] [cam] [229087][tshell][cpc_cs
+[02:55:08.896] RX< i_rx_power_on:633]E id: 2
+[02:55:08.896] RX< [4] [cam] [229088][tshell][cpc_csi_rx_power_on:644]csi_2 has already power on, STATUS: 1
+[02:55:08.896] RX< [6] [cam] [229088][tshell][cpc_update_clock:603]actual SNS mclk: 24MHz
+[02:55:08.896] RX< [6] [cam] [229089][tshell][cpc_update_clock:608]actual MIPI0: 300MHz
+[02:55:08.896] RX< 
+[02:55:08.896] RX< [6] [cam] [229089][tshell][cpc_update_clock:598]actual LITE clk: 25MHz
+[02:55:08.896] RX< [7] [cam] [229089][tshell][cam_prelude_open:297][34msnsOpen camID1 csiID0 phyIdx0[0m
+[02:55:08.896] RX< [6] [cam] [229093][tshell][sensor_expo_gain_match:48]sensor get sensor expo gain of imx681_vst
+[02:55:08.896] RX< [
+[02:55:08.899] RX< 6] [cam] [229094][tshell][sensor_open:684]sensor [1] open OK.
+[02:55:08.899] RX< [6] [cam] [229094][tshell][cam_cpm_parse_media:298]video scenario:3, media para[fps:0, mirror_en:0, flip_en:0]
+[02:55:08.899] RX< [6] [cam] [229094][tshell][cam_cpm_parse_media:301]video scenario, media para[iso:
+[02:55:08.899] RX< 0, gain:0, wb_mode:0]
+[02:55:08.899] RX< [6] [cam] [229095][tshell][csc_isp_clk_cal:353]FE CLK cal: 373MHz, ME CLK cal: 371MHz, FE/ME CLK cal: 410MHz
+[02:55:08.899] RX< [6] [cam] [229096][tshell][csc_isp_clk_cal:360]BE CLK cal: 301MHz
+[02:55:08.899] RX< [4] [cam] [229096][tshell][cam_fe_core_power_on:269]fe pi
+[02:55:08.904] RX< pe has already power on, STATUS: 1
+[02:55:08.904] RX< [6] [cam] [229097][tshell][cpc_update_clock:588]actual FE/ME clk: 500MHz
+[02:55:08.904] RX< [7] [cam] [229097][tshell][cam_cpm_core_power_on:425]id,0 type,1 ret 0
+[02:55:08.904] RX< [6] [cam] [229098][tshell][cam_cpm_core_init:914]E id,0 sensor type,1
+[02:55:08.904] RX< [6] [
+[02:55:08.904] RX< cam] [229101][tshell][cpm_core_check_tuningbin:854]Tuning bin crc check PASS! sum 0x7fb15f, xor 0x4e593f47
+[02:55:08.904] RX< [6] [cam] [229101][tshell][qpc_tuning_check_iqbin_validness:396]IQ bin addr: 0x88646660, project_name: video_3M
+[02:55:08.904] RX< [6] [cam] [229102][tshell][qpc_tunin
+[02:55:08.907] RX< g_check_iqbin_validness:397]total_size: 94208
+[02:55:08.907] RX< [6] [cam] [229102][tshell][qpc_tuning_check_iqbin_validness:398]id_count: 93. ID_TOTAL: 94
+[02:55:08.907] RX< [6] [cam] [229103][tshell][qpc_tuning_check_iqbin_validness:399]spinel tuning data ver: V1.30
+[02:55:08.907] RX< [6] [cam] [229103][tshel
+[02:55:08.907] RX< l][cpm_core_check_tuningbin:868]IQ bin check success!
+[02:55:08.907] RX< [6] [cam] [229104][tshell][cam_bm_core_init:94]E
+[02:55:08.907] RX< [6] [cam] [229104][tshell][bm_lab_init:174]X ctx size 4 addr 0x88455450
+[02:55:08.907] RX< [6] [cam] [229104][tshell][cam_bm_core_init:114]X ctx size 180 addr 0x88468e98
+[02:55:08.924] RX< [6] [cam] [229104][tshell][qpc_core_init:1218]E id,0
+[02:55:08.924] RX< [6] [cam] [229105][tshell][qpc_queue_init:65]QPC init qnodes 8, size 508, pool 0x88485d88
+[02:55:08.924] RX< [7] [cam] [229105][tshell][_qpc_get_cap_cfg_para:888][fallback]preset capCfg 0 0 0 invalid, use default
+[02:55:08.924] RX< [7] [ca
+[02:55:08.924] RX< m] [229106][tshell][_qpc_cfg_hdr_frms:832][fallback]preset hdrCfg 0 32 7 25600 148508608 invalid, use default
+[02:55:08.924] RX< [6] [cam] [229122][tshell][qpc_core_init:1264]X ctx size 3800 addr 0x88468f60
+[02:55:08.924] RX< [6] [cam] [229122][tshell][cpm_core_get_param:666]cpm para chk: tunB
+[02:55:08.930] RX< in-w 4032 h 2266 img-w 4032 h 2268
+[02:55:08.930] RX< [6] [cam] [229123][tshell][cam_fe_core_init:436]E id,0
+[02:55:08.930] RX< [6] [cam] [229123][tshell][cam_fe_core_init:490]X ctx size 100 addr 0x88496708
+[02:55:08.930] RX< [7] [cam] [229124][tshell][qpc_core_fe_chords_init:1659][34mqpc fe init snsOut w 403
+[02:55:08.930] RX< 2 h 2268, tbl w 28 h 20[0m
+[02:55:08.930] RX< [6] [cam] [229124][tshell][cam_me_core_init:1474]X ctx size 1352 addr 0x88498ac0
+[02:55:08.930] RX< [34m[ME SLICE CFG] perf=1343(us)!
+[02:55:08.930] RX< [0m[6] [cam] [229128][tshell][cam_bayer_fe_3a_stats_core_init:445]fe 3a id,0
+[02:55:08.930] RX< [6] [cam] [229128][tshell][cam_ba
+[02:55:08.938] RX< yer_fe_3a_stats_core_init:490]X ctx size 132 addr 0x884a14e0
+[02:55:08.938] RX< [6] [cam] [229129][tshell][awb_wrapper_init:66]xxx awb_bin=0x88488264, awb_bin_length=8068
+[02:55:08.938] RX< [6] [cam] [229129][tshell][awb_wrapper_init:86]X algo_handle 0x884a7140
+[02:55:08.938] RX< [7] [cam] [229130][awb0][a5_co
+[02:55:08.938] RX< re_wrapper_task:252]thread start cid,0 algo type,2
+[02:55:08.938] RX< [6] [cam] [229130][tshell][a5_core_init_task:426]thread created: awb0 mq=0x884a9408 thread=0x884a9520 sem=0x884a9398 ret=0
+[02:55:08.938] RX< [6] [cam] [229131][tshell][bayer_ae_wrapper_init:68]E id,0 proc mode 0 
+[02:55:08.938] RX< 
+[02:55:08.938] RX< [AEC Pro
+[02:55:08.941] RX< c] @[allib_ae_set_debug_log_flag] Line:129:[DEBUG] debug level/to_file/to_terminal: 22/1/1
+[02:55:08.941] RX< [AEC Proc] @[AeInit] Line:377:[INFO] AE ver: 2026_V2.269
+[02:55:08.941] RX< 
+[02:55:08.941] RX< [AEC Proc] @[allib_ae_loadfunc] Line:193:[INFO] camera ID: 0
+[02:55:08.941] RX< [AEC Proc] @[AeInit] Line:404:[DEBUG] init im
+[02:55:08.941] RX< u detector sucessed!
+[02:55:08.941] RX< [AEC Proc] @[AeInit] Line:406:[DEBUG] imu init errcode:0
+[02:55:08.941] RX< [AEC Proc] @[alAE_set_param] Line:575:[DEBUG] sw_maxtime 33004 ,pertline 10800, after check sensor step sw_max_time 33000.00
+[02:55:08.941] RX< [AEC Proc] @[alAE_set_param] Line:580:[DEBUG] sw_mi
+[02:55:08.943] RX< ntime 43 ,pertline 10800, after check sensor step sw_min_time 40.00
+[02:55:08.943] RX< [AEC Proc] @[alAE_set_param] Line:513:[DEBUG] DEBUG minbv exptime 11 gain 100, minExpBV 13810
+[02:55:08.943] RX< [AEC Proc] @[AeTuningParseSet] Line:167:[DEBUG] aeparam version 2.268 60530
+[02:55:08.943] RX< [AEC Proc] @[alAE
+[02:55:08.944] RX< _set_param] Line:340:[DEBUG] INITEXP gain 100, shutter 33242, midtonegain 100, bv 2247
+[02:55:08.944] RX< [6] [cam] [229141][tshell][bayer_ae_wrapper_init:119]X tline 10800 max_exp 33004 alg_hdl 0x884abcd0 
+[02:55:08.944] RX< [7] [cam] [229141][b_ae0][a5_core_wrapper_task:252]thread start cid
+[02:55:08.946] RX< ,0 algo type,0
+[02:55:08.946] RX< [6] [cam] [229142][tshell][a5_core_init_task:426]thread created: b_ae0 mq=0x884b25a8 thread=0x884b26c0 sem=0x884b2538 ret=0
+[02:55:08.946] RX< [6] [cam] [229142][tshell][atf_wrapper_init:67]E id,0
+[02:55:08.946] RX< [6] [cam] [229143][tshell][atf_wrapper_init:107]X alg_ctx add
+[02:55:08.946] RX< r 0x884b4b80
+[02:55:08.946] RX< [7] [cam] [229143][atf0][a5_core_wrapper_task:252]thread start cid,0 algo type,1
+[02:55:08.946] RX< [6] [cam] [229144][tshell][a5_core_init_task:426]thread created: atf0 mq=0x884b6ed8 thread=0x884b6ff0 sem=0x884b6e68 ret=0
+[02:55:08.946] RX< [6] [cam] [229144][tshell][cam_cpm_cor
+[02:55:08.963] RX< e_init:1030]X ctx size 1064 addr 0x88468a60
+[02:55:08.963] RX< [6] [cam] [229145][tshell][csc_open:527]ok! phys_id[1], phys_num[1] 
+[02:55:08.963] RX< [6] [cam] [229145][tshell][cam_open:699]open ok! camera_id[0]
+[02:55:08.963] RX< [34m[cam open] perf=69935(us)!
+[02:55:08.963] RX< [0m[6] [App Cam] cam open success
+[02:55:08.963] RX< [6] [App Ca
+[02:55:08.963] RX< m] hevc init success
+[02:55:08.963] RX< [6] [cam] [229160][tshell][csc_init:637]sensor info:size:4032x2268, formt: 0x2b, bps: 1968, tline: 10800
+[02:55:08.963] RX< [6] [cam] [229160][tshell][cam_sif_mgr_init:261]E id,0
+[02:55:08.963] RX< [7] [cam] [229161][sif0][sif_irq_proc:151]thread start cid,0
+[02:55:08.963] RX< [6] [cam] [22
+[02:55:08.968] TX> rtmp_video_start rtmp://192.168.1.99/live/cam
+[02:55:08.968] TX> echo "__EVBTEST_END_100fed95__"
+[02:55:08.975] RX< 9161][tshell][cam_sif_mgr_init:293]X ctx size 52 addr 0x884e8658
+[02:55:08.975] RX< [6] [cam] [229162][tshell][cam_prelude_init_cfg:368]CSI ID is 0,  phy lanes is 2.
+[02:55:08.975] RX< [7] [cam] [229162][tshell][check_phy_ready:96]MIPI_PHY[0] is ready
+[02:55:08.975] RX< [6] [cam] [229162][tshell][sensor_init:3
+[02:55:08.976] RX< 48]sensor [1]: register ok
+[02:55:08.976] RX< [6] [cam] [229163][tshell][sensor_set_mode:852]sensor [1]: SetMode -> mode = 0.
+[02:55:08.976] RX< [6] [cam] [229163][tshell][sensor_send_reg_tab_to_sensor:704]sensor [1]: send_reg_tab_to_sensor E.
+[02:55:08.976] RX< [6] [cam] [229174][tshell][sensor_send_reg_tab_to
+[02:55:08.994] RX< _sensor:726]sensor [1]: reg_count = 77.
+[02:55:08.994] RX< [6] [cam] [229176][tshell][sensor_init:361]sensor [1]: init success.
+[02:55:08.994] RX< [6] [cam] [229176][tshell][sensor_set_mode:852]sensor [1]: SetMode -> mode = 3.
+[02:55:08.994] RX< [6] [cam] [229177][tshell][sensor_send_reg_tab_to_sensor:704]senso
+[02:55:08.996] RX< r [1]: send_reg_tab_to_sensor E.
+[02:55:08.996] RX< [6] [cam] [229191][tshell][sensor_send_reg_tab_to_sensor:726]sensor [1]: reg_count = 83.
+[02:55:08.996] RX< [6] [cam] [229191][tshell][csc_init:646]ok! phys_id[1], phys_num[1]
+[02:55:08.996] RX< [6] [cam] [229192][tshell][csc_get_bayer_single_buffer:1038]scena
+[02:55:08.996] RX< rio_type: 3
+[02:55:08.996] RX< [6] [cam] [229192][tshell][csc_set_stats_fmt:98]index 0 w 1 h 1 bw 8 wcmp 255
+[02:55:08.996] RX< [7] [cam] [229193][tshell][bm_ioctl:201]BMIOC_STATS_FMT
+[02:55:08.996] RX< [6] [cam] [229193][tshell][csc_set_fe_fmt:47]index 1 w 4032 h 2268 bw 10 wcmp 0
+[02:55:08.996] RX< [7] [cam] [229194][tshell][b
+[02:55:08.999] RX< m_ioctl:201]BMIOC_FE_FMT
+[02:55:08.999] RX< [6] [cam] [229194][tshell][csc_set_me_fmt:64]index 5 w 2268 h 4032 bw 10 wcmp 0, rdma_addr 0x894afe00, wdma_addr 0x894afe00
+[02:55:08.999] RX< [7] [cam] [229195][tshell][bm_ioctl:201]BMIOC_ME_FMT
+[02:55:08.999] RX< [6] [cam] [229195][tshell][csc_set_video_fmt:966]meta
+[02:55:08.999] RX< _addr: 0x89d6c600
+[02:55:08.999] RX< [6] [cam] [229195][tshell][csc_set_me_fmt:64]index 6 w 1296 h 2304 bw 8 wcmp 255, rdma_addr 0x88795200, wdma_addr 0x8c000000
+[02:55:08.999] RX< [6] [cam] [229196][tshell][cam_me_core_buffer_cfg:1367]
+[02:55:08.999] RX< ----ME PIPE INFO---
+[02:55:08.999] RX<  wdma_buf_num:1, rotation_en: 1
+[02:55:08.999] RX< [
+[02:55:09.002] RX< 7] [cam] [229197][tshell][cam_me_core_buffer_cfg:1375]yuv wdma_addr 0:0x8c000000, meta_en: 1, 0x89d6c600
+[02:55:09.002] RX< [7] [cam] [229197][tshell][bm_ioctl:201]BMIOC_ME_FMT
+[02:55:09.002] RX< [6] [cam] [229198][tshell][csc_set_lite_fmt:115]index 13 w 400 h 400 bw 10 wcmp 255
+[02:55:09.002] RX< [7] [cam] [22
+[02:55:09.002] RX< 9198][tshell][bm_ioctl:201]BMIOC_LITE_FMT
+[02:55:09.002] RX< [6] [cam] [229198][tshell][csc_set_lite_fmt:115]index 14 w 400 h 400 bw 10 wcmp 255
+[02:55:09.002] RX< [7] [cam] [229199][tshell][bm_ioctl:201]BMIOC_LITE_FMT
+[02:55:09.002] RX< [6] [cam] [229199][tshell][csc_init:654]get otp ok! phys_id[1], phys_num[
+[02:55:09.005] RX< 1]
+[02:55:09.005] RX< [6] [cam] [229199][tshell][cam_init:789]init ok! logic_id[0]
+[02:55:09.005] RX< [34m[cam init] perf=40452(us)!
+[02:55:09.005] RX< [0m[6] [App Cam] cam init success
+[02:55:09.005] RX< [7] [cam] [229200][tshell][cam_cpm_core_stream_on:541]id 0 sensor type 1
+[02:55:09.005] RX< [6] [cam] [229200][tshell][sensor_stream_on:979]se
+[02:55:09.005] RX< nsor [1]: stream_on
+[02:55:09.005] RX< [6] [cam] [229201][tshell][sensor_stream_on:1007]sensor [1]: REG: 0x100, W:0x1.
+[02:55:09.005] RX< [6] [cam] [229202][tshell][sensor_stream_on:1009]sensor [1]: REG: 0x100, R:0x1.
+[02:55:09.005] RX< [6] [cam] [229202][tshell][csc_prv_start:783]ok! phys_id[1], phys_num[1], c
+[02:55:09.021] RX< am_ids[1]
+[02:55:09.021] RX< [6] [cam] [229203][tshell][cam_start:897]preview start ok! logic_id[0]
+[02:55:09.021] RX< [34m[cam start] perf=2674(us)!
+[02:55:09.021] RX< [0m[6] [App Cam] cam start success
+[02:55:09.021] RX< [RTMP] connecting rtmp://192.168.1.99/live/cam ...
+[02:55:09.021] RX< [7] [cam] [229204][b_3a_sts][bayer_stats_core_irq_pro
+[02:55:09.148] RX< c:164]thread start cid,0
+[02:55:09.148] RX< [7] [cam] [229204][fe0][fe_core_irq_proc:98]thread start cid,0
+[02:55:09.148] RX< [34m[AE] fid=0,exp=10030,adg=288,Y=5958,mtg=100,shg=100,bgbv=4480,iso=288,cnv0,hdr0
+[02:55:09.148] RX< [0m[34m[b_ae0 proc] perf=8054(us), max=8054(us)!
+[02:55:09.148] RX< [0m[34m[awb0 proc] perf=4418
+[02:55:10.302] RX< (us), max=4418(us)!
+[02:55:10.302] RX< [0m[6] [cam] [229496][me0][cpm_cb_fe2me_tikChk:152]frm_length 88560us, fe2me delta 0
+[02:55:10.302] RX< [34m[ME INTP]fid=0, shutter=10030, perf=2833(us), max=2833(us)!
+[02:55:10.302] RX< [0m[7] [cam] [229674][me0][me_core_thread:322]ME out fid 0
+[02:55:10.302] RX< [34m[AE] fid=30,exp=1005
+[02:55:11.478] RX< 0,adg=213,Y=4023,mtg=187,shg=129,bgbv=1624,iso=213,cnv2,hdr0
+[02:55:11.478] RX< [0m[7] [cam] [230674][me0][me_core_thread:322]ME out fid 30
+[02:55:11.478] RX< [34m[AE] fid=60,exp=10040,adg=225,Y=4193,mtg=180,shg=149,bgbv=1631,iso=225,cnv2,hdr0
+[02:55:11.478] RX< [0m[7] [cam] [231674][me0][me_core_thread:322]M
+[02:55:12.483] RX< E out fid 60
+[02:55:12.483] RX< [34m[AE] fid=90,exp=10040,adg=225,Y=4200,mtg=180,shg=149,bgbv=1635,iso=225,cnv2,hdr0
+[02:55:12.483] RX< [0m[34m[b_ae0 proc] perf=894(us), max=8054(us)!
+[02:55:12.483] RX< [0m[34m[awb0 proc] perf=4325(us), max=4442(us)!
+[02:55:12.483] RX< [0m[7] [cam] [232674][me0][me_core_thread:322]ME out fi
+[02:55:14.301] RX< d 90
+[02:55:14.301] RX< [34m[AE] fid=120,exp=10040,adg=225,Y=4204,mtg=180,shg=150,bgbv=1635,iso=225,cnv2,hdr0
+[02:55:14.301] RX< [0m[34m[ME INTP]fid=120, shutter=10040, perf=6(us), max=2989(us)!
+[02:55:14.301] RX< [0m[7] [cam] [233674][me0][me_core_thread:322]ME out fid 120
+[02:55:14.301] RX< [34m[AE] fid=150,exp=10040,adg=22
+[02:55:15.306] RX< 5,Y=4206,mtg=180,shg=150,bgbv=1635,iso=225,cnv2,hdr0
+[02:55:15.306] RX< [0m[7] [cam] [234674][me0][me_core_thread:322]ME out fid 150
+[02:55:15.306] RX< [34m[AE] fid=180,exp=10040,adg=225,Y=4206,mtg=180,shg=150,bgbv=1635,iso=225,cnv2,hdr0
+[02:55:15.306] RX< [0m[34m[b_ae0 proc] perf=855(us), max=1004(us)!
+[02:55:15.306] RX< [0
+[02:55:16.477] RX< m[34m[awb0 proc] perf=4333(us), max=4380(us)!
+[02:55:16.477] RX< [0m[7] [cam] [235673][me0][me_core_thread:322]ME out fid 180
+[02:55:16.477] RX< [34m[AE] fid=210,exp=10040,adg=225,Y=4221,mtg=180,shg=150,bgbv=1639,iso=225,cnv2,hdr0
+[02:55:16.477] RX< [0m[7] [cam] [236673][me0][me_core_thread:322]ME out fid 21
+[02:55:18.305] RX< 0
+[02:55:18.305] RX< [34m[AE] fid=240,exp=10040,adg=225,Y=4225,mtg=180,shg=150,bgbv=1643,iso=225,cnv2,hdr0
+[02:55:18.305] RX< [0m[34m[ME INTP]fid=240, shutter=10040, perf=7(us), max=288(us)!
+[02:55:18.305] RX< [0m[7] [cam] [237673][me0][me_core_thread:322]ME out fid 240
+[02:55:18.305] RX< [34m[AE] fid=270,exp=10040,adg=225,Y=
+[02:55:19.300] RX< 4225,mtg=180,shg=150,bgbv=1643,iso=225,cnv2,hdr0
+[02:55:19.300] RX< [0m[34m[b_ae0 proc] perf=864(us), max=1002(us)!
+[02:55:19.300] RX< [0m[34m[awb0 proc] perf=4329(us), max=4385(us)!
+[02:55:19.300] RX< [0m[7] [cam] [238673][me0][me_core_thread:322]ME out fid 270
+[02:55:19.300] RX< [34m[AE] fid=300,exp=10040,adg=225,Y=4227,m
+[02:55:21.273] RX< tg=180,shg=150,bgbv=1643,iso=225,cnv2,hdr0
+[02:55:21.273] RX< [0m[7] [cam] [239673][me0][me_core_thread:322]ME out fid 300
+[02:55:21.273] RX< [34m[AE] fid=330,exp=10040,adg=225,Y=4227,mtg=180,shg=150,bgbv=1643,iso=225,cnv2,hdr0
+[02:55:21.273] RX< [0m[7] [cam] [240673][me0][me_core_thread:322]ME out fid 330
+[02:55:21.273] RX< [R
+[02:55:21.273] RX< TMP][E] connect(192.168.1.99:1935) failed
+[02:55:21.273] RX< [6] [cam] [241455][tshell][sensor_stream_off:1143]sensor [1]: stream_off
+[02:55:21.273] RX< [6] [cam] [241456][tshell][sensor_stream_off:1172]sensor [1]: REG: 0x100, W:0x0.
+[02:55:21.273] RX< [6] [cam] [241457][tshell][sensor_stream_off:1174]sensor [1
+[02:55:21.284] RX< ]: REG: 0x100, R:0x0.
+[02:55:21.284] RX< [6] [cam] [241476][tshell][csc_prv_stop:893]ok! phys_id[1], phys_num[1], stop_type = 0
+[02:55:21.284] RX< [6] [cam] [241476][tshell][cam_stop:1017]preview stop ok! logic_id[0]
+[02:55:21.284] RX< [34m[cam stop] perf=21520(us)!
+[02:55:21.284] RX< [0m[6] [App Cam] cam stop success
+[02:55:21.284] RX< Total of
+[02:55:21.284] RX<  355 frames encoded, 5736958 bytes, max_workbuffer_used: 4960256 bytes
+[02:55:21.284] RX< [6] [App Cam] hevc_encoder_deinit success
+[02:55:21.284] RX< [7] [cam] [241482][tshell][cam_cpm_core_power_off:457]id,0 type,1 ret 0
+[02:55:21.284] RX< [6] [cam] [241482][sif0][sif_irq_proc:174]thread release cid,0
+[02:55:21.284] RX< [6] [ca
+[02:55:21.288] RX< m] [241483][tshell][cam_sif_mgr_deinit:316]X
+[02:55:21.288] RX< [6] [cam] [241483][tshell][cam_deinit:846]deinit ok! logic_id[0]
+[02:55:21.288] RX< [34m[cam deinit] perf=1287(us)!
+[02:55:21.288] RX< [0m[6] [App Cam] cam deinit success
+[02:55:21.288] RX< [6] [cam] [241484][tshell][sensor_close:1247]sensor [1]: close!
+[02:55:21.288] RX< [6] [cam]
+[02:55:21.291] RX<  [241486][tshell][cam_bm_core_deinit:136]X
+[02:55:21.291] RX< [6] [cam] [241486][me0][me_core_thread:367]thread release cid,0
+[02:55:21.291] RX< [6] [cam] [241487][tshell][cam_me_core_deinit:1502]X
+[02:55:21.291] RX< [6] [cam] [241487][fe0][fe_core_irq_proc:121]thread release cid,0
+[02:55:21.291] RX< [6] [cam] [241487][tshell][c
+[02:55:21.291] RX< am_fe_core_deinit:536]X
+[02:55:21.291] RX< [6] [cam] [241487][b_3a_sts][bayer_stats_core_irq_proc:193]thread release cid,0
+[02:55:21.291] RX< [6] [cam] [241488][tshell][cam_bayer_stats_core_deinit:512]X
+[02:55:21.291] RX< [6] [cam] [241488][b_ae0][a5_core_wrapper_task:315]thread release cid,0,algo,0
+[02:55:21.291] RX< [6] [cam] 
+[02:55:21.294] RX< [241489][tshell][bayer_ae_wrapper_deinit:204]X
+[02:55:21.294] RX< [6] [cam] [241489][atf0][a5_core_wrapper_task:315]thread release cid,0,algo,1
+[02:55:21.294] RX< [6] [cam] [241490][tshell][atf_wrapper_deinit:153]X
+[02:55:21.294] RX< [6] [cam] [241490][awb0][a5_core_wrapper_task:315]thread release cid,0,algo,2
+[02:55:21.294] RX< 
+[02:55:21.294] RX< [6] [cam] [241490][tshell][awb_wrapper_deinit:153]X
+[02:55:21.294] RX< [6] [cam] [241490][tshell][cam_5a_core_deinit:555]X
+[02:55:21.294] RX< [6] [cam] [241491][tshell][cam_5a_inf_deinit:149]X
+[02:55:21.294] RX< [6] [cam] [241491][qpc0][qpc_core_msg_proc:697]thread release cid,0
+[02:55:21.294] RX< [6] [cam] [241492][tshell][qpc
+[02:55:21.300] RX< _core_deinit:1330]X
+[02:55:21.300] RX< [6] [cam] [241492][tshell][cam_cpm_core_deinit:1107]X
+[02:55:21.300] RX< [6] [cam] [241492][tshell][csc_close:584]ok! phys_id[1], phys_num[1]
+[02:55:21.300] RX< [7] [cam] [241492][cer0][cer_recovery_proc:352]msg type = 254
+[02:55:21.300] RX< [6] [cam] [241493][cer0][cer_recovery_proc:454]th
+[02:55:21.300] RX< read release cid,0
+[02:55:21.300] RX< [6] [cam] [241493][tshell][cer_deinit:560]X
+[02:55:21.300] RX< [6] [cam] [241493][tshell][cam_close:750]close ok! logic_id[0]
+[02:55:21.300] RX< [34m[cam close] perf=9821(us)!
+[02:55:21.300] RX< [0m[6] [App Cam] cam close success
+[02:55:21.300] RX< [6] [cam] [241494][cpl0][cam_prelude_proc_routine:136]thread
+[02:55:21.316] RX<  release
+[02:55:21.316] RX< [6] [cam] [241495][tshell][cam_exit:551]exit ok!
+[02:55:21.316] RX< [34m[cam exit] perf=568(us)!
+[02:55:21.316] RX< [0m[6] [App Cam] cam exit success
+[02:55:21.316] RX< [RTMP] disconnected
+[02:55:21.316] RX< [RTMP] connect rtmp://192.168.1.99/live/cam failed
+[02:55:21.316] RX< msh /emmc>echo "__EVBTEST_END_100fed95__"
+[02:55:21.316] RX< __EVBTEST_END_100
+[02:55:23.318] RX< fed95__
+[02:55:23.318] RX< msh /emmc>
+[02:56:40.970] TX> rtmp_video_stop
+[02:56:40.970] TX> echo "__EVBTEST_END_7dd3a027__"
+[02:56:41.393] RX< rtmp_video_stop
+[02:56:41.393] RX< [RTMP] Not pushing.
+[02:56:41.393] RX< msh /emmc>echo "__EVBTEST_END_7dd3a027__"
+[02:56:41.393] RX< __EVBTEST_END_7dd3a027__
+[02:56:41.393] RX< msh /emmc>

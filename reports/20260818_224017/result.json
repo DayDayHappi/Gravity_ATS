@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 62.5,
+    "total_elapsed_ms": 133216
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 2023,
+      "message": "已联网，IP=192.168.1.101（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-18 22:41:06"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=192.168.1.101），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-18 22:41:06"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (SW-test-2.4G/192.168.1.101)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-18 22:41:06"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2001,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-18 22:41:08"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 6379,
+      "message": "FTP 已连接 192.168.1.101，/emmc 列出 4 项",
+      "detail": "",
+      "timestamp": "2026-08-18 22:41:15"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 7257,
+      "message": "JPEG OK 1323KB | 拍照成功，保存到 /emmc/PIC/20260101_000103_3065 | 已下载到 logs/20260818_224017/photos/auto_20260101_000103_3065_Image_20260101_000103_3065_0.jpg",
+      "detail": "含 6 个 jpg",
+      "timestamp": "2026-08-18 22:41:22"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 23202,
+      "message": "录像成功，文件 /emmc/VIDEO/20260101_000110_0321/Video_0321_0.h265，20468KB | 已下载到 logs/20260818_224017/videos/Video_0321_0.h265",
+      "detail": "/emmc/VIDEO/20260101_000110_0321/Video_0321_0.h265",
+      "timestamp": "2026-08-18 22:41:46"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "FAIL",
+      "elapsed_ms": 92354,
+      "message": "推流验证失败: ffprobe 退出码 1: rtmp://192.168.1.89/live/cam: Input/output error",
+      "detail": "{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'ok': False, 'reason': 'ffprobe 退出码 1: rtmp://192.168.1.89/live/cam: Input/output error'}",
+      "timestamp": "2026-08-18 22:43:18"
+    }
+  ],
+  "generated_at": "2026-08-18 22:43:18"
+}

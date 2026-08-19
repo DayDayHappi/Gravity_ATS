@@ -1,0 +1,43 @@
+[23:02:28.570] TX> 
+[23:02:29.471] RX< 
+[23:02:29.471] RX< msh /emmc>[7] [cam] [306348][me0][me_core_thread:359]ME out fid 6360
+[23:02:29.471] RX< [34m[AE] fid=6390,exp=10300,adg=300,Y=4551,mtg=180,shg=100,bgbv=1382,iso=300,cnv2,hdr0
+[23:02:29.471] RX< [0m[34m[b_ae0 proc] perf=970(us), max=2567(us)!
+[23:02:29.471] RX< [0m[34m[awb0 proc] perf=3815(us), max=6529(us
+[23:02:29.674] TX> echo "EVBTEST_HELLO"
+[23:02:29.674] TX> echo "__EVBTEST_END_2a5be74e__"
+[23:02:30.468] RX< )!
+[23:02:30.468] RX< [0mecho "EVBTEST_HELLO"
+[23:02:30.468] RX< EVBTEST_HELLO
+[23:02:30.468] RX< msh /emmc>echo "__EVBTEST_END_2a5be74e__"
+[23:02:30.468] RX< __EVBTEST_END_2a5be74e__
+[23:02:30.468] RX< msh /emmc>[RTMP] f_index = 6390, f_len = 16116
+[23:02:30.468] RX< [7] [cam] [307348][me0][me_core_thread:359]ME out fid 6390
+[23:02:30.468] RX< [34m[AE] fid=6420,exp=10330,adg=300,Y=45
+[23:02:30.672] TX> cd /
+[23:02:30.672] TX> echo "__EVBTEST_END_19dc2cf7__"
+[23:02:31.466] RX< 45,mtg=180,shg=100,bgbv=1377,iso=300,cnv2,hdr0
+[23:02:31.466] RX< [0mcd /
+[23:02:31.466] RX< msh />echo "__EVBTEST_END_19dc2cf7__"
+[23:02:31.466] RX< __EVBTEST_END_19dc2cf7__
+[23:02:31.466] RX< msh />[7] [cam] [308348][me0][me_core_thread:359]ME out fid 6420
+[23:02:31.466] RX< [34m[AE] fid=6450,exp=10380,adg=300,Y=4568,mtg=180,shg=100,bgbv=1377,is
+[23:02:31.669] TX> dfs_video_stop
+[23:02:31.669] TX> echo "__EVBTEST_END_4f756453__"
+[23:02:32.470] RX< o=300,cnv2,hdr0
+[23:02:32.470] RX< [0mdfs_video_stop
+[23:02:32.470] RX< [6] [App Dfs] Please start recording the video first.
+[23:02:32.470] RX< msh />echo "__EVBTEST_END_4f756453__"
+[23:02:32.470] RX< __EVBTEST_END_4f756453__
+[23:02:32.470] RX< msh />[7] [cam] [309348][me0][me_core_thread:359]ME out fid 6450
+[23:02:32.470] RX< [34m[AE] fid=6480,exp=10380,adg=300,Y=
+[23:02:32.789] RX< 4569,mtg=180,shg=100,bgbv=1377,iso=300,cnv2,hdr0
+[23:02:32.789] RX< [0m[34m[b_ae0 proc] perf=1086(us), max=3335(us)!
+[23:02:32.789] RX< [0m[34m[awb0 proc] perf=3711(us), max=4108(us)!
+[23:02:32.789] RX< [0m[34m[ME INTP]fid=6480, shutter=10380, perf=6(us), max=984(us)!
+[23:02:32.789] RX< [0m[RTMP] f_index = 6480, f_len = 13
+[23:02:33.849] RX< 884
+[23:02:33.849] RX< [7] [cam] [310348][me0][me_core_thread:359]ME out fid 6480
+[23:02:33.849] RX< [34m[AE] fid=6510,exp=10380,adg=300,Y=4568,mtg=180,shg=100,bgbv=1377,iso=300,cnv2,hdr0
+[23:02:33.849] RX< [0m[7] [cam] [311348][me0][me_core_thread:359]ME out fid 6510
+[23:02:33.849] RX< [34m[awb0 proc] perf=7037(us), max=7037(u

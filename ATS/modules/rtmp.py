@@ -133,7 +133,7 @@ class RtmpModule(TestModule):
 
         timer = Timer().start()
         url = self.config.get("stream_url", "rtmp://{pc_ip}/live/cam").format(pc_ip=pc_ip)
-        duration = int(self.config.get("stream_duration", 10))
+        duration = int(self.config.get("stream_duration", 600))
 
         logger.step(f"  RTMP 推流测试: {url} / {duration}s")
 
@@ -149,6 +149,7 @@ class RtmpModule(TestModule):
         )
 
         # 4. 等推流上线（给 EVB 建连 + 首帧时间）
+        logger.info("推流命令已下发，等待 EVB 建连上线...")
         time.sleep(3.0)
 
         # 5. 画面确认：优先在独立终端窗口跑 ffplay（窗口生命周期独立，用户可从容看画面）。
@@ -173,25 +174,30 @@ class RtmpModule(TestModule):
         #    ★ 必须在 rtmp_video_stop 之前探测——探测的是实时流。
         info = self._receiver.probe(url, attempts=5, interval=3.0)
 
-        # 6.5 延长 ffplay 展示窗口：探测到流后、stop 前多停留几秒供人眼确认。
-        #     大分辨率首帧解码慢，延长展示让窗口有足够时间出画面。
-        #     仅当流已探测到且 ffplay 已启动时才停留（失败则尽快 stop 清理）。
-        try:
-            show = float(self.config.get("ffplay_show_duration", 5))
-        except (TypeError, ValueError):
-            show = 5.0
-        if info.get("ok") and show > 0 and self._ffplay_active:
-            logger.info(f"ffplay 展示窗口保持 {show:.0f}s 供人眼确认画面...")
-            time.sleep(show)
+        # 7. 探测到流后，保持推流 stream_duration 秒（供长时间观察/压测）。
+        #    ffplay 用独立终端窗口启动，跟随流播放；用户可随时手动关闭 ffplay 窗口，
+        #    不影响脚本与判据（窗口生命周期独立于脚本）。仅探测成功才保持推流，
+        #    失败则尽快 stop 清理。长等待期间按进度打印，避免误以为脚本卡住。
+        if info.get("ok") and duration > 0:
+            logger.info(f"推流保持 {duration}s（ffplay 画面可手动关闭，不影响测试）...")
+            waited = 0
+            progress_step = 30  # 每 30s 打印一次进度，让人知道脚本仍在运行
+            while waited < duration:
+                chunk = min(progress_step, duration - waited)
+                time.sleep(chunk)
+                waited += chunk
+                logger.info(f"  推流已保持 {waited}/{duration}s ...")
+        elif not info.get("ok"):
+            logger.info("推流探测失败，跳过保持阶段，直接停止推流...")
 
-        # 7. 停止推流（exec_async 容忍刷屏）
+        # 8. 停止推流（exec_async 容忍刷屏）
         console.exec_async(
             "rtmp_video_stop",
             expect=r"rtmp_video_stop|stop|RTMP",
             result_timeout=8.0,
         )
 
-        # 8. 判据：ffprobe 探测到流
+        # 9. 判据：ffprobe 探测到流
         if info.get("ok"):
             res = self._pass(f"推流验证通过: {info['reason']}")
         else:
@@ -210,7 +216,8 @@ class RtmpModule(TestModule):
         ffplay_abs = os.path.abspath(self._ffplay_path)
         script = (
             f'echo "RTMP 画面确认: {url}"; '
-            f'"{ffplay_abs}" -x 480 -y 360 "{url}"; '
+            f'"{ffplay_abs}" -rtmp_live live -rtmp_buffer 0 -fflags nobuffer '
+            f'-flags low_delay -framedrop -sync ext "{url}"; '
             f'echo; echo "== ffplay 已退出，按回车关闭窗口 =="; read'
         )
         try:
@@ -235,8 +242,18 @@ class RtmpModule(TestModule):
                 self._ffplay_log = open(os.path.join(log_dir, "ffplay.log"), "wb")
                 ffplay_err = self._ffplay_log
             self._ffplay_proc = subprocess.Popen(
-                [self._ffplay_path, "-rw_timeout", "3000000", "-x", "480", "-y", "360", url],
-                stdout=subprocess.DEVNULL, stderr=ffplay_err,
+                [
+                    self._ffplay_path,
+                    "-rtmp_live", "live",
+                    "-rtmp_buffer", "0",
+                    "-fflags", "nobuffer",
+                    "-flags", "low_delay",
+                    "-framedrop",
+                    "-sync", "ext",
+                    url,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=ffplay_err,
                 preexec_fn=os.setsid,
             )
             logger.info(f"ffplay 画面确认已启动 (pid={self._ffplay_proc.pid})")

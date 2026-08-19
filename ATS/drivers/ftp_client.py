@@ -6,7 +6,11 @@
 - 上传（验证双向通路）
 
 所有操作带重试：网络抖动/服务未完全就绪时重连重试，避免偶发失败误判。
-被动模式（PASV）默认开启，跨 NAT 友好；可配置关闭走主动模式。
+
+连接模型：板子端 FTP 服务空闲约 3s 会断开会话，故不缓存/复用旧连接；每次
+下载前都重新 connect()（新 socket -> 重新登录 -> cwd 根目录）。该 FTP 只支持
+主动模式（PORT）：每次传输由 ftplib 重新 makeport() 起一个新数据端口，让
+服务器主动连回，天然避免旧端口 TIME_WAIT 复用失败。
 """
 import os
 import time
@@ -44,14 +48,27 @@ class FtpClient:
     # ---------- 连接 ----------
 
     def connect(self) -> None:
-        """连接并登录 FTP，失败按 retry 重试。"""
+        """连接并登录 FTP，失败按 retry 重试。
+
+        每次调用都是与上一次完全独立的新连接：新 socket -> connect(读欢迎信息，
+        ftplib 内部 getresp() 已读净，不留缓冲) -> USER/PASS 登录 -> 主动模式 ->
+        cwd 根目录（恢复工作目录到已知基线，后续按绝对路径操作）。
+        板子 FTP 会话空闲一段时间会被服务端断开，调用方不应假设旧连接仍然存活，
+        需要时直接调用本方法重连，而不是复用/探测旧连接。
+        """
         last_err = None
+        # 若已存在旧连接（同一对象复用），先关闭避免泄漏旧 socket。
+        self._safe_close()
         for attempt in range(1, self.retry + 1):
             try:
                 ftp = FTP()
                 ftp.connect(self.host, self.port, timeout=self.timeout)
                 ftp.login(self.user, self.password)
                 ftp.set_pasv(self.pasv)
+                try:
+                    ftp.cwd("/")
+                except Exception:
+                    pass
                 self._ftp = ftp
                 logger.debug(f"FTP 已连接 {self.host}:{self.port} (尝试 {attempt})")
                 return
@@ -207,6 +224,12 @@ class FtpClient:
                  retries: int = 5) -> bool:
         """从板子复制文件到本地（二进制下载，支持断点续传）。
 
+        板子 FTP 会话空闲超过约 3s 会被服务端断开，不能假设调用前的旧连接
+        还活着。每次下载开始时都先重新 connect()（全新独立的控制连接：新
+        socket -> 重新登录 -> cwd 根目录），基于这条新连接查大小、发起传输；
+        续传重试同样重新 connect()，不复用可能已死的旧连接。数据连接（主动
+        模式 PORT）由 ftplib 在每次实际传输时自动重新协商，天然使用新端口。
+
         固件 FTP 传大文件易卡死。用全局 socket 超时使卡死的 recv 抛异常（不无限阻塞），
         失败后用 REST 命令断点续传（从已下载位置继续，不从头）。多次续传可下完大文件。
 
@@ -220,10 +243,16 @@ class FtpClient:
             True 下载成功（本地 >= 远端）；False 失败/不完整（保留部分文件）。
         """
         import socket as _socket
-        total = self.size(remote_path)
         old_timeout = _socket.getdefaulttimeout()
         _socket.setdefaulttimeout(timeout)
         try:
+            # 独立于此前任何操作，先建一条全新连接用于本次下载
+            try:
+                self.connect()
+            except FtpError as e:
+                logger.warn(f"下载前建连失败: {e}")
+                return False
+            total = self.size(remote_path)
             for attempt in range(1, retries + 1):
                 if self._ftp is None:
                     try:
@@ -250,7 +279,7 @@ class FtpClient:
                 except Exception as e:
                     logger.warn(f"下载异常(尝试{attempt}/{retries})，已传"
                                 f"{os.path.getsize(local_path)//1024 if os.path.exists(local_path) else 0}KB: {e}")
-                # 连接已不可用，重连后续传
+                # 连接已不可用，重连（全新会话）后续传
                 self._safe_close()
                 try:
                     self.connect()

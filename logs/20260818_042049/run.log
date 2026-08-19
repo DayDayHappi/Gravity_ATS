@@ -1,0 +1,39 @@
+[04:20:49.295] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260818_042049
+[04:20:49.295] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[04:20:49.296] [INFO] 开始自动探测 EVB 串口，候选端口 ['/dev/ttyUSB1']，候选波特率 [2000000, 250000, 115200, 921600]
+[04:20:49.296] [DEBUG] 探测 /dev/ttyUSB1 @ 2000000 ...
+[04:20:51.607] [INFO]   命中 EVB 指纹: /dev/ttyUSB1 @ 2000000
+[04:20:51.608] [INFO] 探测到 EVB: /dev/ttyUSB1 @ 2000000
+[04:20:51.611] [INFO] 串口已打开: /dev/ttyUSB1 @ 2000000 bps
+[04:20:53.613] [INFO] EVB 已就绪
+[04:20:55.617] [DEBUG] 串口自检通过
+[04:20:55.617] [INFO] 预清理板子状态...
+[04:21:01.837] [INFO] 扫描 WiFi 网络...
+[04:21:47.670] [ERROR] WiFi 连接失败: 期望结果未出现(30.0s): Got IP address\s*:\s*([0-9.]+)
+[04:21:47.670] [ERROR] 输出: wifi join SW-test-2.4G tuf@3600
+[I/WLAN.mgnt] wifi is connect ssid:SW-test-2.4G
+msh />echo "__EVBTEST_END_31a787c5__"
+__EVBTEST_END_31a787c5__
+msh />
+[04:21:47.670] [WARN] WiFi 交互连接失败，将依赖 wifi_join 用例连接
+[04:21:47.671] [INFO] 本次执行模块顺序: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
+[04:21:47.671] >>> 执行模块: wifi_check
+[04:21:49.694] [PASS] wifi_check (2022ms) - 已联网，IP=192.168.1.101（跳过 wifi scan/join）
+[04:21:49.694] >>> 执行模块: wifi_scan
+[04:21:49.694] [SKIP] wifi_scan (0ms) - WiFi 已连接（IP=192.168.1.101），跳过扫描测试
+[04:21:49.694] >>> 执行模块: wifi_join
+[04:21:49.694] [SKIP] wifi_join (0ms) - WiFi 已连接 (SW-test-2.4G/192.168.1.101)，跳过 join 测试
+[04:21:49.694] >>> 执行模块: emmc
+[04:21:51.696] [PASS] emmc (2001ms) - 已进入 /emmc（自动挂载）
+[04:21:51.696] >>> 执行模块: ftp
+[04:22:06.899] [FAIL] ftp (0ms) - FTP 服务启动失败（未等到 service launched）
+[04:22:06.900] [SKIP] photo (0ms) - 依赖模块未通过: ['ftp']
+[04:22:06.900] [SKIP] video (0ms) - 依赖模块未通过: ['ftp']
+[04:22:06.900] [INFO] 自动检测到 PC IP: 192.168.1.89
+[04:22:06.900] >>> 执行模块: rtmp
+[04:22:06.900] [INFO] 检查 RTMP 服务端 (nginx-rtmp) 是否监听 :1935
+[04:22:06.901] [INFO] nginx-rtmp 就绪，RTMP 监听 :1935
+[04:22:06.901]   RTMP 推流测试: rtmp://192.168.1.89/live/cam / 600s
+[04:22:10.403] [INFO] 已在独立终端窗口启动 ffplay 画面确认 (/usr/bin/gnome-terminal)
+[04:22:10.403] [INFO] ffprobe 探测 RTMP 流: rtmp://192.168.1.89/live/cam
+[04:22:41.429] [INFO] 推流保持 600s（ffplay 画面可手动关闭，不影响测试）...

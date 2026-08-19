@@ -29,6 +29,11 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-18 | [20260818_2202_ffplay低延迟参数与模块计时进度日志.md](20260818_2202_ffplay低延迟参数与模块计时进度日志.md) | ffplay 参数换成低延迟直播(-rtmp_live live -rtmp_buffer 0 -fflags nobuffer -flags low_delay -framedrop -sync ext)，URL 复用运行时 pc_ip 不写死；runner 用 time.monotonic+try/finally 给各模块开始/结束计时打印；rtmp 600s 推流改每 30s 打进度防误判卡住 |
+| 2026-08-18 | [20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md](20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md) | rtmp 推流时长与 ffplay 展示都改 10 分钟(stream_duration=600)；原 stream_duration 是死配置、真正时长藏在 ffplay_show_duration，统一到 stream_duration 控制推流持续，删除冗余 ffplay_show_duration；ffplay 独立窗口跟随流播放、用户可手动关 |
+| 2026-08-17 | [20260817_2311_ftp冷启动必须等service_launched再connect.md](20260817_2311_ftp冷启动必须等service_launched再connect.md) | 删预清理后 ftp 冷启动：init success 到 service launched 有约 3.4s 延迟，脚本只等 init success 就 connect 撞上未 listen 窗口 Connection refused；改 exec_async 等 service launched 再连 |
+| 2026-08-17 | [20260817_2241_ftp每次下载前重建连接_应对3s空闲超时.md](20260817_2241_ftp每次下载前重建连接_应对3s空闲超时.md) | 板子 FTP 服务端 3s 空闲即断会话，旧代码缓存复用连接导致拍照/录像后下载失败；改为每次下载前重建独立连接(connect 恢复工作目录+关旧 socket)，ensure_ftp 不再探测旧连接，数据连接由 ftplib 主动模式每次换新端口 |
+| 2026-08-17 | [20260817_0628_ftp_server只启动一次去除重复重启噪音.md](20260817_0628_ftp_server只启动一次去除重复重启噪音.md) | main.py 预清理 + ensure_ftp(force=True) 都会重发 ftp_server，叠加起来多次触发固件崩溃循环刷屏；改为全程只在 ftp 模块启动一次，ensure_ftp 只重连 PC 端客户端；wifi join 成功后加 sleep(5) 等状态稳定 |
 | 2026-08-17 | [20260817_0309_rtmp移除ftp_server前置压制.md](20260817_0309_rtmp移除ftp_server前置压制.md) | rtmp 模块删除 run() 里 ensure_ftp(force=True) 前置调用：rtmp 不依赖 FTP 且重发 ftp_server 会加剧固件 FTP 崩溃循环/线程堆积拖慢推流 |
 | 2026-08-17 | [20260817_0248_ffplay画面确认改用独立终端窗口播放.md](20260817_0248_ffplay画面确认改用独立终端窗口播放.md) | ffplay 画面确认改用 gnome-terminal 独立终端窗口播放(去 -rw_timeout 耐心等关键帧)；窗口生命周期独立于脚本，teardown 不再 kill |
 | 2026-08-17 | [20260817_0203_RTMP探测失败_板子编码慢关键帧稀疏加大超时.md](20260817_0203_RTMP探测失败_板子编码慢关键帧稀疏加大超时.md) | rtmp 探测失败根因是板子推1080p编码慢+FTP刷屏抢CPU→关键帧IDR稀疏(600帧/57s一个)；ffprobe -rw_timeout 3s→15s、analyzeduration/probesize放宽、重试加大，耐心等IDR |

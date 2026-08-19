@@ -1,0 +1,60 @@
+[03:44:29.046] TX> 
+[03:44:30.048] TX> 
+[03:44:31.047] RX< 
+[03:44:31.047] RX< msh />
+[03:44:31.047] RX< msh />
+[03:44:31.250] TX> echo "EVBTEST_HELLO"
+[03:44:31.250] TX> echo "__EVBTEST_END_8a472bc0__"
+[03:44:33.049] RX< echo "EVBTEST_HELLO"
+[03:44:33.049] RX< EVBTEST_HELLO
+[03:44:33.049] RX< msh />echo "__EVBTEST_END_8a472bc0__"
+[03:44:33.049] RX< __EVBTEST_END_8a472bc0__
+[03:44:33.049] RX< msh />
+[03:44:33.253] TX> cd /
+[03:44:33.253] TX> echo "__EVBTEST_END_b2cf5738__"
+[03:44:35.052] RX< cd /
+[03:44:35.052] RX< msh />echo "__EVBTEST_END_b2cf5738__"
+[03:44:35.052] RX< __EVBTEST_END_b2cf5738__
+[03:44:35.052] RX< msh />
+[03:44:35.255] TX> dfs_video_stop
+[03:44:35.255] TX> echo "__EVBTEST_END_26bcc342__"
+[03:44:37.054] RX< dfs_video_stop
+[03:44:37.054] RX< [6] [App Dfs] Please start recording the video first.
+[03:44:37.054] RX< msh />echo "__EVBTEST_END_26bcc342__"
+[03:44:37.054] RX< __EVBTEST_END_26bcc342__
+[03:44:37.054] RX< msh />
+[03:44:38.893] RX< wifi scan
+[03:44:38.893] RX<              SSID                      MAC            security    rssi chn Mbps
+[03:44:38.893] RX< ------------------------------- -----------------  -------------- ---- --- ----
+[03:44:38.893] RX< SW-test-2.4G                    f8:ce:21:8b:a6:fc  WPA2_AES_PSK   4     13  600
+[03:44:38.893] RX< grav
+[03:44:38.994] RX< ityXR                       f4:e4:51:83:d5:50  WPA2_AES_PSK   -54   13  144
+[03:44:38.994] RX< CU_dvOp                         ba:a1:4a:0d:e4:51  WPA2_MIXED_PSK -66    1  144
+[03:44:38.994] RX< ftp_hw_2_4g                     e2:19:01:17:87:d1  WPA2_AES_PSK   -61    1  144
+[03:44:38.994] RX< ftp_test_2_4G    
+[03:44:39.047] TX> wifi scan
+[03:44:39.047] TX> echo "__EVBTEST_END_7cf211e9__"
+[03:44:39.361] RX<                62:ed:11:f2:02:a7  WPA2_AES_PSK   -41    5  144
+[03:44:39.361] RX< DIRECT-9Q-客厅电视          66:6b:e7:66:5c:be  WPA2_AES_PSK   -46   11  144
+[03:44:39.361] RX< GTS_24G                         a4:a9:30:fb:94:34  WPA2_AES_PSK   -60   11  288
+[03:44:39.361] RX<  Gwireless                    
+[03:44:39.461] RX<   f4:e4:51:83:d5:51  WPA2_AES_PSK   -53   13  144
+[03:44:39.461] RX< G-Demo                          f4:e4:51:83:d5:52  WPA2_AES_PSK   -53   13  144
+[03:44:39.461] RX< MTK_CHEETAH_AP_2.4G             e0:ef:02:71:f5:71  OPEN           -59   13  300
+[03:44:39.461] RX< gravityXR                       f4:e4:51:83
+[03:44:40.693] RX< :d5:b0  WPA2_AES_PSK   -69    1  144
+[03:44:40.693] RX< HUAWEI-X1E3WU                   42:17:a3:f1:cf:49  WPA2_AES_PSK   -47    1  144
+[03:44:40.693] RX< gravityXR                       f4:e4:51:83:d3:10  WPA2_AES_PSK   -55   11  144
+[03:44:40.693] RX<  Gwireless                      f4:e4:51:83:d3:11  WPA2_
+[03:44:42.696] RX< AES_PSK   -53   11  144
+[03:44:42.696] RX< G-Demo                          f4:e4:51:83:d3:12  WPA2_AES_PSK   -54   11  144
+[03:44:42.696] RX< msh />echo "__EVBTEST_END_7cf211e9__"
+[03:44:42.696] RX< __EVBTEST_END_7cf211e9__
+[03:44:42.696] RX< msh />
+[03:44:56.259] TX> wifi join SW-test-2.4G tuf@3600
+[03:44:56.259] TX> echo "__EVBTEST_END_5f9e020c__"
+[03:44:56.709] RX< wifi join SW-test-2.4G tuf@3600
+[03:44:56.709] RX< [32m[I/WLAN.mgnt] wifi is connect ssid:SW-test-2.4G[0m
+[03:44:56.709] RX< msh />echo "__EVBTEST_END_5f9e020c__"
+[03:44:56.709] RX< __EVBTEST_END_5f9e020c__
+[03:44:56.709] RX< msh />

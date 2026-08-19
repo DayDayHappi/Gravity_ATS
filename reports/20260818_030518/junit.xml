@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="1" errors="0" skipped="4" time="38.32">
+  <testcase name="wifi_check" classname="wifi_check" time="2.02">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="0.00">
+    <skipped message="WiFi 已连接（IP=192.168.1.101），跳过扫描测试" />
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="0.00">
+    <skipped message="WiFi 已连接 (未知SSID/192.168.1.101)，跳过 join 测试" />
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="2.00">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="0.00">
+    <failure message="FTP 服务启动失败（未等到 service launched）"><![CDATA[ftp_server
+
+[FTP] Ftp server init success!!!
+msh /emmc>echo "__EVBTEST_END_01ae93c2__"
+__EVBTEST_END_01ae93c2__
+msh /emmc>[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+[W/ftp] service go wrong, now wait restarting...
+]]></failure>
+  </testcase>
+  <testcase name="photo" classname="photo" time="0.00">
+    <skipped message="依赖模块未通过: ['ftp']" />
+  </testcase>
+  <testcase name="video" classname="video" time="0.00">
+    <skipped message="依赖模块未通过: ['ftp']" />
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="34.30">
+  </testcase>
+</testsuite>
