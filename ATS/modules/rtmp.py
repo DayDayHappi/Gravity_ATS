@@ -1,17 +1,21 @@
-"""RTMP 推流模块：EVB 推流 + PC 端 ffprobe 实时探测 + 可选 ffplay 画面确认。
+"""RTMP 推流模块：EVB 推流 + PC 端 ffprobe 实时探测 + RTMP 持续 heartbeat 检测 + 可选 ffplay。
 
 流程：
 - setup: 确定 pc_ip（自动检测或配置），创建 RtmpReceiver（ffprobe）+ ffplay 句柄
-- run: 前置压制 FTP 崩溃刷屏 -> 检查 nginx-rtmp 就绪 -> ``rtmp_video_start <url>``
-       (exec_async，不依赖哨兵) -> 等推流上线 -> 可选起 ffplay 看画面 ->
-       ffprobe 实时探测流（★ 主判据）-> ``rtmp_video_stop`` -> 停 ffplay
-- teardown: 停止 ffplay 进程（兜底）
+- run: 检查 nginx-rtmp 就绪 -> ``rtmp_video_start <url>`` (exec_async，不依赖哨兵) ->
+       等推流上线 -> 可选起 ffplay 看画面 -> ffprobe 实时探测流（★ 主判据） ->
+       RTMPMonitor 持续检测 heartbeat（[RTMP] f_index，超时则 FAIL）-> ``rtmp_video_stop``
+- teardown: 停 ffplay 进程 + 移除 monitor listener（兜底）
 
 只依赖 WiFi（推流需网络），不依赖 FTP。
 
 推流命令用 exec_async 而非 exec_sync：photo/video 后固件 FTP 常陷入
 "service go wrong" 崩溃循环刷屏，会打乱 exec_sync 的哨兵定界导致必败。
 exec_async 不依赖哨兵，真正成败判据交给 PC 端 ffprobe 是否探测到流。
+
+持续运行检测：用板端 ``[RTMP] f_index`` 日志作 heartbeat（代表编码+发送仍在进行），
+由独立的 RTMPMonitor 订阅串口原始数据、周期性检查超时，捕捉"推流中途异常停止"
+（如 ImuThread 崩溃导致画面卡住），避免干等剩余时长误判 PASS。
 
 ★ 关键时序：ffprobe 探测必须在 ``rtmp_video_stop`` **之前**——探测的是实时流，
 stop 后流断开探测必失败。这与 MediaMTX 时代"先 stop 再 verify 存盘文件"相反。
@@ -23,9 +27,10 @@ import subprocess
 
 from .base import TestModule, register
 from ..core import logger
-from ..core.result import Timer
+from ..core.result import Timer, TestResult
 from ..drivers.rtmp_receiver import RtmpReceiver
 from ..drivers.rtmp_server import RtmpServer, RtmpServerError
+from .rtmp_monitor import RTMPMonitor, TIMEOUT
 
 
 def _detect_pc_ip(target_ip: str) -> str:
@@ -94,6 +99,8 @@ class RtmpModule(TestModule):
         self._ffplay_log = None        # ffplay stderr 日志文件句柄（仅 subprocess 直启方式用）
         self._ffplay_in_terminal = False  # 是否用独立终端窗口启动 ffplay
         self._ffplay_active = False    # 本次是否成功启动了 ffplay（终端或直启）
+        self._monitor = None           # RTMP 持续 heartbeat 检测器
+        self._monitor_cb = None        # 已注册到 console 的 listener 回调（用于 teardown 兜底移除）
 
     def setup(self, ctx, console):
         evb_ip = getattr(ctx, "evb_ip", None)
@@ -138,13 +145,15 @@ class RtmpModule(TestModule):
         logger.step(f"  RTMP 推流测试: {url} / {duration}s")
 
         # 3. EVB 开始推流（先于探测启动）。
-        # 用 exec_async：发命令后直接等推流相关输出，不依赖被 FTP 刷屏打乱的
-        # 哨兵定界。expect 用宽松正则仅用于尽快返回，不作为成败判据——真正判据
-        # 是 PC 端 ffprobe 探测到流。即便 exec_async 没匹配到也不立即 FAIL，留给
-        # ffprobe 兜底。注：必须先推流后探测——ffprobe 连无流的源会立即 I/O error。
+        # 用 exec_async：只发命令、不发哨兵，直接等业务状态字符串（DUT 侧开始推流）。
+        # expect 匹配 "publish ready / Push Start" 表示 DUT 侧 RTMP 已上线，不再用
+        # 命令回显（"rtmp_video_start"）当匹配——命令回显 ≠ 业务成功。但 exec_async
+        # 的匹配结果仍不作为 RTMP 最终判据，最终判据是 PC 端 ffprobe 探测到流。
+        # 即便 exec_async 没匹配到也不立即 FAIL，留给 ffprobe 兜底。
+        # 注：必须先推流后探测——ffprobe 连无流的源会立即 I/O error。
         console.exec_async(
             f"rtmp_video_start {url}",
-            expect=r"rtmp_video_start|RTMP|push|start",
+            expect=r"publish ready|Push Start",
             result_timeout=8.0,
         )
 
@@ -174,37 +183,87 @@ class RtmpModule(TestModule):
         #    ★ 必须在 rtmp_video_stop 之前探测——探测的是实时流。
         info = self._receiver.probe(url, attempts=5, interval=3.0)
 
-        # 7. 探测到流后，保持推流 stream_duration 秒（供长时间观察/压测）。
-        #    ffplay 用独立终端窗口启动，跟随流播放；用户可随时手动关闭 ffplay 窗口，
-        #    不影响脚本与判据（窗口生命周期独立于脚本）。仅探测成功才保持推流，
-        #    失败则尽快 stop 清理。长等待期间按进度打印，避免误以为脚本卡住。
+        # 7. 探测到流后，保持推流 stream_duration 秒，同时用 RTMPMonitor 持续检测
+        #    heartbeat（[RTMP] f_index）。ffplay 用独立终端窗口启动，跟随流播放，
+        #    用户可随时手动关闭，不影响判据。仅探测成功才保持推流，失败则尽快 stop。
+        #    超时无 heartbeat（板端推流异常停止）则提前 FAIL，不再干等剩余时长。
+        monitor = None
+        heartbeat_timeout = float(self.config.get("heartbeat_timeout", 30.0))
         if info.get("ok") and duration > 0:
-            logger.info(f"推流保持 {duration}s（ffplay 画面可手动关闭，不影响测试）...")
+            monitor = RTMPMonitor(timeout=heartbeat_timeout)
+            monitor.start()
+            self._monitor = monitor
+            self._monitor_cb = monitor.update
+            console.add_listener(self._monitor_cb)
+            logger.info(
+                f"推流保持 {duration}s（持续 heartbeat 检测，阈值 {heartbeat_timeout:.0f}s）..."
+            )
             waited = 0
-            progress_step = 30  # 每 30s 打印一次进度，让人知道脚本仍在运行
-            while waited < duration:
-                chunk = min(progress_step, duration - waited)
-                time.sleep(chunk)
-                waited += chunk
-                logger.info(f"  推流已保持 {waited}/{duration}s ...")
+            check_step = 1.0         # 每 1s 检查一次 heartbeat
+            progress_step = 30       # 每 30s 打印一次进度
+            next_progress = progress_step
+            try:
+                while waited < duration:
+                    time.sleep(check_step)
+                    waited += check_step
+                    if monitor.check_timeout():
+                        logger.error(
+                            f"RTMP heartbeat 超时（>{heartbeat_timeout:.0f}s 无 [RTMP] f_index），"
+                            f"推流异常停止，提前结束等待"
+                        )
+                        break
+                    if waited >= next_progress:
+                        logger.info(f"  推流已保持 {int(waited)}/{duration}s ...")
+                        next_progress += progress_step
+            finally:
+                console.remove_listener(self._monitor_cb)
+                self._monitor_cb = None
+                monitor.stop()
         elif not info.get("ok"):
             logger.info("推流探测失败，跳过保持阶段，直接停止推流...")
 
-        # 8. 停止推流（exec_async 容忍刷屏）
+        # 8. 停止推流（exec_async 只发命令不发哨兵，等业务状态字符串）
         console.exec_async(
             "rtmp_video_stop",
-            expect=r"rtmp_video_stop|stop|RTMP",
+            expect=r"Push Stop|Stop requested",
             result_timeout=8.0,
         )
 
-        # 9. 判据：ffprobe 探测到流
-        if info.get("ok"):
-            res = self._pass(f"推流验证通过: {info['reason']}")
-        else:
+        # 9. 判据：ffprobe 探测到流（主判据）+ RTMP 持续 heartbeat 无超时
+        if not info.get("ok"):
             res = self._fail(f"推流验证失败: {info.get('reason', '未知')}",
                              detail=str(info))
+        elif monitor is not None and monitor.get_status()["status"] == TIMEOUT:
+            res = TestResult(
+                name="rtmp", module="rtmp", status="FAIL",
+                message="RTMP 推流中途异常停止（heartbeat timeout）",
+                detail=self._fmt_monitor_detail(monitor.get_status()),
+            )
+        else:
+            msg = f"推流验证通过: {info['reason']}"
+            detail = ""
+            if monitor is not None:
+                st = monitor.get_status()
+                msg += f"，持续 {st['duration']:.0f}s 稳定"
+                detail = self._fmt_monitor_detail(st)
+            res = TestResult(name="rtmp", module="rtmp", status="PASS",
+                             message=msg, detail=detail)
         res.elapsed_ms = timer.elapsed_ms()
         return res
+
+    @staticmethod
+    def _fmt_monitor_detail(st: dict) -> str:
+        """把 RTMPMonitor 状态格式化为多行文本，写入 TestResult.detail 供 report 展示。"""
+        return "\n".join([
+            "RTMP Monitor Result:",
+            f"Status: {st['status']}",
+            f"Reason: {st['reason']}",
+            f"Start Time: {st['start_time']}",
+            f"Last Frame Time: {st['last_frame_time']}",
+            f"Timeout: {st['timeout']:.0f}s",
+            f"Duration: {st['duration']:.1f}s",
+            f"Frame Count: {st['frame_count']}",
+        ])
 
     def _launch_ffplay_terminal(self, url, terminal) -> bool:
         """在独立终端窗口启动 ffplay 播放画面。
@@ -264,6 +323,17 @@ class RtmpModule(TestModule):
             return False
 
     def teardown(self, ctx, console):
+        # 兜底移除 monitor listener（正常路径已在 run() 的 finally 移除；异常路径在此兜底）。
+        if self._monitor_cb is not None:
+            try:
+                console.remove_listener(self._monitor_cb)
+            except Exception:
+                pass
+            self._monitor_cb = None
+        if self._monitor is not None:
+            self._monitor.stop()
+            self._monitor = None
+
         # 停 ffplay：仅 subprocess 直启方式才需要 killpg（进程组 kill，防 SDL 残留）。
         # 独立终端窗口方式不杀（窗口生命周期独立，ffplay 流断后自退，用户自己关窗口）。
         if (not self._ffplay_in_terminal

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="VX100_EVB" tests="8" failures="1" errors="0" skipped="2" time="673.34">
+  <testcase name="wifi_check" classname="wifi_check" time="2.02">
+  </testcase>
+  <testcase name="wifi_scan" classname="wifi_scan" time="0.00">
+    <skipped message="WiFi 已连接（IP=192.168.1.101），跳过扫描测试" />
+  </testcase>
+  <testcase name="wifi_join" classname="wifi_join" time="0.00">
+    <skipped message="WiFi 已连接 (SW-test-2.4G/192.168.1.101)，跳过 join 测试" />
+  </testcase>
+  <testcase name="emmc" classname="emmc" time="2.00">
+  </testcase>
+  <testcase name="ftp" classname="ftp" time="6.41">
+  </testcase>
+  <testcase name="photo[auto]" classname="photo" time="7.43">
+  </testcase>
+  <testcase name="video" classname="video" time="371.88">
+  </testcase>
+  <testcase name="rtmp" classname="rtmp" time="283.60">
+    <failure message="RTMP 推流中途异常停止（heartbeat timeout）"><![CDATA[RTMP Monitor Result:
+Status: TIMEOUT
+Reason: RTMP heartbeat timeout（>30s 无 [RTMP] f_index）
+Start Time: 06:15:05
+Last Frame Time: 06:19:01
+Timeout: 30s
+Duration: 0.0s
+Frame Count: 71]]></failure>
+  </testcase>
+</testsuite>

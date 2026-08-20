@@ -29,6 +29,10 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-20 | [20260820_0414_RTMP推流持续性检测heartbeat机制与独立monitor模块.md](20260820_0414_RTMP推流持续性检测heartbeat机制与独立monitor模块.md) | 新增独立 RTMPMonitor 模块：用板端 [RTMP] f_index 作 heartbeat 持续检测推流稳定性，串口层只加原始数据 listener 不加业务逻辑；推流中途停止 5s 内判 FAIL，杜绝盲等 sleep 误判 PASS |
+| 2026-08-20 | [20260820_0206_串口同步异步命令执行机制改造_exec_async去哨兵.md](20260820_0206_串口同步异步命令执行机制改造_exec_async去哨兵.md) | 抽离统一 _write_safe；exec_async 不再发送哨兵只发命令等业务 expect；rtmp expect 从命令回显改为 publish ready/Push Start、Push Stop/Stop requested；哨兵与业务完成语义分离 |
+| 2026-08-20 | [20260820_0132_修复TX时间戳晚于RX的日志假象.md](20260820_0132_修复TX时间戳晚于RX的日志假象.md) | _write_cmd 的 TX 日志从分片循环后移到循环前：分片 sleep 会让 TX 时间戳后移到"发送完成"，晚于板子回显 RX 造成"先收后发"假象 |
+| 2026-08-19 | [20260819_0436_测试结束询问问题记录到logs_problem目录.md](20260819_0436_测试结束询问问题记录到logs_problem目录.md) | 测试结束询问用户本次问题，有输入则记录到 logs/problem/<时间戳>.log（回车=无问题不记录），EOFError 兜底防无人值守卡死 |
 | 2026-08-19 | [20260819_0231_录像模块拍摄与下载阶段日志及耗时.md](20260819_0231_录像模块拍摄与下载阶段日志及耗时.md) | video 模块加拍摄开始/结束、FTP 开始下载/下载完成日志及各自耗时，避免录像静默期和 FTP 大文件传输让人误判卡住 |
 | 2026-08-18 | [20260818_2202_ffplay低延迟参数与模块计时进度日志.md](20260818_2202_ffplay低延迟参数与模块计时进度日志.md) | ffplay 参数换成低延迟直播(-rtmp_live live -rtmp_buffer 0 -fflags nobuffer -flags low_delay -framedrop -sync ext)，URL 复用运行时 pc_ip 不写死；runner 用 time.monotonic+try/finally 给各模块开始/结束计时打印；rtmp 600s 推流改每 30s 打进度防误判卡住 |
 | 2026-08-18 | [20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md](20260818_0319_rtmp推流与ffplay改为10分钟可手动关闭.md) | rtmp 推流时长与 ffplay 展示都改 10 分钟(stream_duration=600)；原 stream_duration 是死配置、真正时长藏在 ffplay_show_duration，统一到 stream_duration 控制推流持续，删除冗余 ffplay_show_duration；ffplay 独立窗口跟随流播放、用户可手动关 |

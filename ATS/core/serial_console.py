@@ -2,8 +2,14 @@
 
 实现设计文档第 3 章：
 - **常驻读线程**：持续采集串口字节，全量写日志 + 喂环形缓冲，避免漏掉异步后台日志。
-- **哨兵机制**：发命令时附加 ``; echo <TOKEN>``，等 TOKEN 出现即定界命令结束，
-  解决 msh 提示符被后台日志/回显打碎粘连的问题（``msh />[32m...``、``msh />wifi scan``）。
+- **两种命令执行模型**：
+  - ``exec_sync``（同步命令，如 ifconfig / wifi scan / cd / cam_set）：
+    发「命令 + echo 哨兵」，等哨兵出现定界。哨兵在此只表示「前一条同步 Shell 命令已
+    返回」，解决 msh 提示符被后台日志/回显打碎粘连的问题
+    （``msh />[32m...``、``msh />wifi scan``）。
+  - ``exec_async``（异步命令，如 wifi join / dfs_capture_start / rtmp_video_start）：
+    **只发命令、不发哨兵**，直接等业务完成字符串（Got IP / Save Photo Successful）。
+    因为哨兵只能表示命令已返回、不能表示异步业务真正完成。
 - **自动探测**：未指定端口时扫描 ``/dev/ttyUSB*``+``/dev/ttyACM*``，按候选波特率
   逐个尝试，用 EVB 指纹（JX009 / msh /> / Some IC design company.cn Build）匹配。
 - **波特率回退**：默认 2000000 探不到时回退 [250000, 115200, 921600]。
@@ -67,8 +73,8 @@ class SerialConsole:
     """串口控制台：封装与 EVB msh 的命令-响应交互。
 
     线程模型：``open()`` 后启动一个常驻读线程，持续把串口字节写入
-    ``serial.log`` 并存入环形缓冲；``exec_sync``/``exec_async`` 从缓冲匹配哨兵/期望。
-    ``close()`` 停止线程。
+    ``serial.log`` 并存入环形缓冲；``exec_sync`` 从缓冲匹配哨兵，
+    ``exec_async`` 从缓冲匹配业务期望。``close()`` 停止线程。
     """
 
     def __init__(self, port, baudrate=2000000, timeout=2.0,
@@ -89,6 +95,10 @@ class SerialConsole:
         self._buffer = deque(maxlen=65536)
         self._buffer_lock = threading.Lock()
         self._cond = threading.Condition(self._buffer_lock)  # 缓冲有新数据时通知
+        # 原始数据监听器：读线程收到串口数据时回调（只通知原始文本，不做业务判断）。
+        # 供 RTMPMonitor 等独立检测模块订阅 heartbeat，串口层不感知具体业务。
+        self._listeners = set()
+        self._listeners_lock = threading.Lock()
 
     # ---------- 生命周期 ----------
 
@@ -145,6 +155,16 @@ class SerialConsole:
                 with self._cond:
                     self._buffer.append(text)
                     self._cond.notify_all()
+                # 通知原始数据监听器（只转发原始文本，不做任何业务/PASS/FAIL 判断）
+                if self._listeners:
+                    with self._listeners_lock:
+                        listeners = list(self._listeners)
+                    for cb in listeners:
+                        try:
+                            cb(text)
+                        except Exception:
+                            # 监听器异常不影响串口主流程
+                            pass
             except Exception as e:
                 if not self._stop_event.is_set():
                     logger.warn(f"串口读异常: {e}")
@@ -167,35 +187,48 @@ class SerialConsole:
         with self._cond:
             self._cond.notify_all()
 
+    # ---------- 原始数据订阅 ----------
+
+    def add_listener(self, callback):
+        """订阅串口原始数据事件。
+
+        ``callback(text)`` 在常驻读线程里被调用，参数是刚收到的解码文本（含 ANSI）。
+        串口层只负责转发原始数据，不做任何业务判断；监听器异常会被吞掉，不影响主流程。
+        """
+        with self._listeners_lock:
+            self._listeners.add(callback)
+
+    def remove_listener(self, callback):
+        """取消订阅。未订阅时静默忽略。"""
+        with self._listeners_lock:
+            self._listeners.discard(callback)
+
     # ---------- 底层发送 ----------
 
-    def _write(self, text: str):
-        if self._ser is None:
-            raise SerialError("串口未打开")
-        data = text.encode("utf-8")
-        with self._lock:
-            self._ser.write(data)
-            self._ser.flush()
-        logger.log_serial("TX>", text.rstrip("\n"))
+    def _write_safe(self, text: str):
+        """统一安全发送：把给定文本（含换行）分片写入串口，片间延时。
 
-    def _write_cmd(self, cmd: str, sentinel: str):
-        """分片写入「命令 + 哨兵」，每片后延时，避免板子串口接收缓冲溢出丢字节。
+        命令 + echo 哨兵（同步）或长命令（如 rtmp_video_start <url>）可能达几十字节，
+        板子串口接收环形缓冲（RT_SERIAL_RB_BUFSZ，默认约 64 字节）偏小，且 FTP 崩溃
+        刷屏时板子 CPU 忙、来不及搬移接收字节，一次性写入会溢出导致命令被截断
+        （"command not found"）。分片后每片字节数远小于缓冲，片间延时给板子搬移时间。
 
-        与 ``_write`` 的区别：命令 + echo 哨兵可能达几十字节，板子串口接收环形缓冲
-        （RT_SERIAL_RB_BUFSZ，默认约 64 字节）偏小，且 FTP 崩溃刷屏时板子 CPU 忙、
-        来不及搬移接收字节，一次性写入会溢出导致命令被截断（"command not found"）。
-        分片后每片字节数远小于缓冲，且片间延时给板子搬移时间。
+        本方法不关心业务语义（同步/异步、是否带哨兵），只负责可靠发送：
+        同步（exec_sync）传入「命令 + echo 哨兵」，异步（exec_async）只传入「命令」。
         """
         if self._ser is None:
             raise SerialError("串口未打开")
-        data = (f'{cmd}\necho "{sentinel}"\n').encode("utf-8")
+        # 先记 TX 日志（开始发送时刻），再分片写入。若放在分片循环之后，TX 时间戳
+        # 会记成"最后一片写完"的时刻，晚于板子回显（RX）的实时时间戳，导致
+        # serial.log 里同一命令的 TX 反而晚于 RX，造成"先收后发"的假象。
+        logger.log_serial("TX>", text.rstrip("\n"))
+        data = text.encode("utf-8")
         for i in range(0, len(data), _WRITE_CHUNK_BYTES):
             chunk = data[i:i + _WRITE_CHUNK_BYTES]
             with self._lock:
                 self._ser.write(chunk)
                 self._ser.flush()
             time.sleep(_WRITE_CHUNK_DELAY)
-        logger.log_serial("TX>", f'{cmd}\necho "{sentinel}"')
 
     def send_raw(self, data):
         """裸发送（如复位后发回车唤醒 shell）。"""
@@ -260,7 +293,10 @@ class SerialConsole:
 
     def exec_sync(self, cmd: str, expect=None, timeout: float = 10.0,
                   error_on_no_sentinel: bool = True) -> Response:
-        """执行同步命令：发 ``cmd; echo <TOKEN>``，等哨兵出现定界。
+        """执行同步命令：发 ``cmd\necho <TOKEN>``，等哨兵出现定界。
+
+        哨兵在此处的含义仅表示「前一条同步 Shell 命令已经返回」，不表示任何异步业务
+        完成。适合 ifconfig / wifi scan / cd / cam_set 这类命令本身执行完才返回 shell 的。
 
         Args:
             cmd: 要发送的命令（不含换行）。
@@ -277,9 +313,9 @@ class SerialConsole:
         snapshot = self._buffer_text()
         # 该 msh 不支持 `;` 分隔命令，改用换行分隔：先发 cmd，再发 echo "TOKEN"
         # echo 必须带引号（固件 echo "string" 用法）。
-        # 用 _write_cmd 分片写入（命令+哨兵可能达几十字节，避免板子串口接收缓冲溢出）
+        # 用 _write_safe 分片写入（命令+哨兵可能达几十字节，避免板子串口接收缓冲溢出）
         try:
-            self._write_cmd(cmd, sentinel)
+            self._write_safe(f'{cmd}\necho "{sentinel}"\n')
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
@@ -306,25 +342,23 @@ class SerialConsole:
 
     def exec_async(self, cmd: str, expect: str, send_timeout: float = 5.0,
                    result_timeout: float = 30.0) -> Response:
-        """执行异步命令（如 wifi join）。
+        """执行异步命令（如 wifi join / dfs_capture_start / rtmp_video_start）。
 
-        该类命令（wifi join）会阻塞 shell 直到连接动作完成，echo 哨兵要等命令
-        返回后才输出；而真正的异步结果（Got IP）在 connect 之后才来。故采用
-        "发命令+哨兵，直接在 result_timeout 内同时等哨兵和期望正则"的策略：
-        只要期望正则出现即判成功，不强制先等哨兵。
+        异步命令 Shell 返回后业务仍在后台继续，哨兵只能表示「命令已返回」、不能表示
+        业务真正完成，故**不发送哨兵**：只发送业务命令，然后直接在 result_timeout 内
+        等 expect（真正的业务完成字符串，如 Got IP address / Save Photo Successful）。
 
         Args:
             cmd: 命令。
-            expect: 异步结果的正则（如 Got IP address）。
+            expect: 异步业务完成的正则（命令回显不算，必须是业务状态变化）。
             send_timeout: 兼容旧参数（已并入 result_timeout）。
             result_timeout: 等待期望结果的总超时（秒）。
         """
         timer = Timer().start()
-        sentinel = self._gen_sentinel()
         snapshot = self._buffer_text()
-        # 用 _write_cmd 分片写入，避免长命令（如 rtmp_video_start <url>）溢出丢字节
+        # 只发命令、不发哨兵。用 _write_safe 分片写入，避免长命令溢出丢字节。
         try:
-            self._write_cmd(cmd, sentinel)
+            self._write_safe(f'{cmd}\n')
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 

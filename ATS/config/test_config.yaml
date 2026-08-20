@@ -41,6 +41,7 @@ camera:
 rtmp:
   stream_url: "rtmp://{pc_ip}/live/cam"   # application=live, stream key=cam（对齐 nginx.conf）
   stream_duration: 600                    # 推流持续时长(秒)：600=10分钟；探测到流后保持推流，ffplay 跟随播放，窗口可手动关闭
+  heartbeat_timeout: 60                   # RTMP 持续检测：超过该秒数无 [RTMP] f_index heartbeat 判推流异常停止(默认30s)
   pc_ip: "auto"            # auto=自动检测，或填具体 IP（建议写死 EVB 可达的 IP，见迁移指南）
   # 使用项目内置的静态构建 ffmpeg 套件 (tools/ffmpeg/)，不依赖系统安装
   # 相对路径基于运行时 cwd（python -m ATS.main 在项目根目录执行）

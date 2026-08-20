@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "total": 8,
+    "passed": 5,
+    "failed": 1,
+    "skipped": 2,
+    "errored": 0,
+    "pass_rate": 62.5,
+    "total_elapsed_ms": 552232
+  },
+  "results": [
+    {
+      "name": "wifi_check",
+      "module": "wifi_check",
+      "status": "PASS",
+      "elapsed_ms": 2022,
+      "message": "已联网，IP=192.168.1.100（跳过 wifi scan/join）",
+      "detail": "",
+      "timestamp": "2026-08-20 04:22:25"
+    },
+    {
+      "name": "wifi_scan",
+      "module": "wifi_scan",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接（IP=192.168.1.100），跳过扫描测试",
+      "detail": "",
+      "timestamp": "2026-08-20 04:22:25"
+    },
+    {
+      "name": "wifi_join",
+      "module": "wifi_join",
+      "status": "SKIP",
+      "elapsed_ms": 0,
+      "message": "WiFi 已连接 (SW-test-2.4G/192.168.1.100)，跳过 join 测试",
+      "detail": "",
+      "timestamp": "2026-08-20 04:22:25"
+    },
+    {
+      "name": "emmc",
+      "module": "emmc",
+      "status": "PASS",
+      "elapsed_ms": 2001,
+      "message": "已进入 /emmc（自动挂载）",
+      "detail": "",
+      "timestamp": "2026-08-20 04:22:27"
+    },
+    {
+      "name": "ftp",
+      "module": "ftp",
+      "status": "PASS",
+      "elapsed_ms": 6544,
+      "message": "FTP 已连接 192.168.1.100，/emmc 列出 3 项",
+      "detail": "",
+      "timestamp": "2026-08-20 04:22:34"
+    },
+    {
+      "name": "photo[auto]",
+      "module": "photo",
+      "status": "PASS",
+      "elapsed_ms": 62173,
+      "message": "拍照成功，保存到 /emmc/PIC/20260101_000105_5500（下载验证失败）",
+      "detail": "it] perf=653(us)!\n[6] [App Cam] cam exit success\r\n[6] [App Cam] jpeg deinit success\n[6] [App Dfs] Save Photo Successful: /emmc/PIC/20260101_000105_5500/\n[6] [App Dfs] Capture completed successfully.\r\n",
+      "timestamp": "2026-08-20 04:23:36"
+    },
+    {
+      "name": "video",
+      "module": "video",
+      "status": "PASS",
+      "elapsed_ms": 371329,
+      "message": "录像成功，文件 /emmc/VIDEO/20260101_000208_8218/Video_8218_0.h265，399457KB | 下载不完整(397KB/399457KB)",
+      "detail": "/emmc/VIDEO/20260101_000208_8218/Video_8218_0.h265",
+      "timestamp": "2026-08-20 04:29:48"
+    },
+    {
+      "name": "rtmp",
+      "module": "rtmp",
+      "status": "FAIL",
+      "elapsed_ms": 108163,
+      "message": "推流验证失败: ffprobe 退出码 1: rtmp://192.168.1.89/live/cam: Input/output error",
+      "detail": "{'has_video': False, 'width': 0, 'height': 0, 'codec': '', 'ok': False, 'reason': 'ffprobe 退出码 1: rtmp://192.168.1.89/live/cam: Input/output error'}",
+      "timestamp": "2026-08-20 04:31:36"
+    }
+  ],
+  "generated_at": "2026-08-20 04:31:36"
+}

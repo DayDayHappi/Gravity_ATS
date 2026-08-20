@@ -164,6 +164,37 @@ def interactive_wifi(console, config, ctx):
     return False
 
 
+def _record_test_problem(run_ts: str, log_root: str) -> None:
+    """测试结束时询问用户本次测试遇到的问题，有输入则记录到 ``logs/problem/``。
+
+    按回车（空输入）表示本次测试没有问题，不记录。
+    无人值守/无 stdin 时（EOFError/KeyboardInterrupt）视为无问题，不阻塞退出。
+    记录文件内容 = 问题原文 + 本次运行时间戳（附在末尾）。
+    """
+    try:
+        problem = input("\n本次测试有什么问题？(直接回车表示无问题): ").strip()
+    except (EOFError, KeyboardInterrupt):
+        problem = ""
+    if not problem:
+        return
+
+    problem_dir = os.path.join(log_root, "problem")
+    try:
+        os.makedirs(problem_dir, exist_ok=True)
+    except OSError as e:
+        logger.error(f"创建 problem 目录失败: {e}")
+        return
+
+    fname = os.path.join(problem_dir, f"{run_ts}.log")
+    try:
+        with open(fname, "w", encoding="utf-8") as f:
+            f.write(f"{problem}\n")
+            f.write(f"\n时间戳: {run_ts}\n")
+        logger.info(f"已记录本次测试问题到: {fname}")
+    except OSError as e:
+        logger.error(f"写入 problem 记录失败: {e}")
+
+
 def main(argv=None) -> int:
     args = parse_args(argv)
 
@@ -311,6 +342,9 @@ def main(argv=None) -> int:
     gen_report(results, out_dir,
                junit=rpt_cfg.get("junit", True),
                html=rpt_cfg.get("html", True))
+
+    # 8.5 询问本次测试问题（有输入则记录到 logs/problem/，回车=无问题跳过）
+    _record_test_problem(run_ts, log_root)
 
     # 9. 清理
     ctx.cleanup()
