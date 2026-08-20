@@ -33,13 +33,38 @@ def _result_to_dict(r):
         "name": r.name, "module": r.module, "status": r.status,
         "elapsed_ms": r.elapsed_ms, "message": r.message,
         "detail": r.detail, "timestamp": r.timestamp,
+        "scenario": r.scenario, "cycle": r.cycle,
     }
+
+
+def _scenario_stats(results: list) -> dict:
+    """按场景聚合统计：每场景的 cycle 集合 + 每模块 pass/fail/skip/error 计数。"""
+    stats = {}
+    for r in results:
+        key = r.scenario or "?"
+        sc = stats.setdefault(key, {"cycles": set(), "modules": {}})
+        sc["cycles"].add(r.cycle)
+        mod = sc["modules"].setdefault(
+            r.module, {"pass": 0, "fail": 0, "skip": 0, "error": 0})
+        if r.status == PASSED:
+            mod["pass"] += 1
+        elif r.status == FAILED:
+            mod["fail"] += 1
+        elif r.status == SKIPPED:
+            mod["skip"] += 1
+        elif r.status == ERROR:
+            mod["error"] += 1
+    # 把 set 转成可 JSON 序列化的 count
+    for sc in stats.values():
+        sc["cycles"] = len(sc["cycles"])
+    return stats
 
 
 def write_json(results: list, out_dir: str) -> str:
     summary = _summary(results)
     data = {
         "summary": summary,
+        "scenario_stats": _scenario_stats(results),
         "results": [_result_to_dict(r) for r in results],
         "generated_at": _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
@@ -156,6 +181,13 @@ def print_summary(results: list):
                 f"通过 {s['passed']} | 失败 {s['failed']} | "
                 f"跳过 {s['skipped']} | 错误 {s['errored']} | "
                 f"通过率 {s['pass_rate']}% | 总耗时 {s['total_elapsed_ms']/1000:.1f}s")
+    # 场景维度统计
+    stats = _scenario_stats(results)
+    for sc_name, sc in stats.items():
+        line = f"  场景 [{sc_name}] cycles={sc['cycles']}"
+        for mod, m in sc["modules"].items():
+            line += f" | {mod}: 过{m['pass']}/败{m['fail']}/跳{m['skip']}/错{m['error']}"
+        logger.step(line)
     logger.step("=" * 50)
 
 

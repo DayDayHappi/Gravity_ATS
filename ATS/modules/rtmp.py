@@ -89,6 +89,7 @@ class RtmpModule(TestModule):
     """RTMP 推流测试。"""
 
     depends = ["wifi_join"]
+    duration_key = "stream_duration"   # scenario 里 task.duration 覆盖此参数
 
     def __init__(self, config):
         super().__init__(config)
@@ -104,7 +105,9 @@ class RtmpModule(TestModule):
 
     def setup(self, ctx, console):
         evb_ip = getattr(ctx, "evb_ip", None)
-        pc_ip = self.config.get("pc_ip", "auto")
+        # pc_ip 解析顺序：system.pc.ip -> rtmp.yaml.pc_ip -> auto 探测
+        sys_pc = (getattr(ctx, "system_config", None) or {}).get("pc", {}) or {}
+        pc_ip = sys_pc.get("ip", "auto") or self.config.get("pc_ip", "auto")
         if pc_ip in ("auto", "", None):
             pc_ip = _detect_pc_ip(evb_ip) if evb_ip else ""
             if pc_ip:
@@ -122,7 +125,8 @@ class RtmpModule(TestModule):
         # ffplay 画面确认（可选）：无 DISPLAY 时自动跳过
         self._ffplay_path = _find_ffplay(self.config.get("ffplay_path", "ffplay"))
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
+        self.config = self._merge(params)
         pc_ip = getattr(ctx, "pc_ip", "")
         if not pc_ip:
             return self._fail("无法确定 PC IP，RTMP 推流目标未知")

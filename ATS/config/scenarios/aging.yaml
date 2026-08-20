@@ -1,0 +1,19 @@
+# 老化场景：限时循环 2 小时（photo 10 次 + rtmp 10min 反复）
+scenario:
+  name: aging
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: true
+    duration: 7200
+  tasks:
+    - module: photo
+      repeat: 10
+    - module: rtmp
+      duration: 600
+  cleanup:
+    - stop_stream
+    - close_serial

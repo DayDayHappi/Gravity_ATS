@@ -1,0 +1,8 @@
+# FTP 模块参数（EVB 端 RT-Thread FTP 服务，主动模式）
+user: "loogg"
+password: "loogg"
+port: 21
+connect_retry: 3
+connect_interval: 1.0
+pasv: false                # RT-Thread FTP 不支持 PASV，走主动模式；需 PC 防火墙放行入站
+timeout: 10

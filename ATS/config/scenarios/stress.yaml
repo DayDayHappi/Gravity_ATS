@@ -1,0 +1,21 @@
+# 压测场景：photo 50 次 + video 3min + rtmp 10min，整轮循环 3 次
+scenario:
+  name: stress
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: true
+    count: 3
+  tasks:
+    - module: photo
+      repeat: 50
+    - module: video
+      duration: 180
+    - module: rtmp
+      duration: 600
+  cleanup:
+    - stop_stream
+    - close_serial

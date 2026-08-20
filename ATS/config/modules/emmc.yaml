@@ -1,0 +1,2 @@
+# eMMC 模块参数
+format: false              # 默认跳过格式化，仅 cd 验证；CLI --format 覆盖

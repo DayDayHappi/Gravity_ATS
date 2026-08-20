@@ -33,7 +33,8 @@ class PhotoModule(TestModule):
 
     depends = ["ftp"]
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
+        self.config = self._merge(params)
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
             return self._skip("FTP 客户端不可用，跳过拍照")

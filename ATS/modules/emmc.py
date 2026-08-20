@@ -14,7 +14,8 @@ class EmmcModule(TestModule):
 
     depends = []
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
+        self.config = self._merge(params)
         timer = Timer().start()
         do_format = bool(self.config.get("format", False))
 

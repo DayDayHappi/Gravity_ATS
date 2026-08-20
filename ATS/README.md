@@ -31,17 +31,20 @@ cd /home/gravity/AutoTestScripts_JX009
 # 列出所有可用模块
 python3 -m ATS.main --list-modules
 
+# 列出所有可用场景
+python3 -m ATS.main --list-scenarios
+
 # 校验配置和依赖（不连板子）
 python3 -m ATS.main --dry-run
 
-# 完整测试（自动探测串口 + WiFi 交互连接）
-python3 -m ATS.main
+# 完整测试（普通场景，自动探测串口 + WiFi 交互连接）
+python3 -m ATS.main --scenario normal
 
-# 指定串口和模块
-python3 -m ATS.main --port /dev/ttyUSB0 --modules wifi_scan,wifi_join,emmc,ftp
+# 压测场景（photo 50 次 + video 3min + rtmp 10min，循环 3 轮）
+python3 -m ATS.main --scenario stress --no-interactive-wifi
 
-# 跳过某些模块
-python3 -m ATS.main --skip rtmp,video
+# 指定串口
+python3 -m ATS.main --port /dev/ttyUSB0
 
 # 详细日志
 python3 -m ATS.main -v
@@ -72,34 +75,35 @@ WiFi连接(交互) -> eMMC(cd) -> FTP服务器 -> 拍照 -> 录像 -> RTMP推流
 
 ## 3. 配置
 
-配置文件：`config/test_config.yaml`。改动无需改代码。
+配置拆为三层（`config/` 目录），各司其职：
+
+```
+config/system.yaml            系统/环境级：串口、WiFi 网络环境、PC 地址、报告
+config/modules/<name>.yaml    模块能力参数（photo/video/rtmp/...）
+config/scenarios/<name>.yaml  测试策略：流程/组合/循环次数/持续时间
+```
 
 常用项：
 
 ```yaml
+# system.yaml
 serial:
   port: "auto"          # 自动探测；或填 /dev/ttyUSB0
   baudrate: 2000000     # 默认；探测时自动回退 [2000000,250000,115200,921600]
-
 wifi:
   default_ssid: "G-Demo"
   default_password: "Gdemo@123"
+pc:
+  ip: "auto"            # RTMP 推流目标
 
-camera:
-  photo_modes: ["auto"] # 可扩为 [auto,single,mfnr,hdr_0,hdr_1,hdr_2,hdr_3]
-
-test:
-  enabled_modules:      # 增删测试项改这里
-    - wifi_scan
-    - wifi_join
-    - emmc
-    - ftp
-    - photo
-    - video
-    - rtmp
+# modules/photo.yaml
+photo_modes: ["auto"]   # 可扩为 [auto,single,mfnr,hdr_0,hdr_1,hdr_2,hdr_3]
 ```
 
 敏感字段支持 `${ENV_VAR}` 从环境变量读。
+
+**新增测试项**：`modules/` 新建文件 + `@register("xxx")` + `config/modules/xxx.yaml` + 场景 tasks 加一行。无需改 core。
+**新增测试模式**（压测/老化/自定义组合）：只需新增 `config/scenarios/<name>.yaml`，不改模块核心逻辑。
 
 ---
 
@@ -108,7 +112,9 @@ test:
 ```
 core/      框架核心（稳定，加用例不改这里）
   serial_console.py   哨兵机制 + 常驻读线程 + 自动探测 + 波特率回退
-  runner.py           拓扑排序 + 执行 + 重试 + fail-fast
+  scenario.py         Scenario/Task/LoopConfig 数据结构 + prepare/cleanup 动作注册表
+  scenario_manager.py 加载场景 + 编排 prepare→tasks(loop)→cleanup
+  runner.py           按 Task 列表调度 + repeat/loop + 重试 + fail-fast
   reporter.py         JSON + JUnit + HTML
 modules/   功能模块（每模块一文件，可增删）
   base.py             TestModule 基类 + @register 装饰器
@@ -118,7 +124,7 @@ drivers/   PC 端辅助
   rtmp_server.py      nginx-rtmp 就绪检查（不启停 nginx）
 ```
 
-**新增一个测试项**：`modules/` 新建文件 + `@register("xxx")` + `__init__.py` 加一行 + 配置 `enabled_modules` 加一行。无需改 core 或其他模块。
+**职责边界**：Scenario=怎么组合测试，Runner=什么时候执行，Module=怎么测，Config=参数是什么。
 
 **模块间解耦**：通过共享上下文 `ctx` 传数据（`wifi` 存 `evb_ip`、`ftp` 存 `ftp_client`），不互相 import。删某个模块不影响其他。
 
@@ -207,7 +213,7 @@ logs/<时间戳>/
 
 - PC 端需起 **nginx-rtmp** 服务端（`systemctl start nginx`，监听 1935，配 `application live { live on; record off; }`）
 - 命令：`rtmp_video_start rtmp://<pc_ip>/live/cam`、`rtmp_video_stop`
-- PC 的 IP 自动检测（多网卡建议在 `test_config.yaml` 写死 EVB 可达的 `rtmp.pc_ip`）
+- PC 的 IP 自动检测（多网卡建议在 `config/system.yaml` 写死 EVB 可达的 `pc.ip`）
 - 验证：`ffprobe` 实时探测 `rtmp://<pc_ip>/live/cam`（探到 h264 + 分辨率即 PASS），可选 `ffplay` 画面确认（无 DISPLAY 自动跳过）
 - ★ 关键时序：ffprobe 探测必须在 `rtmp_video_stop` 之前（探测的是实时流）
 

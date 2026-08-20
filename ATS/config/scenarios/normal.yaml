@@ -1,0 +1,20 @@
+# 普通测试场景：等价原有完整测试链路
+scenario:
+  name: normal
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  tasks:
+    - module: wifi_check
+    - module: wifi_scan
+    - module: wifi_join
+    - module: emmc
+    - module: ftp
+    - module: photo
+    - module: video
+    - module: rtmp
+  cleanup:
+    - stop_stream
+    - close_serial

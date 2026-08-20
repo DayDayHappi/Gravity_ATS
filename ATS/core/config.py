@@ -1,16 +1,21 @@
-"""配置加载与校验。
+"""配置加载与校验（拆分版）。
+
+配置体系拆为三层，各司其职：
+- ``config/system.yaml``：系统/环境级（串口、PC 地址、网络环境、报告、执行策略）。
+- ``config/modules/<name>.yaml``：模块能力参数（每模块一个文件）。
+- ``config/scenarios/<name>.yaml``：测试策略（流程/组合/循环/持续时间）。
 
 职责：
-1. 读取 YAML 配置文件（默认 ``config/test_config.yaml``）。
-2. ``${ENV_VAR}`` 语法替换：敏感字段从环境变量读取，未设置则保留原值并警告。
-3. 基础 schema 校验：必填项、类型检查，配置错在启动阶段即报错退出（MAI-004）。
-4. CLI 参数覆盖：命令行参数优先级高于配置文件。
+1. 读取 YAML，``${ENV_VAR}`` 语法替换（敏感字段从环境变量读，未设保留原值）。
+2. 基础 schema 校验（system 必填段、scenario 结构）。
+3. CLI 参数覆盖（点号 key，优先级高于配置）。
 
-配置是"数据驱动"的核心：增删测试项、改流程，大多只动 YAML，不改代码。
+配置是「数据驱动」核心：增删测试项/改流程，大多只动 YAML，不改代码。
 """
 import os
 import re
 import copy
+import glob
 
 try:
     import yaml
@@ -18,6 +23,15 @@ except ImportError:  # pragma: no cover
     yaml = None
 
 _ENV_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+
+# 默认配置目录：ATS/config
+CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
+
+# 模块名 -> 配置文件名（wifi_check/scan/join 共用一个 wifi.yaml）
+_MODULE_FILE_MAP = {
+    "wifi_check": "wifi", "wifi_scan": "wifi", "wifi_join": "wifi",
+    "emmc": "emmc", "ftp": "ftp", "photo": "photo", "video": "video", "rtmp": "rtmp",
+}
 
 
 class ConfigError(Exception):
@@ -32,7 +46,7 @@ def _expand_env(value):
     if isinstance(value, str):
         def repl(m):
             name = m.group(1)
-            return os.environ.get(name, m.group(0))  # 未设置保留原样
+            return os.environ.get(name, m.group(0))
         return _ENV_RE.sub(repl, value)
     if isinstance(value, dict):
         return {k: _expand_env(v) for k, v in value.items()}
@@ -41,59 +55,8 @@ def _expand_env(value):
     return value
 
 
-# 基础 schema：section -> {key: (类型, 是否必填)}
-# 仅校验框架运行必需的字段；模块自有字段由模块自行读取与校验
-_SCHEMA = {
-    "serial": {
-        "port": (str, True),
-        "baudrate": (int, True),
-        "timeout": ((int, float), False),
-    },
-    "wifi": {
-        "default_ssid": (str, True),
-    },
-    "test": {
-        "enabled_modules": (list, True),
-    },
-}
-
-
-def _validate(cfg: dict):
-    """按 schema 做基础校验，失败抛 ConfigError。"""
-    if not isinstance(cfg, dict):
-        raise ConfigError("配置根必须是字典")
-    for section, fields in _SCHEMA.items():
-        if section not in cfg:
-            raise ConfigError(f"缺少必填配置段: {section}")
-        for key, (typ, required) in fields.items():
-            if key not in cfg[section]:
-                if required:
-                    raise ConfigError(f"配置段 [{section}] 缺少必填项: {key}")
-                continue
-            val = cfg[section][key]
-            # typ 可能是元组（多类型允许）
-            types = typ if isinstance(typ, tuple) else (typ,)
-            if not any(isinstance(val, t) for t in types):
-                raise ConfigError(
-                    f"配置项 [{section}].{key} 类型应为 {typ}，实际 {type(val).__name__}"
-                )
-    # enabled_modules 不能为空
-    if not cfg["test"]["enabled_modules"]:
-        raise ConfigError("test.enabled_modules 不能为空")
-
-
-def load_config(path: str) -> dict:
-    """加载并校验配置文件。
-
-    Args:
-        path: YAML 配置文件路径。
-
-    Returns:
-        展开 ${ENV} 后的配置字典。
-
-    Raises:
-        ConfigError: 文件不存在/格式错误/校验失败。
-    """
+def load_yaml_file(path: str) -> dict:
+    """读取一个 YAML 文件，展开 ``${ENV}``，返回 dict（空文件返回 {}）。"""
     if yaml is None:
         raise ConfigError("缺少 pyyaml 依赖，请先 pip install pyyaml")
     if not os.path.isfile(path):
@@ -102,18 +65,87 @@ def load_config(path: str) -> dict:
         with open(path, "r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
     except yaml.YAMLError as e:
-        raise ConfigError(f"YAML 解析失败: {e}")
+        raise ConfigError(f"YAML 解析失败 {path}: {e}")
+    if raw is None:
+        return {}
     if not isinstance(raw, dict):
-        raise ConfigError("配置文件根必须是字典")
-    cfg = _expand_env(raw)
-    _validate(cfg)
+        raise ConfigError(f"配置文件根必须是字典: {path}")
+    return _expand_env(raw)
+
+
+# 基础 schema：仅校验框架运行必需的字段；模块自有字段由模块自行读取与校验
+_SYSTEM_SCHEMA = {
+    "serial": {
+        "port": (str, True),
+        "baudrate": (int, True),
+        "timeout": ((int, float), False),
+    },
+}
+
+
+def _validate_system(cfg: dict):
+    """按 schema 校验 system 配置，失败抛 ConfigError。"""
+    for section, fields in _SYSTEM_SCHEMA.items():
+        if section not in cfg:
+            raise ConfigError(f"system.yaml 缺少必填配置段: {section}")
+        for key, (typ, required) in fields.items():
+            if key not in cfg[section]:
+                if required:
+                    raise ConfigError(f"system.yaml 配置段 [{section}] 缺少必填项: {key}")
+                continue
+            val = cfg[section][key]
+            types = typ if isinstance(typ, tuple) else (typ,)
+            if not any(isinstance(val, t) for t in types):
+                raise ConfigError(
+                    f"配置项 [{section}].{key} 类型应为 {typ}，实际 {type(val).__name__}"
+                )
+
+
+def load_system(config_dir: str = None) -> dict:
+    """加载并校验 system.yaml。"""
+    config_dir = config_dir or CONFIG_DIR
+    cfg = load_yaml_file(os.path.join(config_dir, "system.yaml"))
+    _validate_system(cfg)
     return cfg
+
+
+def _module_file(module_name: str) -> str:
+    """模块名 -> 配置文件名。"""
+    return _MODULE_FILE_MAP.get(module_name, module_name)
+
+
+def load_module_config(module_name: str, config_dir: str = None) -> dict:
+    """加载某模块的能力参数（modules/<file>.yaml），返回 dict。"""
+    config_dir = config_dir or CONFIG_DIR
+    path = os.path.join(config_dir, "modules", f"{_module_file(module_name)}.yaml")
+    return load_yaml_file(path)
+
+
+def load_scenario(name: str, config_dir: str = None) -> dict:
+    """加载某测试场景（scenarios/<name>.yaml），返回含 ``scenario`` 键的 dict。"""
+    config_dir = config_dir or CONFIG_DIR
+    path = os.path.join(config_dir, "scenarios", f"{name}.yaml")
+    cfg = load_yaml_file(path)
+    if "scenario" not in cfg:
+        raise ConfigError(f"场景 {name} 缺少 scenario 段")
+    return cfg
+
+
+def list_scenarios(config_dir: str = None) -> list:
+    """列出所有可用场景名（按文件名）。"""
+    config_dir = config_dir or CONFIG_DIR
+    pat = os.path.join(config_dir, "scenarios", "*.yaml")
+    names = []
+    for p in sorted(glob.glob(pat)):
+        base = os.path.basename(p)
+        names.append(base[:-5])  # 去 .yaml
+    return names
 
 
 def apply_overrides(cfg: dict, overrides: dict) -> dict:
     """用 CLI 覆盖项合并进配置（覆盖项优先）。
 
-    overrides 用扁平点号 key，如 ``{"serial.port": "/dev/ttyUSB1", "wifi.default_ssid": "X"}``。
+    overrides 用扁平点号 key，如 ``{"serial.port": "/dev/ttyUSB1"}``。
     返回新的配置字典，不修改原 cfg。
     """
     out = copy.deepcopy(cfg)

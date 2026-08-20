@@ -1,0 +1,30 @@
+# VX100 EVB 自动化测试 —— 系统/环境级配置（跨模块共享）
+# 职责：串口、PC 地址、网络环境、FTP 环境、报告、执行策略
+# 模块能力参数在 config/modules/，测试策略在 config/scenarios/
+
+serial:
+  port: "auto"             # auto=自动探测；或填 /dev/ttyUSB0
+  baudrate: 2000000        # 默认 2000000；自动探测时回退候选
+  baudrate_candidates: [2000000, 250000, 115200, 921600]
+  timeout: 2.0
+  ready_timeout: 60        # 等 msh 就绪
+  sentinel_timeout: 5      # 哨兵下发确认超时
+  detect_timeout: 2.0      # 自动探测每端口读响应超时
+
+wifi:                      # 网络环境（连接目标，非 wifi 模块测试参数）
+  default_ssid: "SW-test-2.4G"
+  default_password: "tuf@3600"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+  interactive: true        # 启动时交互选择 WiFi
+
+pc:
+  ip: "auto"               # PC 与 EVB 通信 IP（RTMP 推流目标）；auto=自动探测
+
+runner:                    # 执行策略（重试 / fail-fast）
+  retry_on_fail: 1
+  fail_fast: true
+
+report:
+  output_dir: "reports"
+  log_dir: "logs"
+  junit: true
+  html: true

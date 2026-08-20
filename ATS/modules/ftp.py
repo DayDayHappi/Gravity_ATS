@@ -75,7 +75,8 @@ class FtpModule(TestModule):
 
     depends = ["wifi_join"]
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
+        self.config = self._merge(params)
         evb_ip = getattr(ctx, "evb_ip", None)
         if not evb_ip:
             return self._skip("无 EVB IP（WiFi 未连接），跳过 FTP")

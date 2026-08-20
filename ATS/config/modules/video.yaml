@@ -1,0 +1,5 @@
+# 录像模块参数
+video_resolution: "1080p"
+video_duration: 180        # 录像时长(秒)；scenario 里 task.duration 可覆盖
+video_min_size_kb: 100
+video_capture_timeout: 15

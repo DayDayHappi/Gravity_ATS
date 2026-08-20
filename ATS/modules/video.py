@@ -26,8 +26,10 @@ class VideoModule(TestModule):
     """录像测试。"""
 
     depends = ["ftp"]
+    duration_key = "video_duration"   # scenario 里 task.duration 覆盖此参数
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
+        self.config = self._merge(params)
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
             return self._skip("FTP 客户端不可用，跳过录像")

@@ -1,0 +1,9 @@
+# RTMP 推流模块参数
+stream_url: "rtmp://{pc_ip}/live/cam"   # application=live, stream key=cam（对齐 nginx.conf）
+stream_duration: 600                    # 推流持续时长(秒)；scenario 里 task.duration 可覆盖
+heartbeat_timeout: 60                   # 超该秒数无 [RTMP] f_index 判推流异常停止
+# 内置静态构建 ffmpeg 套件（相对 cwd 项目根目录）
+ffprobe_path: "tools/ffmpeg/ffprobe"   # 必需：ffprobe 实时探测 RTMP 流（主判据）
+ffmpeg_path: "tools/ffmpeg/ffmpeg"
+ffplay_path: "tools/ffmpeg/ffplay"     # 可选：画面确认，无 DISPLAY 自动跳过
+# pc_ip 从 config/system.yaml 的 pc.ip 读（此处不再单独配置）

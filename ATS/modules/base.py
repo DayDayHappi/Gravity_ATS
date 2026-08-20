@@ -2,14 +2,17 @@
 
 设计要点：
 - 每个功能模块继承 ``TestModule``，实现 ``run()``，声明 ``name`` 和 ``depends``。
-- ``@register("wifi")`` 装饰器把模块注册到全局表，runner 按名字查找、按依赖排序。
+- ``@register("wifi")`` 装饰器把模块注册到全局表，runner 按名字查找、按 scenario 顺序执行。
 - 模块只通过 ``ctx``（共享上下文）和 ``console``（串口）与其他模块交互，
   不直接 import 其他模块 -> 增删模块不影响既有模块。
+- 模块只负责「怎么测」（一次测试动作 + 参数接口）；执行多少次/循环多久由
+  scenario（config/scenarios/*.yaml）+ runner 控制，模块内**不写** for 循环。
 
 新增一个测试项的步骤：
 1. 在 ``modules/`` 新建文件，定义 ``class XxxModule(TestModule)`` + ``@register("xxx")``。
-2. 在 ``config/test_config.yaml`` 的 ``enabled_modules`` 加一行 ``- xxx``。
-3. 无需改 core 或其他模块。
+2. 在 ``config/modules/`` 新增 ``xxx.yaml``（能力参数）。
+3. 在 ``config/scenarios/<场景>.yaml`` 的 tasks 加一行 ``- module: xxx``。
+4. 无需改 core 或其他模块。
 """
 from ..core.result import TestResult
 
@@ -22,7 +25,7 @@ def register(name: str):
     """类装饰器：把模块类注册到全局表。
 
     Args:
-        name: 模块名，需与 ``enabled_modules`` 中的名字一致。
+        name: 模块名，需与 scenario tasks 里的 ``module:`` 名字一致。
     """
     def deco(cls):
         if name in _REGISTRY:
@@ -58,22 +61,37 @@ class TestModule:
 
     name: str = ""
     depends: list = []
+    duration_key: str = None   # 子类声明「持续类」参数 key，供 scenario 的 task.duration 快捷覆盖
 
     def __init__(self, config: dict):
-        """config 为该模块对应的配置段（runner 从总配置里切出来传入）。"""
+        """config 为该模块的能力参数（来自 config/modules/<name>.yaml）。"""
         self.config = config or {}
 
     def setup(self, ctx, console):
         """前置钩子，默认无操作。"""
         pass
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
         """主逻辑，子类必须实现。
+
+        Args:
+            ctx: 共享上下文。
+            console: 串口控制台。
+            params: 运行时参数覆盖（scenario override + CLI），覆盖 self.config。
+                子类开头用 ``self.config = self._merge(params)`` 合并即可，后续
+                ``self.config.get(...)`` 自动生效。
 
         Returns:
             TestResult 或 list[TestResult]。
         """
         raise NotImplementedError(f"{self.__class__.__name__} 未实现 run()")
+
+    def _merge(self, params: dict = None) -> dict:
+        """合并模块默认参数与运行时覆盖（覆盖优先），返回新 dict。
+
+        示例：``self.config = self._merge(params)``。
+        """
+        return {**(self.config or {}), **(params or {})}
 
     def teardown(self, ctx, console):
         """后置钩子，默认无操作。"""

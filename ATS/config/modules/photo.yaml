@@ -1,0 +1,5 @@
+# 拍照模块参数
+photo_modes: ["auto"]      # 可扩为 [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
+photo_min_size_kb: 10
+photo_settle_delay: 1.0    # 模式切换后稳定延时(秒)
+photo_capture_timeout: 10

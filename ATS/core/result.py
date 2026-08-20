@@ -53,6 +53,8 @@ class TestResult:
     message: str = ""                # 概要信息（通过/失败原因）
     detail: str = ""                 # 详细上下文（失败时的命令输出等）
     timestamp: str = ""              # 时间戳字符串（由 reporter 填）
+    scenario: str = ""               # 所属场景名（scenario 层新增，默认空）
+    cycle: int = 0                   # 所属 cycle 序号（loop 第几轮，默认 0）
 
     @property
     def passed(self) -> bool:

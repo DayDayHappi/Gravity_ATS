@@ -55,7 +55,7 @@ class WifiCheckModule(TestModule):
 
     depends = []
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
         timer = Timer().start()
         ip = check_wifi_connected(console)
         if ip:
@@ -74,7 +74,7 @@ class WifiScanModule(TestModule):
 
     depends = ["wifi_check"]
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
         if getattr(ctx, "skip_wifi", False):
             return self._skip(f"WiFi 已连接（IP={ctx.evb_ip}），跳过扫描测试")
         timer = Timer().start()
@@ -112,12 +112,14 @@ class WifiJoinModule(TestModule):
 
     depends = ["wifi_scan"]
 
-    def run(self, ctx, console):
+    def run(self, ctx, console, params=None):
         if getattr(ctx, "skip_wifi", False) and getattr(ctx, "evb_ip", None):
             ssid_info = ctx.wifi_ssid or "未知SSID"
             return self._skip(f"WiFi 已连接 ({ssid_info}/{ctx.evb_ip})，跳过 join 测试")
-        ssid = getattr(ctx, "wifi_ssid", None) or self.config.get("default_ssid")
-        pwd = getattr(ctx, "wifi_password", None) or self.config.get("default_password", "")
+        # 连接目标 ssid/password 属系统环境（system.yaml 的 wifi 段）
+        sys_wifi = (getattr(ctx, "system_config", None) or {}).get("wifi", {}) or {}
+        ssid = getattr(ctx, "wifi_ssid", None) or sys_wifi.get("default_ssid")
+        pwd = getattr(ctx, "wifi_password", None) or sys_wifi.get("default_password", "")
         if not ssid:
             return self._fail("未配置 SSID")
         timer = Timer().start()
