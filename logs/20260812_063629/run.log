@@ -1,4 +1,0 @@
-[06:36:29.593] [INFO] 串口已打开: /dev/ttyUSB0 @ 2000000 bps
-[06:36:31.594] [INFO] EVB 已就绪
-[06:36:36.595] [ERROR] 串口自检失败: 收发异常或波特率不匹配。输出: 'Usage: echo "string" [filename]\nmsh />'
-[06:36:37.606] [DEBUG] 串口已关闭

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="VX100_EVB" tests="1" failures="1" errors="0" skipped="0" time="0.00">
-  <testcase name="rtmp" classname="rtmp" time="0.00">
-    <failure message="无法确定 PC IP，RTMP 推流目标未知"><![CDATA[]]></failure>
-  </testcase>
-</testsuite>

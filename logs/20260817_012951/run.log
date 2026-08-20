@@ -1,5 +1,0 @@
-[01:29:51.705] [INFO] VX100 EVB 自动化测试启动，运行时间戳: 20260817_012951
-[01:29:51.705] [INFO] 启用模块: ['wifi_check', 'wifi_scan', 'wifi_join', 'emmc', 'ftp', 'photo', 'video', 'rtmp']
-[01:29:51.706] [ERROR] 未发现任何可访问的串口设备 (/dev/ttyUSB* /dev/ttyACM*)
-[01:29:51.706] [ERROR] 请检查: 1) EVB 已上电并连接  2) 当前用户在 dialout 组  3) USB-串口驱动已加载
-[01:29:51.706] [ERROR] 无法确定 EVB 串口，测试中止
