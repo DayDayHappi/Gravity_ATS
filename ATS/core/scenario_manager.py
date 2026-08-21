@@ -156,9 +156,20 @@ def _action_preclean(ctx, system_cfg):
 
 @prepare_action("ftp_ready")
 def _action_ftp_ready(ctx, system_cfg):
-    """FTP 就绪检查：仅确认 WiFi 已连（evb_ip 存在）。ftp_server 由 ftp 模块 run 启动。"""
-    if not getattr(ctx, "evb_ip", None):
-        logger.warn("ftp_ready: 无 EVB IP（WiFi 未连接），ftp 模块可能跳过")
+    """启动 EVB 端 ftp_server（全局只发一次）并建立 PC 端连接。
+
+    幂等：loop 多轮重复调用不会重发 ftp_server（ctx.ftp_server_started 标志）。
+    板子 FTP 服务端一直 listen（3s 空闲断开会话），脚本侧仍是无状态 client，
+    photo/video 每次下载前由 ensure_ftp 重建连接。ftp_server 只发一次、连接每次重建。
+    """
+    console = getattr(ctx, "console", None)
+    if console is None:
+        logger.warn("ftp_ready: 无 console，跳过")
+        return
+    from ..modules.ftp import start_ftp
+    client = start_ftp(ctx, console)
+    if client is None:
+        logger.warn("ftp_ready: FTP 服务启动/连接失败（可能 WiFi 未连），photo/video 可能跳过")
 
 
 # ---------------------------------------------------------------------------
