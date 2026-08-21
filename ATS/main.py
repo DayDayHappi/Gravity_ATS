@@ -98,6 +98,27 @@ def list_scenarios_cmd(config_dir):
         print(f"  {name}")
 
 
+def _resolve_output_dirs(system_cfg: dict, scenario_name: str,
+                         output_dir_override: str = None) -> tuple:
+    """按场景解析日志/报告根目录，实现场景间隔离。
+
+    普通场景（normal）保持现状：日志 ``logs/``，报告 ``reports/``。
+    其余场景（stress/aging 等）与普通隔离，统一归入日志根目录下：
+    日志 ``<log_dir>/<scenario>/logs/``，报告 ``<log_dir>/<scenario>/report/``。
+
+    返回 ``(log_root, report_root)``。
+    """
+    report_cfg = system_cfg.get("report", {}) or {}
+    log_root = report_cfg.get("log_dir", "logs")
+    report_root = output_dir_override or report_cfg.get("output_dir", "reports")
+    # 非 normal 场景：日志与报告都按场景名隔离（用户显式 --output-dir 时不改日志根）
+    if scenario_name != "normal" and output_dir_override is None:
+        base = os.path.join(log_root, scenario_name)
+        log_root = os.path.join(base, "logs")
+        report_root = os.path.join(base, "report")
+    return log_root, report_root
+
+
 def _record_test_problem(run_ts: str, log_root: str) -> None:
     """测试结束时询问用户本次测试遇到的问题，有输入则记录到 ``logs/problem/``。"""
     try:
@@ -152,8 +173,6 @@ def main(argv=None) -> int:
         system_overrides["wifi.default_ssid"] = args.wifi_ssid
     if args.wifi_password:
         system_overrides["wifi.default_password"] = args.wifi_password
-    if args.output_dir:
-        system_overrides["report.output_dir"] = args.output_dir
     system_cfg = apply_overrides(system_cfg, system_overrides)
 
     # --terminal: 交互式串口终端（调试工具，独立分支，不走测试流程）
@@ -166,10 +185,12 @@ def main(argv=None) -> int:
     if args.format:
         module_overrides["emmc"] = {"format": True}
 
-    # 3. 初始化日志
-    log_root = system_cfg.get("report", {}).get("log_dir", "logs")
+    # 3. 初始化日志（按场景隔离目录）
+    log_root, report_root = _resolve_output_dirs(
+        system_cfg, args.scenario, output_dir_override=args.output_dir)
     run_ts = logger.init_logger(log_root, verbose=args.verbose)
     logger.info(f"VX100 EVB 自动化测试启动，运行时间戳: {run_ts}")
+    logger.info(f"日志目录: {log_root}  报告目录: {report_root}")
 
     # 4. 加载场景
     manager = ScenarioManager(config_dir)
@@ -220,8 +241,7 @@ def main(argv=None) -> int:
         env_error = True
 
     # 7. 生成报告
-    out_dir = os.path.join(
-        system_cfg.get("report", {}).get("output_dir", "reports"), run_ts)
+    out_dir = os.path.join(report_root, run_ts)
     rpt_cfg = system_cfg.get("report", {})
     from ATS.core.reporter import generate as gen_report
     gen_report(results, out_dir,

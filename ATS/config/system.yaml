@@ -24,7 +24,7 @@ runner:                    # 执行策略（重试 / fail-fast）
   fail_fast: true
 
 report:
-  output_dir: "reports"
-  log_dir: "logs"
+  output_dir: "reports"    # 报告根目录；非 normal 场景自动隔离到 <log_dir>/<场景>/report/
+  log_dir: "logs"          # 日志根目录；非 normal 场景自动隔离到 <log_dir>/<场景>/logs/
   junit: true
   html: true
