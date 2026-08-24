@@ -29,4 +29,4 @@ normal 场景的 prepare.`wifi_connect` 已连 WiFi 并设 `ctx.skip_wifi=True`�
 
 ## Status
 
-Accepted（源码实施待 Code Agent）
+Accepted（源码已实施）
