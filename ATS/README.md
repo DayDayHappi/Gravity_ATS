@@ -4,7 +4,7 @@
 
 - **被测系统**：RT-Thread msh shell（UART0），双核异构 RISC-V
 - **运行环境**：Ubuntu 20.04+，Python 3.8+
-- **设计文档**：`../doc/VX100_EVB_自动化测试_第一版设计文档.md`
+- **设计文档**：`../docs/03_development/archive/VX100_EVB_自动化测试_第一版设计文档.md`
 
 ---
 
@@ -271,7 +271,7 @@ pip install git+https://github.com/pyserial/pyserial.git
 
 ```
 ATS/                 本脚本
-doc/                 需求文档 + 设计文档
+docs/                文档知识库（设计/需求归档见 docs/03_development/archive/）
 res/                 实测日志样本（开发参考）
 reports/             测试报告（运行时生成）
 logs/                全量日志（运行时生成）

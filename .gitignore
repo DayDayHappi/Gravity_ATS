@@ -8,8 +8,7 @@ logs/
 reports/
 
 # 文档 / 交接 / 实测样本
-doc/
-handoff/
+docs/
 res/
 
 # Claude 配置与计划文件
@@ -17,7 +16,6 @@ res/
 
 # 根目录杂项
 migrate.sh
-迁移指南.md
 all_source.txt
 auto.crt
 auto.key
