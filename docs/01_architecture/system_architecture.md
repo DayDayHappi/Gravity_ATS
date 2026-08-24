@@ -34,7 +34,7 @@
 ```
 启动
  → 加载 scenario（system + modules + scenario 三层配置合并）
- → 执行 prepare 动作（串口初始化、WiFi 连接、清理、FTP 就绪）
+ → 执行 prepare 动作（串口初始化、WiFi 连接收敛、清理、FTP 就绪）
  → 按 loop 循环执行 tasks（每个 task 交给 Runner 调度到对应 Module）
  → 执行 cleanup 动作（停推流、关串口）
  → 生成报告，返回退出码
@@ -42,6 +42,7 @@
 
 - 依赖关系：task 声明 depends；某模块 FAIL/ERROR 时依赖它的模块 SKIP；**SKIP 不阻断依赖**（主动跳过不算失败）。
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
+- **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
 
 ## 4. 数据流概览
 

@@ -11,14 +11,16 @@
 PC 通过串口向 EVB 下发命令，通过 WiFi/FTP/RTMP 验证功能产物，自动执行并判定以下测试链路，生成报告：
 
 ```
-wifi_check → wifi_scan → wifi_join → emmc → ftp → photo → video → rtmp   （共 8 项）
+模块（8 个，代码保留）：wifi_check / wifi_scan / wifi_join / emmc / ftp / photo / video / rtmp
+normal 执行：prepare（wifi_connect 收敛器连 WiFi + ftp_ready 启 FTP）
+             → tasks（emmc → photo → video → rtmp，4 项）
 ```
 
 入口：`python3 -m ATS.main --scenario <name>`（默认 `normal`）。
 
 ## 3. 支持场景（Supported Scenario）
 
-- **normal**：8 模块完整链路，向后兼容的默认场景。
+- **normal**：WiFi/FTP 由 prepare 准备（wifi_connect 收敛器 + ftp_ready），tasks 4 项（emmc/photo/video/rtmp），向后兼容的默认场景。
 - **stress**：photo×50 + video 180s + rtmp 600s，整轮循环 3 次（压测）。
 - **aging**：photo×10 + rtmp 600s，限时 2h 循环（老化）。
 

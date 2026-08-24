@@ -9,3 +9,4 @@
 | ADR-005 | 配置三层 + Scenario 层 | Scenario/Runner/Module/Config 职责边界 |
 | ADR-006 | 内置 ffmpeg + nginx-rtmp | 离线依赖 + 服务端就绪检查 |
 | ADR-007 | 模块红线 | 模块只做一次动作，循环由 Scenario/Runner 驱动 |
+| ADR-008 | WiFi 职责重划 | wifi_check=状态检测器，prepare.wifi_connect=状态收敛器，scan/join 退出 normal |

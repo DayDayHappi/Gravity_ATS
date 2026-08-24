@@ -10,16 +10,17 @@
 - 内置 ffmpeg/ffprobe/ffplay（离线可用）
 - FTP 会话策略（只发一次 / 冷启动 / 重建连接 / 主动模式）
 - Scenario 层重构（配置三层拆分 + Task/repeat/loop + 场景隔离）
-- 仓库只跟踪 ATS + tools（.gitignore 拆分）
+- 修复 `--no-interactive-wifi` 断链（原 P0-1，方向 A）
+- normal 场景移除重复 ftp task
+- 仓库只跟踪 ATS + tools + docs
 
 ## Current（进行中）
 
-- **未完成**：Scenario 层重构 + 第四次交接 4 项改动全部待真机验证
-- **未完成**：stress/aging 场景 WiFi 前置缺失（P0-1）
+- **待实施**：WiFi 职责重划（ADR-008）——normal tasks 移除 wifi_check/scan/join、wifi_connect 改收敛器
+- **未完成**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动全部待真机验证
 
 ## Planned（计划中）
 
-- 修复 stress/aging 的 WiFi 前置（方向 A：prepare 加非交互连 WiFi 动作）
 - 真机验证 normal + stress 场景
 - loop 语义增强（支持循环外一次性前置任务）
 - RTMP 类型2 网络异常覆盖（周期 ffprobe 复探）

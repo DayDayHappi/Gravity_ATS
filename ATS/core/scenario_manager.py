@@ -68,13 +68,13 @@ def _action_serial_init(ctx, system_cfg):
 
 @prepare_action("wifi_connect")
 def _action_wifi_connect(ctx, system_cfg):
-    """交互式 WiFi 连接（默认 SSID 或扫描选 AP），连上存 ctx.evb_ip / ctx.skip_wifi。
+    """建立测试环境的 WiFi 连接，连上存 ctx.evb_ip / ctx.skip_wifi。
 
-    --no-interactive-wifi 时跳过交互，交由 wifi_join 模块用 system.wifi 默认参数连接。
+    - 自动（--no-interactive-wifi）：直接用 system.wifi 的 default_ssid/default_password
+      执行 wifi join，不弹交互。
+    - 交互（默认）：可连默认 SSID 或扫描选 AP。
+    两条路径最终汇聚到同一个 join 出口，连上后设 ctx.evb_ip + ctx.skip_wifi=True。
     """
-    if getattr(ctx, "no_interactive_wifi", False):
-        logger.info("--no-interactive-wifi：跳过交互 WiFi 连接，交由 wifi_join 模块处理")
-        return
     console = getattr(ctx, "console", None)
     if console is None:
         logger.warn("wifi_connect: 无 console，跳过")
@@ -86,15 +86,20 @@ def _action_wifi_connect(ctx, system_cfg):
     default_ssid = wifi_cfg.get("default_ssid", "")
     default_pwd = wifi_cfg.get("default_password", "")
 
+    no_interactive = getattr(ctx, "no_interactive_wifi", False)
+
     print("\n" + "=" * 50)
     print("WiFi 连接")
     print("=" * 50)
     use_default = True
-    if wifi_cfg.get("interactive", True):
+    if not no_interactive and wifi_cfg.get("interactive", True):
         ans = input(f"是否连接默认 WiFi [{default_ssid}]? [Y/n]: ").strip().lower()
         use_default = ans != "n"
 
-    if use_default:
+    if no_interactive:
+        ssid, pwd = default_ssid, default_pwd
+        logger.info(f"--no-interactive-wifi：使用默认 WiFi [{ssid}] 自动连接")
+    elif use_default:
         ssid, pwd = default_ssid, default_pwd
         logger.info(f"使用默认 WiFi: {ssid}")
     else:

@@ -11,7 +11,6 @@ scenario:
     - module: wifi_scan
     - module: wifi_join
     - module: emmc
-    - module: ftp
     - module: photo
     - module: video
     - module: rtmp

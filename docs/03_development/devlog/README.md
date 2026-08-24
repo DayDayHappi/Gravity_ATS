@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-24 | [20260824_0205_修复no_interactive_wifi断链.md](20260824_0205_修复no_interactive_wifi断链.md) | 修复 --no-interactive-wifi 下 wifi_connect 直接 return 导致 evb_ip 拿不到、photo/video 全 SKIP：非交互改为自动用默认 SSID join |
+| 2026-08-24 | [20260824_0150_移除normal场景tasks重复ftp.md](20260824_0150_移除normal场景tasks重复ftp.md) | normal 场景 tasks 删除重复的 ftp 模块（ftp_ready 已做 FTP 准备），保留 modules/ftp.py 代码；photo/video 依赖不阻断 |
 | 2026-08-20 | [20260820_2246_ftp_ready下沉ftp_server启动幂等只发一次.md](20260820_2246_ftp_ready下沉ftp_server启动幂等只发一次.md) | 新增 start_ftp 幂等函数，ftp_ready 下沉 ftp_server 启动（全局只发一次），client 每次重建；修 stress 无 ftp 模块导致 FTP 未启动 |
 | 2026-08-20 | [20260820_2124_按场景隔离日志与报告目录.md](20260820_2124_按场景隔离日志与报告目录.md) | 非 normal 场景日志/报告按场景隔离：logs/<场景>/logs/ + logs/<场景>/report/ |
 | 2026-08-20 | [20260820_0833_引入测试场景层Scenario配置彻底拆分.md](20260820_0833_引入测试场景层Scenario配置彻底拆分.md) | 引入 Scenario 层：配置拆 system/modules/scenarios，Runner 支持 Task/repeat/loop，模块 run(params) 参数入口，--scenario 主入口 |

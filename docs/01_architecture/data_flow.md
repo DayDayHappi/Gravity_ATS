@@ -44,10 +44,10 @@ EVB 编码 ──RTMP──> PC nginx-rtmp (1935)
 ## 4. 上下文流转（跨模块共享）
 
 ```
-wifi_check/join ──> ctx.evb_ip（EVB IP）
-ftp             ──> ctx.ftp_client（供 photo/video 复用）
-photo/video     ──> 消费 ctx.ftp_client
-rtmp            ──> 消费 ctx.evb_ip + pc_ip
+prepare.wifi_connect ──> ctx.evb_ip（收敛器：先 wifi_check 检测，未连才 join）
+ftp_ready            ──> ctx.ftp_client（供 photo/video 复用）
+photo/video          ──> 消费 ctx.ftp_client
+rtmp                 ──> 消费 ctx.evb_ip + pc_ip
 ```
 
 模块间通过共享上下文传递数据，不互相 import。

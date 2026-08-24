@@ -1,49 +1,57 @@
 # 模块设计（Module Design）
 
 > 每个模块的职责边界。修改模块前先读本表，确认「该模块负责什么、不该负责什么」。
+>
+> **WiFi 职责重划（ADR-008）**：WiFi 不再作为 normal 独立测试项。`wifi_check` 是「状态检测器」，由 prepare 的 `wifi_connect` 收敛器内部调用；`wifi_scan`/`wifi_join` 退出 normal 默认流程，模块代码保留可复用。
 
 ## 模块职责总览
 
-| 模块 | 职责 | 成功判据 |
-|------|------|---------|
-| wifi_check | 检测 EVB 是否已联网 | ifconfig 有非 0.0.0.0 IP |
-| wifi_scan | 扫描附近 WiFi AP | 表头 + ≥1 行数据 |
-| wifi_join | 连接指定 WiFi | `Got IP address : <IP>` |
-| emmc | 进入 eMMC 目录 | `cd /emmc` 无 error |
-| ftp | 启动 FTP 服务 + 连接验证 | 列出 `/emmc` 成功 |
-| photo | 拍照并验证产物 | 串口 `Save Photo Successful` |
-| video | 录像并验证产物 | 串口 `Save Video Successful` |
-| rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 |
-| rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 |
+| 模块 | 职责 | 成功判据 | normal 流程 |
+|------|------|---------|------------|
+| wifi_check | **状态检测器**：ifconfig 检测是否已联网 | 有非 0.0.0.0 IP | 由 prepare 调用，不作 task |
+| wifi_scan | 扫描附近 WiFi AP | 表头 + ≥1 行数据 | 退出默认流程（保留代码） |
+| wifi_join | 连接指定 WiFi | `Got IP address : <IP>` | 退出默认流程（保留代码） |
+| emmc | 进入 eMMC 目录 | `cd /emmc` 无 error | ✓ task |
+| ftp | 启动 FTP 服务 + 连接验证 | 列出 `/emmc` 成功 | prepare.ftp_ready 保证 |
+| photo | 拍照并验证产物 | 串口 `Save Photo Successful` | ✓ task |
+| video | 录像并验证产物 | 串口 `Save Video Successful` | ✓ task |
+| rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
+| rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
 
 ---
 
-## wifi_check
+## wifi_check（状态检测器）
 
-- **Responsibility**：检测已联网状态，联网则跳过后续 scan/join 并缓存 IP。
+- **Responsibility**：检测当前板子是否已满足网络环境要求（`ifconfig` 有无非 0.0.0.0 IP）。
 - **Input**：串口 `ifconfig` 输出。
-- **Output**：`ctx.skip_wifi` 标志 + `ctx.evb_ip`。
+- **Output**：`ctx.evb_ip`（已联网时）+ `ctx.wifi_ready`（True/False）。
 - **Dependency**：无。
-- **Forbidden Dependency**：不主动连接 WiFi。
-- **Lifecycle**：单次执行，无清理。
+- **Forbidden Dependency**：**不 scan / join / 改配置**（只检测）。
+- **Lifecycle**：被 prepare 的 `wifi_connect` 收敛器内部调用，不作为独立 task。
 
 ## wifi_scan
 
-- **Responsibility**：扫描 AP，解析 SSID/RSSI。
+- **Responsibility**：扫描 AP，解析 SSID/RSSI（保留，供手动调试 / 未来场景）。
 - **Input**：串口 `wifi scan` 输出。
 - **Output**：AP 列表（RSSI<-70 只警告不判失败）。
 - **Dependency**：wifi_check。
 - **Forbidden Dependency**：不解析 IP。
-- **Lifecycle**：单次执行。
+- **Lifecycle**：退出 normal 默认流程，模块代码保留。
 
 ## wifi_join
 
-- **Responsibility**：连接 WiFi，异步等待拿到 IP。
+- **Responsibility**：连接 WiFi，异步等待拿到 IP（保留，供手动调试 / 未来场景）。
 - **Input**：ssid/password（来自 system.wifi）。
 - **Output**：`ctx.evb_ip`。
 - **Dependency**：wifi_scan。
 - **Forbidden Dependency**：不负责 FTP/RTMP。
-- **Lifecycle**：单次执行，成功后 sleep 等状态稳定。
+- **Lifecycle**：退出 normal 默认流程；收敛器 `wifi_connect` 内部实现「未联网才 join」的逻辑。
+
+## prepare.wifi_connect（状态收敛器）
+
+- **Responsibility**：确保测试开始前 WiFi 一定达到可用状态。
+- **逻辑**：先 wifi_check 检测 → 已联网则保留状态；未联网则执行 join → 最终设 `ctx.evb_ip`。
+- **Forbidden Dependency**：不做 WiFi 的「测试判定」，只做「状态收敛」。
 
 ## emmc
 
