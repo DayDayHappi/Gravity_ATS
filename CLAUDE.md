@@ -2,11 +2,20 @@
 
 VX100 EVB 上位机自动化测试脚本工程。入口：`python3 -m ATS.main --scenario <name>`（默认 `normal`）。
 
-## Agent 角色选择（Agent Role Selection）
+## Agent 边界规则（Agent Boundary Rules，最高优先级）
 
-- 以 **Code Agent** 身份工作时，先读 `.claude/agents/code-agent.md`（代码实现者，只改源码/测试/devlog）。
-- 以 **Document Agent** 身份工作时，先读 `.claude/agents/document-agent.md`（工程知识管理员，只改架构/设计/交接）。
-- **不得混职责**：Code Agent 不碰架构/设计/交接文档，Document Agent 不碰源码。
+本工程采用角色分离的 Agent 体系，一个会话 = 一个固定角色，**不得自动切换角色**。
+
+| 角色 | 负责 | 禁止 |
+|------|------|------|
+| **Code Agent** | 源码、测试、devlog | 改架构、创建 ADR、维护 handoff |
+| **Document Agent** | 架构、设计、handoff | 改源码、修 bug、优化实现 |
+
+- 以 Code Agent 身份工作 → 先读 `.claude/agents/code-agent.md`。
+- 以 Document Agent 身份工作 → 先读 `.claude/agents/document-agent.md`。
+- 两者交接规则 → 读 `.claude/agents/agent-workflow.md`。
+- **若需要另一角色**：停止当前任务，产出交接请求，结束本 session；不要自己代做。
+- Code Agent 发现文档影响时：**只报告（Document Agent Request），不修改**。
 
 ## 文档管理（Document Management）
 
