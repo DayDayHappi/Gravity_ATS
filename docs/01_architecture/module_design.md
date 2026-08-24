@@ -3,6 +3,8 @@
 > 每个模块的职责边界。修改模块前先读本表，确认「该模块负责什么、不该负责什么」。
 >
 > **WiFi 职责重划（ADR-008）**：WiFi 不再作为 normal 独立测试项。`wifi_check` 是「状态检测器」，由 prepare 的 `wifi_connect` 收敛器内部调用；`wifi_scan`/`wifi_join` 退出 normal 默认流程，模块代码保留可复用。
+>
+> **depends 字段语义（ADR-009）**：模块代码里 `depends = []`（已清空死依赖）。`depends` 字段只表达「运行时 task 间 fail-fast」；「逻辑依赖」（谁需要谁的前置环境）由 Scenario 的 prepare 编排保证，并记录在本文件各模块的 Dependency 描述中。
 
 ## 模块职责总览
 
@@ -34,7 +36,7 @@
 - **Responsibility**：扫描 AP，解析 SSID/RSSI（保留，供手动调试 / 未来场景）。
 - **Input**：串口 `wifi scan` 输出。
 - **Output**：AP 列表（RSSI<-70 只警告不判失败）。
-- **Dependency**：wifi_check。
+- **Dependency**：逻辑依赖 wifi_check（已联网状态），由 prepare.wifi_connect 收敛器内部保证；代码 `depends=[]`。
 - **Forbidden Dependency**：不解析 IP。
 - **Lifecycle**：退出 normal 默认流程，模块代码保留。
 
@@ -43,7 +45,7 @@
 - **Responsibility**：连接 WiFi，异步等待拿到 IP（保留，供手动调试 / 未来场景）。
 - **Input**：ssid/password（来自 system.wifi）。
 - **Output**：`ctx.evb_ip`。
-- **Dependency**：wifi_scan。
+- **Dependency**：逻辑依赖 wifi_scan（AP 列表），退出 normal 默认流程；代码 `depends=[]`。
 - **Forbidden Dependency**：不负责 FTP/RTMP。
 - **Lifecycle**：退出 normal 默认流程；收敛器 `wifi_connect` 内部实现「未联网才 join」的逻辑。
 
@@ -67,7 +69,7 @@
 - **Responsibility**：幂等启动 FTP 服务 + 建立连接验证。
 - **Input**：`ctx.evb_ip`。
 - **Output**：可用的 FTP 客户端（存入 ctx）。
-- **Dependency**：wifi_join（需 evb_ip）。
+- **Dependency**：逻辑依赖 WiFi 就绪（需 evb_ip），由 prepare.wifi_connect 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**全程只发一次 ftp_server**（重发触发固件崩溃）；**每次下载前重建连接**（不缓存复用）。
 - **Lifecycle**：启动后长期 listen；会话 3s 空闲即断。
 
@@ -76,7 +78,7 @@
 - **Responsibility**：遍历拍照模式，每拍一次验证产物。
 - **Input**：photo_modes 参数。
 - **Output**：串口 `Save Photo Successful`（主判据）。
-- **Dependency**：ftp（需 FTP 客户端）。
+- **Dependency**：逻辑依赖 FTP 就绪（需 FTP 客户端），由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得写 for 循环重复**（重复由 Scenario 的 task.repeat 驱动）；不感知场景类型。
 - **Lifecycle**：每模式一次动作；FTP 下载 JPEG 校验为辅助，失败降级不判 FAIL。
 
@@ -85,7 +87,7 @@
 - **Responsibility**：录一段视频并验证产物。
 - **Input**：video_duration 参数。
 - **Output**：串口 `Save Video Successful`（主判据）。
-- **Dependency**：ftp。
+- **Dependency**：逻辑依赖 FTP 就绪，由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：同 photo（不写循环、不感知场景）。
 - **Lifecycle**：拍摄 + 下载校验；FTP 校验为辅助。
 
@@ -94,7 +96,7 @@
 - **Responsibility**：发起推流、保持、验证流到达、停止。
 - **Input**：pc_ip、stream_duration、heartbeat_timeout。
 - **Output**：ffprobe 探到 h264+分辨率 且 heartbeat 无超时。
-- **Dependency**：wifi_join（不依赖 ftp）。
+- **Dependency**：逻辑依赖 WiFi 就绪，由 prepare.wifi_connect 保证；不依赖 FTP；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）。
 - **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。
 

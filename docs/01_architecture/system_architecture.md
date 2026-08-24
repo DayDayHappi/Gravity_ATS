@@ -40,7 +40,7 @@
  → 生成报告，返回退出码
 ```
 
-- 依赖关系：task 声明 depends；某模块 FAIL/ERROR 时依赖它的模块 SKIP；**SKIP 不阻断依赖**（主动跳过不算失败）。
+- **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前三个场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
 - **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
 

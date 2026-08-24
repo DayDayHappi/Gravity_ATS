@@ -88,7 +88,7 @@ def _find_terminal() -> str:
 class RtmpModule(TestModule):
     """RTMP 推流测试。"""
 
-    depends = ["wifi_join"]
+    depends = []
     duration_key = "stream_duration"   # scenario 里 task.duration 覆盖此参数
 
     def __init__(self, config):

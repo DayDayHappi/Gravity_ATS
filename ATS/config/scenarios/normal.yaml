@@ -7,9 +7,6 @@ scenario:
     - preclean
     - ftp_ready
   tasks:
-    - module: wifi_check
-    - module: wifi_scan
-    - module: wifi_join
     - module: emmc
     - module: photo
     - module: video

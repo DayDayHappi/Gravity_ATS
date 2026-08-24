@@ -10,3 +10,4 @@
 | ADR-006 | 内置 ffmpeg + nginx-rtmp | 离线依赖 + 服务端就绪检查 |
 | ADR-007 | 模块红线 | 模块只做一次动作，循环由 Scenario/Runner 驱动 |
 | ADR-008 | WiFi 职责重划 | wifi_check=状态检测器，prepare.wifi_connect=状态收敛器，scan/join 退出 normal |
+| ADR-009 | depends 字段语义定位 | depends 只做 task 间 fail-fast，逻辑依赖移到 module_design 文档，清空死依赖 |

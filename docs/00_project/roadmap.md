@@ -12,12 +12,14 @@
 - Scenario 层重构（配置三层拆分 + Task/repeat/loop + 场景隔离）
 - 修复 `--no-interactive-wifi` 断链（原 P0-1，方向 A）
 - normal 场景移除重复 ftp task
+- WiFi 职责重划（ADR-008）源码已实施：normal tasks = emmc/photo/video/rtmp
+- depends 字段清理（ADR-009）源码已实施：6 个模块死依赖清空
 - 仓库只跟踪 ATS + tools + docs
 
 ## Current（进行中）
 
-- **待实施**：WiFi 职责重划（ADR-008）——normal tasks 移除 wifi_check/scan/join、wifi_connect 改收敛器
 - **未完成**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动全部待真机验证
+- **待 Code Agent**：base.py docstring 过时（「拓扑排序」旧语义）
 
 ## Planned（计划中）
 

@@ -68,19 +68,31 @@ def _action_serial_init(ctx, system_cfg):
 
 @prepare_action("wifi_connect")
 def _action_wifi_connect(ctx, system_cfg):
-    """建立测试环境的 WiFi 连接，连上存 ctx.evb_ip / ctx.skip_wifi。
+    """WiFi 状态收敛器（ADR-008）：先检测已联网则保留，未联网则执行 join。
 
-    - 自动（--no-interactive-wifi）：直接用 system.wifi 的 default_ssid/default_password
-      执行 wifi join，不弹交互。
-    - 交互（默认）：可连默认 SSID 或扫描选 AP。
-    两条路径最终汇聚到同一个 join 出口，连上后设 ctx.evb_ip + ctx.skip_wifi=True。
+    - 检测：复用 wifi.check_wifi_connected（ifconfig 有无非 0.0.0.0 IP）。
+    - 已联网：设 ctx.evb_ip + ctx.wifi_ready=True + ctx.skip_wifi=True，直接返回。
+    - 未联网：自动（--no-interactive-wifi）用默认 SSID join；交互（默认）可选默认/扫描。
+    最终保证 WiFi 达到可用状态（ctx.evb_ip 就绪）。
     """
     console = getattr(ctx, "console", None)
     if console is None:
         logger.warn("wifi_connect: 无 console，跳过")
         return
 
-    from ..modules.wifi import _SCAN_HEADER_RE, _SCAN_ROW_RE, _GOT_IP_RE
+    from ..modules.wifi import (
+        _SCAN_HEADER_RE, _SCAN_ROW_RE, _GOT_IP_RE, check_wifi_connected,
+    )
+
+    # 1. 状态检测：已联网则收敛，不再 join（掉电记忆 WiFi 场景）
+    ip = check_wifi_connected(console)
+    if ip:
+        ctx.evb_ip = ip
+        ctx.wifi_ready = True
+        ctx.skip_wifi = True
+        logger.info(f"WiFi 已联网（IP={ip}），无需连接")
+        return
+    ctx.wifi_ready = False
 
     wifi_cfg = system_cfg.get("wifi", {})
     default_ssid = wifi_cfg.get("default_ssid", "")

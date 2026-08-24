@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-24 | [20260824_0250_depends字段清理.md](20260824_0250_depends字段清理.md) | ADR-009 方向 A：清空 6 个模块死依赖 depends（photo/video/rtmp/ftp/wifi_scan/wifi_join），depends 只保留 task 间 fail-fast 语义 |
+| 2026-08-24 | [20260824_0230_WiFi职责重划源码实施.md](20260824_0230_WiFi职责重划源码实施.md) | ADR-008 实施：normal 移除 wifi_check/scan/join，wifi_connect 改状态收敛器，wifi_check 产出 ctx.wifi_ready |
 | 2026-08-24 | [20260824_0205_修复no_interactive_wifi断链.md](20260824_0205_修复no_interactive_wifi断链.md) | 修复 --no-interactive-wifi 下 wifi_connect 直接 return 导致 evb_ip 拿不到、photo/video 全 SKIP：非交互改为自动用默认 SSID join |
 | 2026-08-24 | [20260824_0150_移除normal场景tasks重复ftp.md](20260824_0150_移除normal场景tasks重复ftp.md) | normal 场景 tasks 删除重复的 ftp 模块（ftp_ready 已做 FTP 准备），保留 modules/ftp.py 代码；photo/video 依赖不阻断 |
 | 2026-08-20 | [20260820_2246_ftp_ready下沉ftp_server启动幂等只发一次.md](20260820_2246_ftp_ready下沉ftp_server启动幂等只发一次.md) | 新增 start_ftp 幂等函数，ftp_ready 下沉 ftp_server 启动（全局只发一次），client 每次重建；修 stress 无 ftp 模块导致 FTP 未启动 |

@@ -31,7 +31,7 @@ _PIC_DIR = "/emmc/PIC"
 class PhotoModule(TestModule):
     """拍照测试。"""
 
-    depends = ["ftp"]
+    depends = []
 
     def run(self, ctx, console, params=None):
         self.config = self._merge(params)

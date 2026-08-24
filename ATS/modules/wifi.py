@@ -8,6 +8,12 @@
 执行顺序：wifi_check -> wifi_scan -> wifi_join
 - wifi_check 先 ifconfig 检测，若已有 IP（板子未下电仍连着），跳过 scan/join
 - 否则 wifi_scan 扫描 AP，wifi_join 连接并获取 IP
+
+职责定位（ADR-008）：
+- wifi_check：状态检测器，prepare 内部使用（产出 ctx.evb_ip + ctx.wifi_ready），
+  只检测不 scan/join，不作 normal task。
+- wifi_scan / wifi_join：代码保留但退出 normal 默认流程（可复用于手动调试/未来场景）。
+- 连接收敛由 prepare.wifi_connect（状态收敛器）完成。
 """
 import re
 import time
@@ -47,10 +53,10 @@ def check_wifi_connected(console):
 
 @register("wifi_check")
 class WifiCheckModule(TestModule):
-    """WiFi 连接状态检测（在 scan/join 之前执行）。
+    """WiFi 连接状态检测器（ADR-008：prepare 内部检测，不作 normal task）。
 
-    发 ifconfig，若已有 IP（板子未下电仍连着 WiFi），标记 ctx.skip_wifi=True
-    并存 evb_ip，使后续 wifi_scan/wifi_join 跳过。
+    只检测（ifconfig → 有无非 0.0.0.0 IP），产出 ctx.evb_ip + ctx.wifi_ready。
+    不 scan / join / 改配置。
     """
 
     depends = []
@@ -58,12 +64,13 @@ class WifiCheckModule(TestModule):
     def run(self, ctx, console, params=None):
         timer = Timer().start()
         ip = check_wifi_connected(console)
+        ctx.wifi_ready = bool(ip)
         if ip:
             ctx.skip_wifi = True
             ctx.evb_ip = ip
-            res = self._pass(f"已联网，IP={ip}（跳过 wifi scan/join）")
+            res = self._pass(f"已联网，IP={ip}")
         else:
-            res = self._pass("未联网，将继续 scan/join")
+            res = self._pass("未联网")
         res.elapsed_ms = timer.elapsed_ms()
         return res
 
@@ -72,7 +79,7 @@ class WifiCheckModule(TestModule):
 class WifiScanModule(TestModule):
     """WiFi 扫描测试。"""
 
-    depends = ["wifi_check"]
+    depends = []
 
     def run(self, ctx, console, params=None):
         if getattr(ctx, "skip_wifi", False):
@@ -110,7 +117,7 @@ class WifiJoinModule(TestModule):
     否则用 ctx.wifi_ssid / ctx.wifi_password 执行 join。
     """
 
-    depends = ["wifi_scan"]
+    depends = []
 
     def run(self, ctx, console, params=None):
         if getattr(ctx, "skip_wifi", False) and getattr(ctx, "evb_ip", None):

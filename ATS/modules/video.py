@@ -25,7 +25,7 @@ _VIDEO_DIR = "/emmc/VIDEO"
 class VideoModule(TestModule):
     """录像测试。"""
 
-    depends = ["ftp"]
+    depends = []
     duration_key = "video_duration"   # scenario 里 task.duration 覆盖此参数
 
     def run(self, ctx, console, params=None):

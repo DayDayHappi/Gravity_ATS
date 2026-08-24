@@ -118,7 +118,7 @@ def start_ftp(ctx, console, cfg=None):
 class FtpModule(TestModule):
     """FTP 服务启动与连接验证。"""
 
-    depends = ["wifi_join"]
+    depends = []
 
     def run(self, ctx, console, params=None):
         self.config = self._merge(params)
