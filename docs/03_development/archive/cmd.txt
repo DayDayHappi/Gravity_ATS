@@ -1,0 +1,54 @@
+ffplay \
+-fflags nobuffer \
+-flags low_delay \
+-framedrop \
+-sync ext \
+rtmp://192.168.x.x/live/cam
+
+
+ffplay \
+-fflags nobuffer \
+-flags low_delay \
+-avioflags direct \
+-probesize 32 \
+-analyzeduration 0 \
+-max_delay 0 \
+-rtmp_buffer 0 \
+-rtmp_live live \
+-noinfbuf \
+-framedrop \
+-sync ext \
+rtmp://192.168.1.89/live/cam
+
+./AutoTestScripts_JX009/tools/ffmpeg/ffplay \
+-fflags nobuffer \
+-flags low_delay \
+-probesize 32768 \
+-analyzeduration 100000 \
+-max_delay 0 \
+-rtmp_buffer 0 \
+-rtmp_live live \
+-noinfbuf \
+-framedrop \
+-sync ext \
+rtmp://192.168.1.89/live/cam
+
+
+./AutoTestScripts_JX009/tools/ffmpeg/ffplay \
+-fflags nobuffer \
+-flags low_delay \
+-rtmp_buffer 0 \
+-rtmp_live live \
+-noinfbuf \
+-framedrop \
+-sync ext \
+rtmp://192.168.1.89/live/cam
+
+./AutoTestScripts_JX009/tools/ffmpeg/ffplay \
+-fflags nobuffer \
+-flags low_delay \
+-rtmp_buffer 0 \
+-noinfbuf \
+-framedrop \
+-sync ext \
+rtmp://192.168.1.89/live/cam

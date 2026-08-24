@@ -1,18 +1,20 @@
 # ============================================================
-# 本仓库只跟踪 ATS/（源码）与 tools/（内置 ffmpeg 二进制）
-# 其余目录与根目录杂项均忽略（本地保留，不进 git）
+# 跟踪范围：ATS/（源码）、tools/（内置 ffmpeg 二进制）、
+#           docs/（文档知识库）、.claude/agents/（Document Agent 规则）
+# 运行产物与本地敏感配置忽略（不进 git）
 # ============================================================
 
 # 运行产物
 logs/
 reports/
 
-# 文档 / 交接 / 实测样本
-docs/
+# 实测样本（开发参考，保留本地）
 res/
 
-# Claude 配置与计划文件
-.claude/
+# Claude 配置与计划文件（仅放行 Document Agent 规则，settings.local.json 等继续忽略）
+.claude/*
+!.claude/agents/
+!.claude/agents/document-agent.md
 
 # 根目录杂项
 migrate.sh
