@@ -2,6 +2,12 @@
 
 VX100 EVB 上位机自动化测试脚本工程。入口：`python3 -m ATS.main --scenario <name>`（默认 `normal`）。
 
+## Agent 角色选择（Agent Role Selection）
+
+- 以 **Code Agent** 身份工作时，先读 `.claude/agents/code-agent.md`（代码实现者，只改源码/测试/devlog）。
+- 以 **Document Agent** 身份工作时，先读 `.claude/agents/document-agent.md`（工程知识管理员，只改架构/设计/交接）。
+- **不得混职责**：Code Agent 不碰架构/设计/交接文档，Document Agent 不碰源码。
+
 ## 文档管理（Document Management）
 
 - 文档知识库在 `docs/`，唯一导航入口是 `docs/README.md`。任何 Agent 先读它，再按任务决定读哪些文件，不要全量扫描。
