@@ -72,17 +72,24 @@ class PhotoModule(TestModule):
 
         # 2. 拍照 + 等保存完成。
         # 拍照命令输出海量摄像头初始化日志，会打乱哨兵定界，故用 exec_async
-        # （发命令后直接等正则，不依赖哨兵）。主判据：Save Photo Successful（含路径）
+        # （发命令后直接等正则，不依赖哨兵）。
+        # ★ 主判据：Capture completed successfully.（相机日志全部打印完的完成标志）。
+        #   不能用 Save Photo Successful：它出现早，此时日志未打印完、路径还可能被
+        #   串口分块截断（实测出现 "Save Photo Successful: /e" 的截断），提前发下一条
+        #   命令会打断相机流程造成错位。
         r = console.exec_async("dfs_capture_start",
-                               expect=r"Save Photo Successful:\s*(\S+)",
+                               expect=r"Capture completed successfully.",
                                result_timeout=30.0)
         if not r.success:
             return self._mk(name, "FAIL", "拍照未完成保存", r.clean[-300:], timer)
 
-        # 3. 从串口输出解析保存目录（如 /emmc/PIC/20260812_104009_9606/）
+        # 3. 从累积缓冲扫描保存目录（如 /emmc/PIC/20260812_104009_9606/）。
+        #    不能依赖 Save Photo Successful 行的捕获组——板端打印路径本身会分块截断；
+        #    等 Capture completed successfully. 后整条路径已在 r.clean 中拼接完整，
+        #    按 /emmc/PIC/<时间戳>/ 目录结构扫描才可靠。
         import re
-        save_dir = r.matched or ""
-        save_dir = save_dir.rstrip("/")
+        m2 = re.search(rf"{re.escape(_PIC_DIR)}/[^\s/]+/", r.clean)
+        save_dir = m2.group(0).rstrip("/") if m2 else ""
         msg_base = f"拍照成功，保存到 {save_dir}"
 
         # 4. FTP 下载验证（辅助；FTP 在拍照后大概率崩，强制重连）
