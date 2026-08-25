@@ -23,14 +23,24 @@ python3 -m ATS.main --scenario stress --no-interactive-wifi   # 再通压测循�
 - 验收项：normal 全程 1 个 ffplay 窗口；stress repeat=3/loop 多轮不重复开窗、无残留进程；cleanup 正常关闭窗口。
 - 已知遗留（见 devlog）：终端窗口模式 `killpg` 属 best-effort；`preview_required: true` 尚未闭环「影响整体结果」。
 
-## 🟡 P2 — loop 语义局限
+## 🟡 P2 — 新增场景 stress_traverse_photo_mode（待实施）
+
+需求已整理：[新增场景需求_stress_traverse_photo_mode.md](../03_development/archive/新增场景需求_stress_traverse_photo_mode.md)。
+
+- 新增 `ATS/config/scenarios/stress_traverse_photo_mode.yaml`，与 `stress.yaml` 唯一差异是
+  photo task 用 `override.photo_modes` 遍历全部拍照模式（`auto/single/mfnr/hdr_0~3`）。
+- 已核查现有 `override` + `repeat` 机制足够，**预计不需要改 `photo.py`/Runner/Scenario**，
+  纯新增配置文件。
+- `photo_modes` 具体 7 个模式名需 Code Agent 真机核实（TODO-CONFIRM，见需求文档）。
+
+## 🟡 P4 — loop 语义局限
 
 当前 loop 只能循环「整轮 tasks」，不支持「A 任务循环 N 次 + B 只跑 1 次」混合编排（目前靠 task.repeat + scenario.loop 两层凑合）。
 
-## 🟡 P3 — 破坏性 CLI 变更
+## 🟡 P5 — 破坏性 CLI 变更
 
 `--modules`/`--skip` 已移除，`--scenario` 成为主入口。旧文档命令全部失效，需同步。
 
-## 🟢 P4 — RTMP 类型2 网络异常未覆盖
+## 🟢 P6 — RTMP 类型2 网络异常未覆盖
 
 heartbeat 只能证明「板端编码线程活着」，证明不了「网络断但板端仍在编码」（f_index 持续但 ffprobe 收不到）。如需覆盖需补周期 ffprobe 复探。
