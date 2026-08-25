@@ -8,7 +8,7 @@ scenario:
     - ftp_ready
   loop:
     enable: true
-    count: 10
+    count: 20
   tasks:
     - module: photo
       repeat: 50
