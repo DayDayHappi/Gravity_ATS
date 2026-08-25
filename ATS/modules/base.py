@@ -1,7 +1,7 @@
 """模块基类与注册机制（解耦核心）。
 
 设计要点：
-- 每个功能模块继承 ``TestModule``，实现 ``run()``，声明 ``name`` 和 ``depends``。
+- 每个功能模块继承 ``TestModule``，实现 ``run()``；``name`` 由 ``@register("xxx")`` 注入。
 - ``@register("wifi")`` 装饰器把模块注册到全局表，runner 按名字查找、按 scenario 顺序执行。
 - 模块只通过 ``ctx``（共享上下文）和 ``console``（串口）与其他模块交互，
   不直接 import 其他模块 -> 增删模块不影响既有模块。
@@ -51,7 +51,8 @@ class TestModule:
 
     子类需设置：
         name:   模块名（由 @register 注入，子类不必显式声明）
-        depends: 依赖的模块名列表（runner 据此拓扑排序）
+        depends: 运行时 task 间 fail-fast 依赖（当前三场景均无此用法，字段保留但空；
+                 逻辑依赖由 Scenario prepare 编排 + module_design.md 表达，见 ADR-009）
 
     子类可覆盖：
         setup():    前置（如启动 PC 端服务）

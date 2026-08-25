@@ -189,6 +189,57 @@ def _action_ftp_ready(ctx, system_cfg):
         logger.warn("ftp_ready: FTP 服务启动/连接失败（可能 WiFi 未连），photo/video 可能跳过")
 
 
+@prepare_action("preview_start")
+def _action_preview_start(ctx, system_cfg):
+    """启动画面观察 PreviewManager（ADR-010）：组观看地址 + nginx 就绪后 start。
+
+    - 开关：ctx.preview_enabled（scenario 层 preview.enabled）为 False 则跳过。
+    - 观看地址：preview.url 显式覆盖优先；否则由 ctx.pc_ip + rtmp.yaml 的 stream_url
+      模板推导（与 rtmp 模块判据同一 URL，避免两处各写一份漂移）。
+    - 复用 RtmpServer.check_ready() 确认 nginx-rtmp 就绪，未就绪跳过（不影响判据）。
+    - 创建 PreviewManager 写入 ctx.preview_manager，供 preview_stop 与未来扩展复用。
+    """
+    if not getattr(ctx, "preview_enabled", False):
+        logger.info("preview.enabled=false，跳过画面观察")
+        return
+
+    from ..drivers.preview_manager import PreviewManager, _detect_pc_ip
+    from ..drivers.rtmp_server import RtmpServer, RtmpServerError
+    from .config import load_module_config
+
+    preview_cfg = load_module_config("preview")
+    rtmp_cfg = load_module_config("rtmp")
+
+    # pc_ip 解析顺序：system.pc.ip -> auto 探测（复用 preview_manager._detect_pc_ip）
+    evb_ip = getattr(ctx, "evb_ip", None)
+    sys_pc = (getattr(ctx, "system_config", None) or {}).get("pc", {}) or {}
+    pc_ip = sys_pc.get("ip", "auto")
+    if pc_ip in ("auto", "", None):
+        pc_ip = _detect_pc_ip(evb_ip) if evb_ip else ""
+    if pc_ip:
+        ctx.pc_ip = pc_ip
+
+    explicit_url = (preview_cfg.get("url") or "").strip()
+    if explicit_url:
+        url = explicit_url
+    elif pc_ip:
+        url = (rtmp_cfg.get("stream_url", "rtmp://{pc_ip}/live/cam")).format(pc_ip=pc_ip)
+    else:
+        logger.warn("preview_start: 未确定 PC IP，跳过画面观察")
+        return
+
+    # nginx-rtmp 就绪（复用现有 driver），未就绪则跳过（不影响判据）
+    try:
+        RtmpServer(port=1935).check_ready()
+    except RtmpServerError as e:
+        logger.warn(f"preview_start: RTMP 服务端未就绪，跳过画面观察: {e}")
+        return
+
+    mgr = PreviewManager(preview_cfg)
+    mgr.start(url)
+    ctx.preview_manager = mgr
+
+
 # ---------------------------------------------------------------------------
 # cleanup 动作
 # ---------------------------------------------------------------------------
@@ -205,6 +256,19 @@ def _action_stop_stream(ctx, system_cfg):
                            result_timeout=8.0)
     except Exception:
         pass
+
+
+@cleanup_action("preview_stop")
+def _action_preview_stop(ctx, system_cfg):
+    """关闭画面观察 PreviewManager（ADR-010），释放 ffplay 重连 wrapper 及子进程。"""
+    mgr = getattr(ctx, "preview_manager", None)
+    if mgr is None:
+        return
+    try:
+        mgr.stop()
+    except Exception as e:
+        logger.warn(f"preview_stop 异常(可忽略): {e}")
+    ctx.preview_manager = None
 
 
 @cleanup_action("close_serial")
@@ -229,10 +293,12 @@ class ScenarioManager:
         self.config_dir = config_dir or CONFIG_DIR
         self.system_cfg = None
         self.ctx = None
+        self.preview_cfg = {}   # scenario 层 preview 开关（ADR-010），load 时解析
 
     def load(self, name: str) -> Scenario:
         """加载场景名 -> Scenario 对象（含参数合并前的原始 task）。"""
         raw = load_scenario(name, self.config_dir)
+        self.preview_cfg = (raw.get("scenario") or {}).get("preview") or {}
         return self._parse_scenario(raw, name)
 
     def run(self, scenario_name: str, no_interactive_wifi: bool = False,
@@ -253,6 +319,7 @@ class ScenarioManager:
         ctx = Context()
         ctx.system_config = self.system_cfg
         ctx.no_interactive_wifi = no_interactive_wifi
+        ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
         self.ctx = ctx
 
         results = []

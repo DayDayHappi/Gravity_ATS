@@ -19,12 +19,13 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - normal 场景移除重复 ftp task（FTP 由 prepare.ftp_ready 保证）
 - WiFi 职责重划（ADR-008）源码已实施：normal tasks = emmc/photo/video/rtmp
 - depends 字段清理（ADR-009）源码已实施：6 个模块死依赖清空
+- base.py docstring 修正，对齐 ADR-009（「拓扑排序」旧语义 → 「运行时 fail-fast」）
 - 仓库只跟踪 ATS + tools + docs
+- ADR-010 PreviewManager 单例播放器源码已实施（ffplay 从 rtmp 模块剥离至驱动层）
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动全部未跑真机。
-- **待 Code Agent**：base.py docstring 过时（「拓扑排序」旧语义），见 next_step.md P1。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）全部未跑真机。
 
 ## Known Issues
 

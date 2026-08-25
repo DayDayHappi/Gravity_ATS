@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-25 | [20260825_0111_PreviewManager单例播放器实施.md](20260825_0111_PreviewManager单例播放器实施.md) | ADR-010 实施：新增 drivers/preview_manager.py + config/modules/preview.yaml，ffplay 从 rtmp 模块抽离为 Scenario 生命周期单例，scenario_manager 挂 preview_start/preview_stop 动作，normal/stress 补 preview.enabled |
+| 2026-08-24 | [20260824_2259_修正base模块docstring语义.md](20260824_2259_修正base模块docstring语义.md) | 修正 base.py docstring 过时语义（拓扑排序→声明顺序执行；depends→运行时 fail-fast），对齐 ADR-009 |
 | 2026-08-24 | [20260824_0555_stress场景循环次数3改10.md](20260824_0555_stress场景循环次数3改10.md) | stress 场景 loop.count 3 → 10（压测整轮循环增至 10 次）；第 1 行注释「3 次」过时待同步 |
 | 2026-08-24 | [20260824_0250_depends字段清理.md](20260824_0250_depends字段清理.md) | ADR-009 方向 A：清空 6 个模块死依赖 depends（photo/video/rtmp/ftp/wifi_scan/wifi_join），depends 只保留 task 间 fail-fast 语义 |
 | 2026-08-24 | [20260824_0230_WiFi职责重划源码实施.md](20260824_0230_WiFi职责重划源码实施.md) | ADR-008 实施：normal 移除 wifi_check/scan/join，wifi_connect 改状态收敛器，wifi_check 产出 ctx.wifi_ready |

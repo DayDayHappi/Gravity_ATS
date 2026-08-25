@@ -7,27 +7,29 @@
 | 层 | 文件 | 放什么 |
 |----|------|--------|
 | system | `config/system.yaml` | 串口、WiFi 网络环境（ssid/password 属这里）、pc.ip、runner、report |
-| modules | `config/modules/*.yaml` | 模块业务参数（photo_modes、video_duration、stream_duration、heartbeat_timeout…） |
-| scenarios | `config/scenarios/*.yaml` | 流程 / 组合 / 循环（prepare/tasks/loop/cleanup） |
+| modules | `config/modules/*.yaml` | 模块业务参数（photo_modes、video_duration、stream_duration、heartbeat_timeout、preview 播放器参数…） |
+| scenarios | `config/scenarios/*.yaml` | 流程 / 组合 / 循环（prepare/tasks/loop/cleanup/preview.enabled） |
 
 **场景结构**：
 
 ```yaml
 scenario:
   name: stress
-  prepare: [serial_init, wifi_connect, preclean, ftp_ready]
+  prepare: [serial_init, wifi_connect, preclean, ftp_ready, preview_start]
+  preview: {enabled: true}
   loop: {enable: true, count: 3}
   tasks:
     - {module: photo, repeat: 50}
     - {module: video, duration: 180}
     - {module: rtmp,  duration: 600}
-  cleanup: [stop_stream, close_serial]
+  cleanup: [stop_stream, close_serial, preview_stop]
 ```
 
 - `task.repeat`：单任务重复 N 次（Runner 循环，模块内不写 for）。
 - `task.duration`：经模块 `duration_key` 覆盖持续参数（video→video_duration、rtmp→stream_duration）。
 - `loop`：整轮循环（count 次数 / duration 时长 / 都缺省=无限）。
-- `prepare`/`cleanup` 内置动作：serial_init、wifi_connect、preclean、ftp_ready、stop_stream、close_serial。
+- `preview.enabled`：是否启动 RTMP 画面观察窗口（ADR-010），生命周期跨整个 Scenario（含 loop 多轮），不随单次 rtmp task 重启。
+- `prepare`/`cleanup` 内置动作：serial_init、wifi_connect、preclean、ftp_ready、preview_start、stop_stream、close_serial、preview_stop。
 
 ## 2. CLI
 

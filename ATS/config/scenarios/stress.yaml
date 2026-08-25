@@ -1,11 +1,14 @@
 # 压测场景：photo 50 次 + video 3min + rtmp 10min，整轮循环 3 次
 scenario:
   name: stress
+  preview:
+    enabled: true
   prepare:
     - serial_init
     - wifi_connect
     - preclean
     - ftp_ready
+    - preview_start
   loop:
     enable: true
     count: 20
@@ -18,4 +21,5 @@ scenario:
       duration: 600
   cleanup:
     - stop_stream
+    - preview_stop
     - close_serial

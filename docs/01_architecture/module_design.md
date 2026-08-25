@@ -19,6 +19,7 @@
 | video | 录像并验证产物 | 串口 `Save Video Successful` | ✓ task |
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
+| preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
 
 ---
 
@@ -93,12 +94,21 @@
 
 ## rtmp
 
-- **Responsibility**：发起推流、保持、验证流到达、停止。
+- **Responsibility**：发起推流、保持、验证流到达、停止。**不负责画面展示**（ADR-010：ffplay 已剥离到 preview_manager）。
 - **Input**：pc_ip、stream_duration、heartbeat_timeout。
 - **Output**：ffprobe 探到 h264+分辨率 且 heartbeat 无超时。
 - **Dependency**：逻辑依赖 WiFi 就绪，由 prepare.wifi_connect 保证；不依赖 FTP；代码 `depends=[]`。
-- **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）。
+- **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）；**不得启动 ffplay 或管理播放器进程**（ADR-010，属 preview_manager 职责）。
 - **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。
+
+## preview_manager（ADR-010）
+
+- **Responsibility**：管理 ffplay 单例，观察 EVB 实时 RTMP 流（延时/首帧/卡顿/推流恢复），观察能力而非测试能力。
+- **Input**：`ctx.pc_ip` + `rtmp.yaml.stream_url` 模板推导出的观看地址；`config/modules/preview.yaml` 播放器参数。
+- **Output**：`is_running()` 状态；异常仅在 `preview_required: true` 时才影响整体结果。
+- **Dependency**：逻辑依赖 nginx-rtmp 就绪（`RtmpServer.check_ready()`）+ WiFi 就绪；由 `prepare.preview_start` 保证。
+- **Forbidden Dependency**：**不得由 video.py/rtmp.py 创建或持有**；**不得每轮 loop 重新实例化**（Scenario 生命周期内单例，start 内部自带断流重连 wrapper）。
+- **Lifecycle**：`prepare.preview_start` 启动 → 跨整个 Scenario（含 loop 多轮 tasks）保持 → `cleanup.preview_stop` 关闭。存于 `ctx.preview_manager`。
 
 ## rtmp_monitor
 

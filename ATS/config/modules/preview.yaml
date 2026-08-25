@@ -1,0 +1,5 @@
+# PreviewManager 播放器参数（画面观察，不参与判据）
+ffplay_path: "tools/ffmpeg/ffplay"   # 可选：画面观察，无 DISPLAY 自动跳过；判据由 ffprobe 给出
+retry_interval: 3                     # ffplay 退出后重连间隔(秒)；stress 多轮推流断流后自动重连
+preview_required: false               # true 时画面观察意外退出才影响整体结果；默认 false 不影响判据
+url: ""                               # 显式覆盖观看地址；空则用 ctx.pc_ip + rtmp.yaml 的 stream_url 推导

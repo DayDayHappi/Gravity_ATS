@@ -8,20 +8,20 @@
 
 - Scenario 层重构 + 第四次交接 4 项改动（TX/RX 时间戳、exec_async 去哨兵、RTMP heartbeat、测试结束询问）
 - 20260824 改动：normal 移除重复 ftp task、修复 `--no-interactive-wifi` 断链、WiFi 职责重划（ADR-008）、depends 字段清理（ADR-009）
+- 20260825 改动：ADR-010 PreviewManager 单例播放器源码已实施（design 层 devlog 留痕，见 [P1 验收项](#🟡-p1--adr-010-previewmanager-待实施)）
 
 ```bash
 python3 -m ATS.main --scenario normal --no-interactive-wifi   # 先通正常链路
 python3 -m ATS.main --scenario stress --no-interactive-wifi   # 再通压测循环
 ```
 
-## 🟡 P1 — base.py docstring 过时（代码内注释，待 Code Agent）
+## 🟡 P1 — ADR-010 PreviewManager 待真机验收
 
-`ATS/modules/base.py` 的 docstring 仍写旧语义，与 ADR-005/009 不符：
+设计已定（[ADR-010](../02_design/decision_record/ADR-010-PreviewManager单例播放器.md)），源码已实施（devlog `20260825_0111_PreviewManager单例播放器实施.md`），**待真机验收**：
 
-- L4：「声明 `name` 和 `depends`」→ depends 语义已变，可简化为「声明 `name`」。
-- L54：「依赖的模块名列表（runner 据此拓扑排序）」→ **两处过时**：①「拓扑排序」早已改为「声明顺序执行」；② depends 已由 ADR-009 定义为「运行时 task 间 fail-fast」。
-
-正确语义（照 ADR-009）：`depends` 只表达「运行时 task 间 fail-fast」（当前三场景均无此用法，字段保留但空）；逻辑依赖由 Scenario 的 prepare 编排 + `module_design.md` 表达。
+- 已实施：`ATS/drivers/preview_manager.py`（单例，含断流重连 wrapper）+ `config/modules/preview.yaml`；`rtmp.py` 移除全部 ffplay 逻辑；`scenario_manager.py` 新增 `preview_start`/`preview_stop`；`normal.yaml`/`stress.yaml` 补配置（`aging.yaml` 不启用）。
+- 验收项：normal 全程 1 个 ffplay 窗口；stress repeat=3/loop 多轮不重复开窗、无残留进程；cleanup 正常关闭窗口。
+- 已知遗留（见 devlog）：终端窗口模式 `killpg` 属 best-effort；`preview_required: true` 尚未闭环「影响整体结果」。
 
 ## 🟡 P2 — loop 语义局限
 

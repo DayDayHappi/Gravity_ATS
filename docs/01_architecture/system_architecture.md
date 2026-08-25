@@ -15,10 +15,12 @@
              │ 逐个模块调用
 模块层    wifi / emmc / ftp / photo / video / rtmp（一次测试动作）
              │ 调用通信接口
-通信层    SerialConsole（串口） / FtpClient / RtmpReceiver
+通信层    SerialConsole（串口） / FtpClient / RtmpReceiver / PreviewManager
              │
 硬件层    EVB 板（msh shell / FTP 服务 / RTMP 推流）
 ```
+
+- **PreviewManager**（ADR-010）是驱动层的观察能力，生命周期挂在 `prepare.preview_start`/`cleanup.preview_stop`（跨整个 Scenario，含 loop 多轮），不属任一 Task，不影响判据。
 
 ## 2. 职责边界（架构约定，勿破坏）
 
@@ -34,9 +36,9 @@
 ```
 启动
  → 加载 scenario（system + modules + scenario 三层配置合并）
- → 执行 prepare 动作（串口初始化、WiFi 连接收敛、清理、FTP 就绪）
+ → 执行 prepare 动作（串口初始化、WiFi 连接收敛、清理、FTP 就绪、preview 启动）
  → 按 loop 循环执行 tasks（每个 task 交给 Runner 调度到对应 Module）
- → 执行 cleanup 动作（停推流、关串口）
+ → 执行 cleanup 动作（停推流、关串口、preview 停止）
  → 生成报告，返回退出码
 ```
 

@@ -1,11 +1,14 @@
 # 普通测试场景：等价原有完整测试链路
 scenario:
   name: normal
+  preview:
+    enabled: true
   prepare:
     - serial_init
     - wifi_connect
     - preclean
     - ftp_ready
+    - preview_start
   tasks:
     - module: emmc
     - module: photo
@@ -13,4 +16,5 @@ scenario:
     - module: rtmp
   cleanup:
     - stop_stream
+    - preview_stop
     - close_serial

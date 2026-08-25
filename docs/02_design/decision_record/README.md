@@ -11,3 +11,4 @@
 | ADR-007 | 模块红线 | 模块只做一次动作，循环由 Scenario/Runner 驱动 |
 | ADR-008 | WiFi 职责重划 | wifi_check=状态检测器，prepare.wifi_connect=状态收敛器，scan/join 退出 normal |
 | ADR-009 | depends 字段语义定位 | depends 只做 task 间 fail-fast，逻辑依赖移到 module_design 文档，清空死依赖 |
+| ADR-010 | PreviewManager 单例播放器 | ffplay 生命周期从 rtmp 模块剥离，归 Scenario 级 drivers/preview_manager.py，prepare/cleanup 挂载 |
