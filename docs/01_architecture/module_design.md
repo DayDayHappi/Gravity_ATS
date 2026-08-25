@@ -99,6 +99,7 @@
 - **Output**：ffprobe 探到 h264+分辨率 且 heartbeat 无超时。
 - **Dependency**：逻辑依赖 WiFi 就绪，由 prepare.wifi_connect 保证；不依赖 FTP；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）；**不得启动 ffplay 或管理播放器进程**（ADR-010，属 preview_manager 职责）。
+- **运行依赖**：本模块判据依赖 `ffprobe` 可执行（属运行依赖，**仓库不随附** `tools/ffmpeg/`，需自行安装或拷贝，见 `05_handoff/build_environment.md`）。
 - **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。
 
 ## preview_manager（ADR-010）
@@ -107,6 +108,7 @@
 - **Input**：`ctx.pc_ip` + `rtmp.yaml.stream_url` 模板推导出的观看地址；`config/modules/preview.yaml` 播放器参数。
 - **Output**：`is_running()` 状态；异常仅在 `preview_required: true` 时才影响整体结果。
 - **Dependency**：逻辑依赖 nginx-rtmp 就绪（`RtmpServer.check_ready()`）+ WiFi 就绪；由 `prepare.preview_start` 保证。
+- **运行依赖**：观察需 `ffplay` 可执行（属运行依赖，**仓库不随附** `tools/ffmpeg/`，需自行安装或拷贝，见 `05_handoff/build_environment.md`）；不可用时跳过画面观察，不影响判据。
 - **Forbidden Dependency**：**不得由 video.py/rtmp.py 创建或持有**；**不得每轮 loop 重新实例化**（Scenario 生命周期内单例，start 内部自带断流重连 wrapper）。
 - **Lifecycle**：`prepare.preview_start` 启动 → 跨整个 Scenario（含 loop 多轮 tasks）保持 → `cleanup.preview_stop` 关闭。存于 `ctx.preview_manager`。
 
