@@ -11,7 +11,7 @@
 
 ## 2. 测试方法
 
-- **主判据优先串口正向标志**（`Save Photo/Video Successful`、`Got IP address`、`publish ready`），不靠「无 error 关键字」（初始化日志含 `invalid` 等词会误判）。
+- **主判据优先串口正向标志**（`Capture completed successfully.`、`Save Video Successful`、`Got IP address`、`publish ready`），不靠「无 error 关键字」（初始化日志含 `invalid` 等词会误判）。
 - **辅助判据**：FTP 下载校验（JPEG 头 FFD8FF + 大小阈值），失败降级不判 FAIL（串口已确认成功）。
 - **异步命令**靠业务正则，不靠哨兵（业务未完成 shell 已返回）。
 - **RTMP**：ffprobe 实时探测（主）+ heartbeat 持续检测。

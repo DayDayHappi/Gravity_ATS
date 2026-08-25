@@ -15,7 +15,7 @@
 | wifi_join | 连接指定 WiFi | `Got IP address : <IP>` | 退出默认流程（保留代码） |
 | emmc | 进入 eMMC 目录 | `cd /emmc` 无 error | ✓ task |
 | ftp | 启动 FTP 服务 + 连接验证 | 列出 `/emmc` 成功 | prepare.ftp_ready 保证 |
-| photo | 拍照并验证产物 | 串口 `Save Photo Successful` | ✓ task |
+| photo | 拍照并验证产物 | 串口 `Capture completed successfully.` | ✓ task |
 | video | 录像并验证产物 | 串口 `Save Video Successful` | ✓ task |
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
@@ -78,7 +78,7 @@
 
 - **Responsibility**：遍历拍照模式，每拍一次验证产物。
 - **Input**：photo_modes 参数。
-- **Output**：串口 `Save Photo Successful`（主判据）。
+- **Output**：串口 `Capture completed successfully.`（主判据，相机日志全部打印完的完成标志）。
 - **Dependency**：逻辑依赖 FTP 就绪（需 FTP 客户端），由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得写 for 循环重复**（重复由 Scenario 的 task.repeat 驱动）；不感知场景类型。
 - **Lifecycle**：每模式一次动作；FTP 下载 JPEG 校验为辅助，失败降级不判 FAIL。

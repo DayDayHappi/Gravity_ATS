@@ -9,7 +9,7 @@
 | 用例 ID | 模块 | 输入 | 预期（成功判据） | 结果 |
 |---------|------|------|------------------|------|
 | TC-004 | emmc | `cd /emmc` | 无 error | PASS（重构前） |
-| TC-006 | photo | `cam_set photo <mode>` + capture | 串口 `Save Photo Successful: <dir>` | PASS |
+| TC-006 | photo | `cam_set photo <mode>` + capture | 串口 `Capture completed successfully.` | PASS |
 | TC-007 | video | `cam_set video` + start/stop | 串口 `Save Video Successful: <path>` | PASS |
 | TC-008 | rtmp | `rtmp_video_start <url>` | ffprobe 探到 h264+分辨率 且 heartbeat 无超时 | PASS |
 
