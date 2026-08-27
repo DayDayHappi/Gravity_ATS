@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-27 | [20260827_0721_video启动判据加f_index与失败清理.md](20260827_0721_video启动判据加f_index与失败清理.md) | video 启动判据 Record Start → Record Start\|f_index=（固件漏打 Record Start 但编码在跑时不再误判）；失败分支补发 dfs_video_stop 清理 stream_on 半初始化态，避免泄漏给 rtmp |
 | 2026-08-26 | [20260826_2321_video判据改VideoRecordingCompleted与路径扫描.md](20260826_2321_video判据改VideoRecordingCompleted与路径扫描.md) | video 判据 Save Video Successful → Video recording completed successfully.（出现早/路径分块截断致 flaky）；路径改从 r.clean 缓冲扫描 /emmc/VIDEO/<dir>/Video_<n>_0.h265 |
 | 2026-08-26 | [20260826_2247_新增场景stress_traverse_photo_mode.md](20260826_2247_新增场景stress_traverse_photo_mode.md) | 新增 stress_traverse_photo_mode.yaml：photo task 用 override.photo_modes 遍历 auto/single/mfnr/hdr_0~3 全模式，其余与 stress 一致（纯配置，不改源码） |
 | 2026-08-25 | [20260825_0514_photo判据改CaptureCompleted与路径扫描.md](20260825_0514_photo判据改CaptureCompleted与路径扫描.md) | photo 主判据 Save Photo Successful → Capture completed successfully.（日志未打印完/路径分块截断致提前发命令错位）；路径改从 r.clean 累积缓冲扫描 /emmc/PIC/<ts>/ |

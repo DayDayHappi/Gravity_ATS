@@ -59,10 +59,24 @@ class VideoModule(TestModule):
             return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
 
         # 3. 开始录像。录像命令输出海量日志会打乱哨兵，用 exec_async 等正则。
+        #    启动成功判据：Record Start（正常路径）或 f_index（录像编码心跳，无 [RTMP] 前缀，
+        #    区别于 rtmp_monitor 的 [RTMP] f_index）。连续压测下固件可能漏打 Record Start
+        #    （摄像头资源退化）但编码实际在跑（f_index 持续增长），只等 Record Start 会误判失败。
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
         rec_start = time.monotonic()
-        r = console.exec_async("dfs_video_start", expect=r"Record Start", result_timeout=25.0)
+        r = console.exec_async("dfs_video_start",
+                               expect=r"Record Start|f_index\s*=",
+                               result_timeout=25.0)
         if not r.success:
+            # 失败清理：尽力停掉可能已半启动的录像，避免 stream_on 半初始化态泄漏给下一个
+            # rtmp task（否则 ffprobe Input/output error 连锁 FAIL/SKIP）。best-effort，不判结果。
+            logger.warn("开始录像失败，补发 dfs_video_stop 清理状态（best-effort）...")
+            try:
+                console.exec_async("dfs_video_stop",
+                                   expect=r"Save Video|Please start|recording completed",
+                                   result_timeout=8.0)
+            except Exception as e:
+                logger.warn(f"清理 dfs_video_stop 异常(可忽略): {e}")
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
 
         time.sleep(duration)
