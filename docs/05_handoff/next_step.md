@@ -2,6 +2,37 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 紧急 — video 启动判据改 f_index + 失败清理 dfs_video_stop（待 Code Agent）
+
+**问题**（实测 `logs/stress_traverse_photo_mode/logs/20260827_034923`）：连续压测第 10 轮，
+`dfs_video_start` 后固件漏打 `Record Start`（摄像头资源退化），但编码实际在跑（`f_index` 持续增长）。
+当前 `video.py` 只等 `Record Start`（`result_timeout=25s`），于是误判「开始录像失败」FAIL，
+且失败分支**直接 return、没有发 `dfs_video_stop` 清理**，把 stream_on 半初始化态泄漏给下一个
+rtmp task → ffprobe `Input/output error`（run.log cycle 10~12 连锁 FAIL/SKIP）。
+
+**需求**（用户明确要求）：
+1. 启动成功判据加 `f_index` 检测——`f_index` 是录像编码心跳，每 90 帧发一次，
+   第一次 `f_index = 0`、第二次 `f_index = 90`。有 `Record Start` **或** `f_index` 出现
+   都应判启动成功（不只看 `Record Start`）。
+2. 判定启动失败后，补发一次 `dfs_video_stop` 清理状态（best-effort，不判结果）。
+
+**f_index 实测格式**（video 录像，无 `[RTMP]` 前缀，区别于 rtmp_monitor 监听的 `[RTMP] f_index`）：
+```
+[05:22:48.401] I/NO_TAG: Gravity_XR Record Start
+[05:22:50.385] I/NO_TAG: f_index = 0, f_len = 83618, cur_total_len = 83709     ← Record Start 后约 2s
+[05:22:53.384] I/NO_TAG: f_index = 90, f_len = 159743, ...                     ← 再约 3s
+[05:22:56.392] I/NO_TAG: f_index = 180, ...
+```
+剥 ANSI 后形如 `... I/NO_TAG: f_index = 0, f_len = 83618, cur_total_len = 83709`。
+
+**修复建议**（`ATS/modules/video.py` L64-66，由 Code Agent 落地，参考 rtmp_monitor.py 的 `_HEARTBEAT_RE`）：
+- 判据正则：`expect=r"Record Start|f_index\s*="`（兼容 Record Start 与 f_index）；
+  若要求「稳定」，可等到 `f_index\s*=\s*(?:90|[1-9]\d\d)`（跳过 f_index=0 等到第二次 ≥90）。
+- 失败清理：`if not r.success:` 分支里，先 `console.exec_async("dfs_video_stop", expect=..., result_timeout=短超时)` 尽力停掉，
+  再 return FAIL。注意 `dfs_video_stop` 的完成判据用 `Video recording completed successfully.`（见上个 video 判据修复）。
+
+**参考**：`ATS/modules/rtmp_monitor.py`（f_index 正则）、`ATS/README.md` §7.9（同源摄像头资源冲突已知问题）。
+
 ## 🔴 P0 — 全部改动待真机验证
 
 以下改动均已离线验证通过，**尚未真机验证**：
