@@ -2,7 +2,7 @@
 
 ## Current Version
 
-分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008 已实施），**均尚未真机验证**。
+分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景），**均尚未真机验证**。
 
 ## Current Architecture
 
@@ -22,10 +22,13 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - base.py docstring 修正，对齐 ADR-009（「拓扑排序」旧语义 → 「运行时 fail-fast」）
 - 仓库只跟踪 ATS + tools + docs
 - ADR-010 PreviewManager 单例播放器源码已实施（ffplay 从 rtmp 模块剥离至驱动层）
+- photo 判据修复：`Save Photo Successful` → `Capture completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（真机验证通过）
+- video 判据修复：`Save Video Successful` → `Video recording completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（与 photo 同类的对称 bug，离线验证通过，待真机）
+- 新增场景 `stress_traverse_photo_mode.yaml`（photo task 用 `override.photo_modes` 遍历全部拍照模式压测；`hdr` 模式名待真机核实 TODO-CONFIRM）
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）全部未跑真机。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）全部未跑真机。
 
 ## Known Issues
 
