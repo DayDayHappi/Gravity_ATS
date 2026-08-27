@@ -9,8 +9,9 @@
 | RTMP 命令卡死板子（串口零响应） | 未联网/状态异常时发 `rtmp_video_start` | 确保 WiFi 已连 + 摄像头就绪再发；卡死需物理重启 | 待固件修复 |
 | RTMP 发送线程启动调度延迟 | 前一重负载结束到 RTMP 冷却间隔太短 | 前几十帧积压、首 IDR 延时大，属固件线程调度问题 | 待固件修复 |
 | 关键帧(IDR)稀疏 | 1080p 编码慢 + FTP 刷屏抢 CPU | 探测超时放宽（-rw_timeout 15s），别用 640×480 经验值套大分辨率 | 待固件优化 |
+| eMMC 文件系统大量照片写入后失效 + 固件「假成功」标志 | stress_traverse 压测约第 44 张起 `Image_*.jpg write failed errno=0`（open 成功 write 失败）→ `write open failed errno=-2`（ENOENT，目录建不出，累计 1353 条，不可恢复）；jpg 未落盘但固件仍打印 `Save Photo Successful`/`Capture completed successfully.`，脚本主判据误判 PASS | 转固件工程师定位（疑似 eMMC 目录/inode 超限、写缓冲泄漏、文件系统损坏）；脚本侧「未列出 jpg 辅助验证」应视为需警惕信号而非完全忽略 | 待固件修复 |
 
-排查先 grep serial.log 的 `RV_Backtrace` / `ImuThread` / `discontinuous frame` / `interp not finish in sof`。
+排查先 grep serial.log 的 `RV_Backtrace` / `ImuThread` / `discontinuous frame` / `interp not finish in sof` / `write failed errno` / `write open failed`。
 
 ## 文档过时点（后续顺手修）
 

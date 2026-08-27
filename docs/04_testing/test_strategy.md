@@ -13,6 +13,7 @@
 
 - **主判据优先串口正向标志**（`Capture completed successfully.`、`Video recording completed successfully.`、`Got IP address`、`publish ready`），不靠「无 error 关键字」（初始化日志含 `invalid` 等词会误判）。
 - **辅助判据**：FTP 下载校验（JPEG 头 FFD8FF + 大小阈值），失败降级不判 FAIL（串口已确认成功）。
+  ⚠️ 固件存在「假成功」：jpg 写失败（`write failed errno=0` / `write open failed errno=-2`）时仍打印 `Save Photo Successful`/`Capture completed successfully.`，此时「未列出 jpg」是唯一暴露失败的信号，应视为需警惕信号而非完全忽略（见 `05_handoff/known_issue.md` eMMC 失效条目）。
 - **异步命令**靠业务正则，不靠哨兵（业务未完成 shell 已返回）。
 - **RTMP**：ffprobe 实时探测（主）+ heartbeat 持续检测。
 
