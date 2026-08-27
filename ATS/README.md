@@ -193,13 +193,13 @@ logs/<时间戳>/
 
 - 目录大写 `PIC`/`VIDEO`，每次拍照/录像生成一个**时间戳命名的子目录**
 - 拍照成功标志（串口）：`[App Dfs] Capture completed successfully.`（相机日志全部打印完的完成标志；保存路径在其前一条日志 `[App Dfs] Save Photo Successful: /emmc/PIC/<dir>/`，脚本从累积缓冲扫描路径）
-- 录像成功标志（串口）：`[App Dfs] Save Video Successful: /emmc/VIDEO/<dir>/Video_<n>_0.h265`
+- 录像完成标志（串口）：`[App Dfs] Video recording completed successfully.`（`Save Video Successful: <path>` 出现更早约 2s，且其路径会被串口分块截断，不能作完成判据；路径从累积缓冲扫描）
 
 ### 7.5 ✅ 拍照/录像命令的异步性（哨兵失效，改 exec_async）
 
 - 拍照/录像命令**输出海量摄像头初始化日志**（sensor probe、AE/AWB、mem_laySolv 等），会**打乱哨兵回显**（引号丢失、行错位）
 - **不能用 exec_sync（哨兵定界）**，改用 `exec_async`（发命令后直接等正则，不依赖哨兵）
-- 成功判据用串口正向标志（拍照 `Capture completed successfully.`、录像 `Save Video Successful`），不靠"无 error 关键字"（初始化日志含 `invalid` 等词会误判）
+- 成功判据用串口正向标志（拍照 `Capture completed successfully.`、录像 `Video recording completed successfully.`），不靠"无 error 关键字"（初始化日志含 `invalid` 等词会误判）
 - FTP 下载 JPEG 验证作为**辅助**：FTP 崩溃时优雅降级（不判 FAIL，串口已确认成功）
 
 ### 7.6 ✅ WiFi 命令

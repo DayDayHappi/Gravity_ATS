@@ -2,6 +2,22 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 紧急 — video 判据修正（源码 bug，待 Code Agent 修复）
+
+`ATS/modules/video.py` 的 `dfs_video_stop` 判据错误，实测日志
+（`logs/stress/logs/20260826_030311/serial.log`）确认：
+
+- **正确判据**：`Video recording completed successfully.`（录像全流程走完的最终完成标志）
+- **当前错误实现**：`expect=r"Save Video Successful:\s*(\S+)"`，且路径从捕获组 `r.matched` 取
+- **两个问题**：
+  1. `Save Video Successful` 出现更早（实测约早 2s），此时录像收尾（编码 finalize/落盘）未完成；
+  2. 其路径会被串口分块截断（实测 `Save Video Successful: /emmc/VI`），捕获组取到截断路径，
+     导致后续 `ftp2.size()` 校验对象错误 → 偶发 FAIL / 校验跳过（flaky）。
+- **对称改法**（参考 `photo.py` 已完成的同类修复，`Capture completed successfully.` + 从累积缓冲扫描）：
+  1. `expect=r"Video recording completed successfully."`
+  2. 路径从 `r.clean` 累积缓冲扫描 `/emmc/VIDEO/<dir>/Video_<n>_0.h265`，不依赖 `r.matched` 捕获组。
+- **文档已同步**（test_case / test_strategy / data_flow / module_design / README §7.4），源码待 Code Agent 改。
+
 ## 🔴 P0 — 全部改动待真机验证
 
 以下改动均已离线验证通过，**尚未真机验证**：

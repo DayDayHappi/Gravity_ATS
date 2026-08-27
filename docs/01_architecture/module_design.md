@@ -16,7 +16,7 @@
 | emmc | 进入 eMMC 目录 | `cd /emmc` 无 error | ✓ task |
 | ftp | 启动 FTP 服务 + 连接验证 | 列出 `/emmc` 成功 | prepare.ftp_ready 保证 |
 | photo | 拍照并验证产物 | 串口 `Capture completed successfully.` | ✓ task |
-| video | 录像并验证产物 | 串口 `Save Video Successful` | ✓ task |
+| video | 录像并验证产物 | 串口 `Video recording completed successfully.` | ✓ task |
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
 | preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
@@ -87,7 +87,7 @@
 
 - **Responsibility**：录一段视频并验证产物。
 - **Input**：video_duration 参数。
-- **Output**：串口 `Save Video Successful`（主判据）。
+- **Output**：串口 `Video recording completed successfully.`（主判据，录像全流程走完的最终完成标志；`Save Video Successful: <path>` 出现更早且路径会被串口分块截断，路径应从累积缓冲扫描）。
 - **Dependency**：逻辑依赖 FTP 就绪，由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：同 photo（不写循环、不感知场景）。
 - **Lifecycle**：拍摄 + 下载校验；FTP 校验为辅助。

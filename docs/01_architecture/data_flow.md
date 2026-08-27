@@ -25,7 +25,7 @@ EVB 摄像头 ──拍照/录像──> /emmc/PIC/ 或 /emmc/VIDEO/
                         PC 本地目录 ──校验──> 判据（JPEG 头 / 大小）
 ```
 
-- 主判据：串口正向标志（`Capture completed successfully.`；录像为 `Save Video Successful`）。
+- 主判据：串口正向标志（`Capture completed successfully.`；录像为 `Video recording completed successfully.`）。
 - 辅助判据：FTP 下载 + JPEG 头（FFD8FF）+ 大小阈值，失败降级不判 FAIL。
 
 ## 3. RTMP 推流流（推流 → 探测）
