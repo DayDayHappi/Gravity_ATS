@@ -2,6 +2,26 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 紧急 — 录像前暂时取消 cam_set，直接 dfs_video_start（待 Code Agent）
+
+**需求**（用户口述）：每次录像前**暂时不发** `cam_set video <resolution>`，直接 `dfs_video_start`。
+**后续会恢复** `cam_set`，因此本次是临时禁用，必须留清晰可回退的标记。
+
+**改动点**：`ATS/modules/video.py` L56-59（当前）：
+
+```python
+# 2. 设置分辨率
+r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
+if not r.success:
+    return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
+```
+
+**改法**：临时跳过上述 `cam_set` 段，直接进入 L61 起的 `dfs_video_start`。要求：
+- 用显式注释标记「临时禁用，后续恢复」，例如：
+  `# TODO-TEMP-DISABLE-CAM_SET: 录像前暂不切分辨率，直接 dfs_video_start；后续恢复 cam_set video`。
+- `resolution` 变量仍保留（`logger.step` / `logger.info` 还在用），不要删除变量。
+- 恢复时只需删掉跳过逻辑、还原 `cam_set` 调用即可。
+
 ## 🔴 紧急 — video 启动判据改 f_index + 失败清理 dfs_video_stop（待 Code Agent）
 
 **问题**（实测 `logs/stress_traverse_photo_mode/logs/20260827_034923`）：连续压测第 10 轮，
