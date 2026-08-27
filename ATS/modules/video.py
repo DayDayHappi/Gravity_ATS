@@ -67,9 +67,12 @@ class VideoModule(TestModule):
 
         time.sleep(duration)
 
-        # 4. 停止录像（exec_async 等串口主判据：Save Video Successful，含视频路径）
+        # 4. 停止录像（exec_async 等串口主判据：Video recording completed successfully.，
+        #    录像全流程走完的最终完成标志。不能用 Save Video Successful：它出现更早
+        #    （实测约早 2s），此时录像收尾（编码 finalize/落盘）未完成、路径还可能被
+        #    串口分块截断，提前发下一条命令会造成错位 + 校验对象错误）
         r = console.exec_async("dfs_video_stop",
-                               expect=r"Save Video Successful:\s*(\S+)",
+                               expect=r"Video recording completed successfully.",
                                result_timeout=25.0)
         rec_elapsed = time.monotonic() - rec_start
         if not r.success:
@@ -77,9 +80,13 @@ class VideoModule(TestModule):
             return self._mk("FAIL", "停止录像失败", r.clean[-300:], timer)
         logger.info(f"拍摄结束，耗时 {rec_elapsed:.1f}s")
 
-        # 5. 录像已成功落盘（串口确认）。FTP 校验文件大小作辅助
+        # 5. 录像已成功落盘（串口确认）。FTP 校验文件大小作辅助。
+        #    路径不能依赖 Save Video Successful 行的捕获组——板端打印路径本身会分块
+        #    截断（实测 "Save Video Successful: /emmc/VI"）；等完成标志后整条路径已在
+        #    r.clean 累积缓冲中拼接完整，按 /emmc/VIDEO/<dir>/Video_<n>_0.h265 扫描才可靠。
         import re
-        video_path = (r.matched or "").rstrip()
+        m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
+        video_path = m2.group(0) if m2 else ""
         msg_base = "录像成功"
         if video_path:
             msg_base += f"，文件 {video_path}"
