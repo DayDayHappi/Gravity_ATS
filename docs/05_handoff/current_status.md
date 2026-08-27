@@ -2,7 +2,7 @@
 
 ## Current Version
 
-分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景），**均尚未真机验证**。
+分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据加 f_index 兜底 + 失败清理、录像前暂时取消 cam_set），**均尚未真机验证**。
 
 ## Current Architecture
 
@@ -25,10 +25,13 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - photo 判据修复：`Save Photo Successful` → `Capture completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（真机验证通过）
 - video 判据修复：`Save Video Successful` → `Video recording completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（与 photo 同类的对称 bug，离线验证通过，待真机）
 - 新增场景 `stress_traverse_photo_mode.yaml`（photo task 用 `override.photo_modes` 遍历全部拍照模式压测；`hdr` 模式名待真机核实 TODO-CONFIRM）
+- video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=`，失败分支补发 `dfs_video_stop` 清理（固件偶发漏打 Record Start 但编码在跑，devlog `20260827_0721`）
+- video 录像前暂时取消 `cam_set`（`if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复，devlog `20260827_0739`）
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）全部未跑真机。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底 + 录像前取消 cam_set）全部未跑真机。
+- **临时禁用待恢复**：`video.py` 录像前 `cam_set` 已用 `if False:` 跳过（`TODO-TEMP-DISABLE-CAM_SET`），真机验证后需按标记恢复。
 
 ## Known Issues
 
