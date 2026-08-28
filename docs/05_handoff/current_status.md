@@ -4,6 +4,8 @@
 
 分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据加 f_index 兜底 + 失败清理、录像前暂时取消 cam_set），**均尚未真机验证**。
 
+20260828 改动（commit `177976c`）：`stress_traverse_photo_mode` 参数调为冒烟值（loop 200 / photo repeat 1 / video 20s / rtmp 20s）+ WiFi 默认值改 `ftp_test_2_4G`（场景文件头部注释与实际参数不一致，待同步，见 next_step）。
+
 ## Current Architecture
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。

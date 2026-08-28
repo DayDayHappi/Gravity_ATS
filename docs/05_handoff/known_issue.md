@@ -18,7 +18,7 @@
 
 | 位置 | 现象 |
 |------|------|
-| `config/system.yaml` | WiFi 默认 `SW-test-2.4G`/`tuf@3600`；但 `ATS/README.md`、`archive/使用手册`、`archive/00_阅读导航` 仍写 `G-Demo`/`Gdemo@123` |
+| `config/system.yaml` | WiFi 默认值已再次变更为 `ftp_test_2_4G`/`12345678`（commit `177976c`，历史候选 SW-test-2.4G/ftp_hw_2_4g/G-Demo 已注释）；但 `ATS/README.md`、`archive/使用手册`、`archive/00_阅读导航` 仍写 `G-Demo`/`Gdemo@123` |
 | `config/modules/rtmp.yaml` | `heartbeat_timeout: 60`；rtmp_monitor 注释写默认 30（实际生效 60，以配置为准） |
 | `modules/__init__.py` | 注释说 wifi 注册 scan/join，实际还注册了 `wifi_check` |
 | `ATS/README.md` | 第 5 节哨兵机制仍写 `cmd; echo <TOKEN>`（旧写法），实际已改换行分隔 |

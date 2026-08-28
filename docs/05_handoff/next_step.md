@@ -22,6 +22,11 @@ python3 -m ATS.main --scenario stress --no-interactive-wifi            # 再通�
 python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi  # 遍历全拍照模式压测（先小 repeat 冒烟）
 ```
 
+> **20260828 改动（commit `177976c`）**：
+> - `stress_traverse_photo_mode.yaml` 参数调为冒烟值：`loop.count 20→200`、`photo.repeat 50→1`、`video.duration 180→20`、`rtmp.duration 600→20`（落地 P0 的「先小 repeat 冒烟」）。
+> - `system.yaml` WiFi 默认值改为 `ftp_test_2_4G`/`12345678`（历史候选 SW-test-2.4G/ftp_hw_2_4g/G-Demo 已注释）。
+> - 待 Code Agent 处理（Document Agent Request）：场景文件注释与参数脱钩 —— 头部注释「video 3min + rtmp 10min，整轮循环 20 次」与 `repeat: 1` 行「各拍 50 次」写死了旧数字。要求改为「自行根据需求配置」，注释不规定具体数字（见下方 Document Agent Request）。
+
 ## 🟡 P1 — 新增场景 stress_traverse_photo_mode_seq（待实施）
 
 需求已整理：[新增场景需求_stress_traverse_photo_mode_seq.md](../03_development/archive/新增场景需求_stress_traverse_photo_mode_seq.md)。
@@ -50,3 +55,26 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 ## 🟢 P5 — RTMP 类型2 网络异常未覆盖
 
 heartbeat 只能证明「板端编码线程活着」，证明不了「网络断但板端仍在编码」（f_index 持续但 ffprobe 收不到）。如需覆盖需补周期 ffprobe 复探。
+
+---
+
+## 📋 Document Agent Request — stress_traverse_photo_mode.yaml 注释与参数脱钩
+
+> 由 Document Agent 发起，请 Code Agent 接手实施。本 request 不改任何文档。
+
+### Reason
+场景文件 `ATS/config/scenarios/stress_traverse_photo_mode.yaml` 头部与行内注释写死了具体数字，参数调整后注释失配（见 20260828 commit `177976c`）。
+
+### Change Summary
+把注释里写死的具体数字去掉，改为「自行根据需求配置」类措辞，注释不再规定具体数字：
+
+- 第 1 行注释「video 3min + rtmp 10min，整轮循环 20 次」→ 去掉具体时长/次数。
+- 第 19 行 `repeat: 1` 行内注释「每个模式各拍 50 次（...）」→ 去掉「50 次」。
+- 保留 `photo_modes` 的 TODO-CONFIRM 说明（hdr 模式名待真机核实，与本次无关）。
+
+### Need
+- 修改 `ATS/config/scenarios/stress_traverse_photo_mode.yaml` 注释（纯注释，不改任何参数值/结构）。
+- 改代码必留痕：新建 devlog 并更新其 README 索引。
+
+### Related Code
+- `ATS/config/scenarios/stress_traverse_photo_mode.yaml`
