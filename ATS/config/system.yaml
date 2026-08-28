@@ -12,8 +12,15 @@ serial:
   detect_timeout: 2.0      # 自动探测每端口读响应超时
 
 wifi:                      # 网络环境（连接目标，非 wifi 模块测试参数）
-  default_ssid: "SW-test-2.4G"
-  default_password: "tuf@3600"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+#  default_ssid: "SW-test-2.4G"
+#  default_password: "tuf@3600"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+#  default_ssid: "ftp_hw_2_4g"
+#  default_password: "ftp12345"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+#  default_ssid: "G-Demo"
+#  default_password: "Gdemo@123"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+  default_ssid: "ftp_test_2_4G"
+  default_password: "12345678"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+  
   interactive: true        # 启动时交互选择 WiFi
 
 pc:

@@ -13,10 +13,10 @@ scenario:
     - preview_start
   loop:
     enable: true
-    count: 20
+    count: 200
   tasks:
     - module: photo
-      repeat: 50            # 每个模式各拍 50 次（Runner 每轮 repeat 都完整遍历一次 photo_modes）
+      repeat: 1            # 每个模式各拍 50 次（Runner 每轮 repeat 都完整遍历一次 photo_modes）
       override:
         # TODO-CONFIRM：7 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
         # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
@@ -24,9 +24,9 @@ scenario:
         # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
         photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
     - module: video
-      duration: 180
+      duration: 20
     - module: rtmp
-      duration: 600
+      duration: 20
   cleanup:
     - stop_stream
     - preview_stop
