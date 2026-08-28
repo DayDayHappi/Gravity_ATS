@@ -18,7 +18,9 @@ wifi:                      # 网络环境（连接目标，非 wifi 模块测试
 #  default_password: "ftp12345"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
 #  default_ssid: "G-Demo"
 #  default_password: "Gdemo@123"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
-  default_ssid: "ftp_test_2_4G"
+#  default_ssid: "ftp_test_2_4G"
+#  default_password: "12345678"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
+  default_ssid: "KhalilFong"
   default_password: "12345678"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖
   
   interactive: true        # 启动时交互选择 WiFi

@@ -1,32 +1,25 @@
-# 压测场景：遍历全部拍照模式（video/rtmp 时长与整轮循环次数自行按需配置）
-# 与 stress.yaml 唯一差异：photo task 用 override.photo_modes 遍历全部模式（而非只测 auto）。
-# 其余（preview/prepare/loop/video/rtmp/cleanup）与 stress.yaml 完全一致。
+# 纯录像场景（testvideo 分支）：只录不下载（video_ftp_download=false），循环次数自行按需配置。
+# 沿用 stress_traverse_photo_mode 文件名/name（日志报告落在 logs/stress_traverse_photo_mode/，
+# 后续若需独立命名再重命名为 testvideo.yaml）。preview 已关（无 RTMP 流可看），ftp_ready 已移除。
 scenario:
   name: stress_traverse_photo_mode
   preview:
-    enabled: true
+    enabled: false
   prepare:
     - serial_init
-    - wifi_connect
+  
     - preclean
-    - ftp_ready
     - preview_start
   loop:
     enable: true
-    count: 200
+    count: 20
   tasks:
-    - module: photo
-      repeat: 1            # Runner 每轮 repeat 都完整遍历一次 photo_modes
-      override:
-        # TODO-CONFIRM：7 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
-        # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
-        # "cam_set photo hdr <0-3>"（hdr 带参数），与这里的 hdr_0~3 独立命名可能不一致，
-        # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
-        photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
+
     - module: video
-      duration: 20
-    - module: rtmp
-      duration: 20
+      duration: 40
+      override:
+        video_ftp_download: false
+
   cleanup:
     - stop_stream
     - preview_stop
