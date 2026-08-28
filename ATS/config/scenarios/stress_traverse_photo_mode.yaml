@@ -1,4 +1,4 @@
-# 压测场景：遍历全部拍照模式 + video 3min + rtmp 10min，整轮循环 20 次
+# 压测场景：遍历全部拍照模式（video/rtmp 时长与整轮循环次数自行按需配置）
 # 与 stress.yaml 唯一差异：photo task 用 override.photo_modes 遍历全部模式（而非只测 auto）。
 # 其余（preview/prepare/loop/video/rtmp/cleanup）与 stress.yaml 完全一致。
 scenario:
@@ -16,7 +16,7 @@ scenario:
     count: 200
   tasks:
     - module: photo
-      repeat: 1            # 每个模式各拍 50 次（Runner 每轮 repeat 都完整遍历一次 photo_modes）
+      repeat: 1            # Runner 每轮 repeat 都完整遍历一次 photo_modes
       override:
         # TODO-CONFIRM：7 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
         # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
