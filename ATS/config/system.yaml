@@ -33,7 +33,7 @@ runner:                    # 执行策略（重试 / fail-fast）
   fail_fast: true
 
 report:
-  output_dir: "reports"    # 报告根目录；非 normal 场景自动隔离到 <log_dir>/<场景>/report/
-  log_dir: "logs"          # 日志根目录；非 normal 场景自动隔离到 <log_dir>/<场景>/logs/
+  output_dir: "reports"    # 报告根目录；日志/报告按「场景/日期」分层（见 main.py _resolve_output_dirs）
+  log_dir: "logs"          # 日志根目录；日志统一 logs/<场景>/<日期>/，报告 normal->reports/<日期>/、非 normal->logs/<场景>/report/<日期>/
   junit: true
   html: true

@@ -17,6 +17,7 @@
 import os
 import sys
 import argparse
+import datetime as _dt
 
 # 支持作为模块运行 (python -m ATS.main) 和直接运行 (python ATS/main.py)
 if __package__ in (None, ""):
@@ -100,27 +101,46 @@ def list_scenarios_cmd(config_dir):
 
 def _resolve_output_dirs(system_cfg: dict, scenario_name: str,
                          output_dir_override: str = None) -> tuple:
-    """按场景解析日志/报告根目录，实现场景间隔离。
+    """按「场景 / 日期」解析日志、报告、问题记录根目录，实现场景隔离 + 按天聚合。
 
-    普通场景（normal）保持现状：日志 ``logs/``，报告 ``reports/``。
-    其余场景（stress/aging 等）与普通隔离，统一归入日志根目录下：
-    日志 ``<log_dir>/<scenario>/logs/``，报告 ``<log_dir>/<scenario>/report/``。
+    返回 ``(log_root, report_root, problem_root)``，三者均已按场景隔离；
+    ``log_root``/``report_root`` 含当天日期（logger/reporter 在其下再建 ``<run_ts>/`` 子目录），
+    ``problem_root`` 不含日期（问题记录稀疏，run_ts 已含日期，不按天打散）。
 
-    返回 ``(log_root, report_root)``。
+    结构（date=``%Y%m%d``，run_ts=``%Y%m%d_%H%M%S``）：
+
+    - 日志（所有场景）: ``logs/<scenario>/<date>/<run_ts>/``
+    - 报告 normal:      ``reports/<date>/<run_ts>/``
+    - 报告 非 normal:   ``logs/<scenario>/report/<date>/<run_ts>/``
+    - 问题记录（所有）: ``logs/<scenario>/problem/<run_ts>.log``
+
+    用户显式 ``--output-dir`` 时，报告走 ``<output-dir>/<date>/<run_ts>/``，
+    日志与问题记录路径不受影响（维持场景隔离）。
     """
     report_cfg = system_cfg.get("report", {}) or {}
-    log_root = report_cfg.get("log_dir", "logs")
-    report_root = output_dir_override or report_cfg.get("output_dir", "reports")
-    # 非 normal 场景：日志与报告都按场景名隔离（用户显式 --output-dir 时不改日志根）
+    log_base = report_cfg.get("log_dir", "logs")
+    report_base = report_cfg.get("output_dir", "reports")
+    date = _dt.datetime.now().strftime("%Y%m%d")   # 每次运行取启动当天日期
+
+    # 日志：所有场景（含 normal）统一 logs/<scenario>/<date>/，去掉中间冗余 logs 层
+    log_root = os.path.join(log_base, scenario_name, date)
+    # 问题记录：按场景聚合，不按天打散
+    problem_root = os.path.join(log_base, scenario_name, "problem")
+
+    # 报告：normal 走顶层 reports；非 normal 归入场景目录；--output-dir 时均走 override
     if scenario_name != "normal" and output_dir_override is None:
-        base = os.path.join(log_root, scenario_name)
-        log_root = os.path.join(base, "logs")
-        report_root = os.path.join(base, "report")
-    return log_root, report_root
+        report_root = os.path.join(log_base, scenario_name, "report", date)
+    else:
+        report_root = os.path.join(output_dir_override or report_base, date)
+    return log_root, report_root, problem_root
 
 
-def _record_test_problem(run_ts: str, log_root: str) -> None:
-    """测试结束时询问用户本次测试遇到的问题，有输入则记录到 ``logs/problem/``。"""
+def _record_test_problem(run_ts: str, problem_root: str) -> None:
+    """测试结束时询问用户本次测试遇到的问题，有输入则记录到 ``problem_root/<run_ts>.log``。
+
+    ``problem_root`` 不含日期层（如 ``logs/<scenario>/problem``）：问题记录稀疏、
+    ``run_ts`` 已含日期，不按天打散，同场景的问题归入同一 problem 目录。
+    """
     try:
         problem = input("\n本次测试有什么问题？(直接回车表示无问题): ").strip()
     except (EOFError, KeyboardInterrupt):
@@ -128,14 +148,13 @@ def _record_test_problem(run_ts: str, log_root: str) -> None:
     if not problem:
         return
 
-    problem_dir = os.path.join(log_root, "problem")
     try:
-        os.makedirs(problem_dir, exist_ok=True)
+        os.makedirs(problem_root, exist_ok=True)
     except OSError as e:
         logger.error(f"创建 problem 目录失败: {e}")
         return
 
-    fname = os.path.join(problem_dir, f"{run_ts}.log")
+    fname = os.path.join(problem_root, f"{run_ts}.log")
     try:
         with open(fname, "w", encoding="utf-8") as f:
             f.write(f"{problem}\n")
@@ -186,7 +205,7 @@ def main(argv=None) -> int:
         module_overrides["emmc"] = {"format": True}
 
     # 3. 初始化日志（按场景隔离目录）
-    log_root, report_root = _resolve_output_dirs(
+    log_root, report_root, problem_root = _resolve_output_dirs(
         system_cfg, args.scenario, output_dir_override=args.output_dir)
     run_ts = logger.init_logger(log_root, verbose=args.verbose)
     logger.info(f"VX100 EVB 自动化测试启动，运行时间戳: {run_ts}")
@@ -249,7 +268,7 @@ def main(argv=None) -> int:
                html=rpt_cfg.get("html", True))
 
     # 7.5 询问本次测试问题
-    _record_test_problem(run_ts, log_root)
+    _record_test_problem(run_ts, problem_root)
 
     logger.close()
 

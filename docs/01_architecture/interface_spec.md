@@ -56,9 +56,12 @@ python3 -m ATS.main --format               # 强制格式化 eMMC
 
 ## 4. 文件格式
 
-- **串口日志**：`logs/<ts>/serial.log`，每字节带毫秒时间戳，含 ANSI 原始字节。
+- **串口日志**：`serial.log`，每字节带毫秒时间戳，含 ANSI 原始字节（目录由 `logger.init_logger(log_root)` 决定，`log_root` 由 main.py 按「场景/日期」拼好）。
 - **报告**：`result.json`（机器可读）+ `junit.xml`（CI）+ `report.html`（人读）。
-- **输出目录**：normal → `logs/<ts>/` + `reports/<ts>/`；stress/aging → `logs/<场景>/logs/<ts>/` + `logs/<场景>/report/<ts>/`。
+- **输出目录**（场景/日期/运行时间戳三级分层，date=`%Y%m%d`，run_ts=`%Y%m%d_%H%M%S`）：
+  - 日志（所有场景）：`logs/<场景>/<date>/<run_ts>/`。
+  - 报告：normal → `reports/<date>/<run_ts>/`；非 normal → `logs/<场景>/report/<date>/<run_ts>/`。
+  - 问题记录（所有场景）：`logs/<场景>/problem/<run_ts>.log`（不按天打散）。
 - **板端产物**：`/emmc/PIC/<时间戳目录>/Image_*.jpg`、`/emmc/VIDEO/<时间戳目录>/Video_*.h265`（大写目录，与手册不同）。
 
 ## 5. 敏感信息
