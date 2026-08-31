@@ -1,10 +1,14 @@
 """日志系统。
 
 两类输出：
-1. **串口原始日志** ``logs/<run_ts>/serial.log`` —— 串口收发的每个字节，带毫秒时间戳，
+1. **串口原始日志** ``serial.log`` —— 串口收发的每个字节，带毫秒时间戳，
    保留 ANSI 原始字节（便于问题回溯）。由 ``SerialConsole`` 的常驻读线程调用 ``log_serial`` 写入。
-2. **运行日志 + 控制台** ``logs/<run_ts>/run.log`` + stdout —— 框架/模块的运行轨迹和
+2. **运行日志 + 控制台** ``run.log`` + stdout —— 框架/模块的运行轨迹和
    测试进度（``[PASS]/[FAIL]``），同时写文件和控制台。
+
+输出目录由 ``init_logger(log_root)`` 决定：在 ``log_root`` 下创建 ``<run_ts>/`` 子目录，
+``serial.log`` / ``run.log`` 都写在该子目录内。``log_root`` 由 main.py 按
+「场景 / 日期」拼好（如 ``logs/stress/20260828/``），本模块不关心上层分层结构。
 
 设计为单例风格：``get_logger()`` 返回全局实例，各层共用，避免传参耦合。
 """

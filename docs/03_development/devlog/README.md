@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-08-31 | [20260831_1032_日志目录按场景日期运行时间戳分层.md](20260831_1032_日志目录按场景日期运行时间戳分层.md) | 日志目录按「场景/日期/run_ts」三级分层：所有场景日志统一 logs/<场景>/<日期>/（去掉中间冗余 logs 层），报告也按天分（normal->reports/<日期>/、非 normal->logs/<场景>/report/<日期>/），problem 记录不按天打散到 logs/<场景>/problem/ |
 | 2026-08-28 | [20260828_0233_stress_traverse注释去具体时长次数.md](20260828_0233_stress_traverse注释去具体时长次数.md) | stress_traverse_photo_mode.yaml 注释去具体时长/次数（video 3min/rtmp 10min/20 次 → 自行按需配置；repeat 行内注释去掉「50 次」），纯注释 |
 | 2026-08-27 | [20260827_0739_video录像前暂时取消cam_set.md](20260827_0739_video录像前暂时取消cam_set.md) | video 录像前临时禁用 cam_set video，直接 dfs_video_start（TODO-TEMP-DISABLE-CAM_SET 标记，后续恢复） |
 | 2026-08-27 | [20260827_0721_video启动判据加f_index与失败清理.md](20260827_0721_video启动判据加f_index与失败清理.md) | video 启动判据 Record Start → Record Start\|f_index=（固件漏打 Record Start 但编码在跑时不再误判）；失败分支补发 dfs_video_stop 清理 stream_on 半初始化态，避免泄漏给 rtmp |
