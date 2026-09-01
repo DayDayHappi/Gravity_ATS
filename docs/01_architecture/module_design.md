@@ -15,6 +15,7 @@
 | wifi_join | 连接指定 WiFi | `Got IP address : <IP>` | 退出默认流程（保留代码） |
 | emmc | 进入 eMMC 目录 | `cd /emmc` 无 error | ✓ task |
 | ftp | 启动 FTP 服务 + 连接验证 | 列出 `/emmc` 成功 | prepare.ftp_ready 保证 |
+| download | 从板端 FTP 下载文件到本地（列目录→逐文件下载，不测试） | 按 source 汇总：单文件失败不中断，全部失败才 FAIL | 独立场景 `download` |
 | photo | 拍照并验证产物 | 串口 `Capture completed successfully.` | ✓ task |
 | video | 录像并验证产物 | 串口 `Video recording completed successfully.` | ✓ task |
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
@@ -73,6 +74,15 @@
 - **Dependency**：逻辑依赖 WiFi 就绪（需 evb_ip），由 prepare.wifi_connect 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**全程只发一次 ftp_server**（重发触发固件崩溃）；**每次下载前重建连接**（不缓存复用）。
 - **Lifecycle**：启动后长期 listen；会话 3s 空闲即断。
+
+## download
+
+- **Responsibility**：从板端 FTP 下载文件到本地（列目录 → 逐文件下载），**不做任何业务测试**。
+- **Input**：`sources`（{label, dir, pattern} 列表）、`latest_n`（每源取最新 N 个目录）、`download_dest`、`download_timeout`/`download_retries`。
+- **Output**：本地 `downloads/<日期>/<label>/<子目录>/<文件>`；按 source 汇总的 TestResult（成功数/失败数/总大小）。
+- **Dependency**：逻辑依赖 FTP 就绪 + WiFi 就绪（需 evb_ip），由 prepare 的 `wifi_connect`→`ftp_ready` 保证；代码 `depends=[]`。
+- **Forbidden Dependency**：**不删除板端文件（不用 DELE）**；**不感知场景类型**；遍历 sources/子目录/文件由配置驱动（同 photo 遍历 photo_modes 模式，非业务循环）。
+- **Lifecycle**：独立场景 `download`（prepare：serial_init→wifi_connect→ftp_ready；tasks 仅 download）；配合纯录像场景拍完后手动运行。
 
 ## photo
 

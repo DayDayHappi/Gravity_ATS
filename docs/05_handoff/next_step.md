@@ -17,11 +17,14 @@
   - video 录像前暂时取消 `cam_set`（`if False:` 跳过，`TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复）
 - 20260831 改动：
   - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`（去掉中间冗余 logs 层），报告也按天分（normal→`reports/<日期>/`、非 normal→`logs/<场景>/report/<日期>/`），problem 记录归入 `logs/<场景>/problem/<run_ts>.log`
+  - 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试（`--scenario download`）
+  - 修复 download 完整性校验 + 逐文件日志（devlog `20260831_1753`）：`ftp_client.download` 远端大小未知不静默成功（重查兜底+可疑失败），download 逐文件成功/失败日志带两端大小
 
 ```bash
 python3 -m ATS.main --scenario normal --no-interactive-wifi            # 先通正常链路
 python3 -m ATS.main --scenario stress --no-interactive-wifi            # 再通压测循环
 python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi  # 遍历全拍照模式压测（先小 repeat 冒烟）
+python3 -m ATS.main --scenario download --no-interactive-wifi          # 纯录像跑完后手动下载板端文件
 ```
 
 > **20260828 改动（commit `177976c`）**：

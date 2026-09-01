@@ -62,7 +62,9 @@ python3 -m ATS.main --format               # 强制格式化 eMMC
   - 日志（所有场景）：`logs/<场景>/<date>/<run_ts>/`。
   - 报告：normal → `reports/<date>/<run_ts>/`；非 normal → `logs/<场景>/report/<date>/<run_ts>/`。
   - 问题记录（所有场景）：`logs/<场景>/problem/<run_ts>.log`（不按天打散）。
+  - 板端下载产物（`--scenario download`）：`downloads/<日期>/<label>/<子目录>/<文件>`（本地产物，已 gitignore）。
 - **板端产物**：`/emmc/PIC/<时间戳目录>/Image_*.jpg`、`/emmc/VIDEO/<时间戳目录>/Video_*.h265`（大写目录，与手册不同）。
+- **下载模块配置**（`config/modules/download.yaml`）：`sources` 列表（每组 `{label, dir, pattern}`）+ `latest_n`（每源最新 N 个目录，0=全部）+ `download_dest` + `download_timeout`/`download_retries`。本地落盘 `downloads/<日期>/<label>/<子目录>/<文件>`，不删除板端文件。
 
 ## 5. 敏感信息
 

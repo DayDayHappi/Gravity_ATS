@@ -13,7 +13,7 @@
              │ Task 列表
 调度层    Runner（repeat / loop / 重试 / fail-fast）
              │ 逐个模块调用
-模块层    wifi / emmc / ftp / photo / video / rtmp（一次测试动作）
+模块层    wifi / emmc / ftp / photo / video / rtmp / download（一次测试动作）
              │ 调用通信接口
 通信层    SerialConsole（串口） / FtpClient / RtmpReceiver / PreviewManager
              │
@@ -42,7 +42,7 @@
  → 生成报告，返回退出码
 ```
 
-- **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前三个场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。
+- **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前各场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
 - **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
 

@@ -10,3 +10,4 @@ from . import ftp  # noqa: F401
 from . import photo  # noqa: F401
 from . import video  # noqa: F401
 from . import rtmp  # noqa: F401
+from . import download  # noqa: F401

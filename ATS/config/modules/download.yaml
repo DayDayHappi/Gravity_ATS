@@ -1,0 +1,12 @@
+# 下载模块参数（仅下载，不做测试）
+sources:                  # 下载来源列表，可含多组（视频/照片/其他），按需配置
+  - label: video          # 来源标签，用于本地子目录与日志区分
+    dir: /emmc/VIDEO      # 板端远程根目录（其下是时间戳子目录）
+    pattern: "*.h265"     # 文件匹配模式（fnmatch）
+  - label: photo
+    dir: /emmc/PIC
+    pattern: "*.jpg"
+latest_n: 20              # 每个来源取最新的 N 个时间戳子目录（0=全部）
+download_dest: downloads  # 本地下载根目录（其下 downloads/<日期>/<label>/<子目录>/<文件>）
+download_timeout: 30      # 单文件下载 socket 超时（秒）
+download_retries: 5       # 单文件断点续传重试次数

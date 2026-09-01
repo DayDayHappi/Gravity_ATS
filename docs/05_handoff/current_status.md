@@ -8,6 +8,8 @@
 
 20260831 改动（commit `0a43ac4`）：日志目录按「场景/日期/运行时间戳」三级分层（所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，去掉中间冗余 logs 层；报告也按天分；problem 记录归入 `logs/<场景>/problem/`），**待真机验证**。
 
+20260831 改动（devlog `20260831_1419`/`20260831_1753`）：新增独立 `download` 场景+模块（仅从板端 FTP 下载、不做测试，配合纯录像场景手动下载）+ 修复 download 完整性校验（`ftp_client.download` 远端大小未知不静默成功）+ 逐文件下载日志，**待真机验证**。
+
 ## Current Architecture
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
@@ -32,10 +34,12 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=`，失败分支补发 `dfs_video_stop` 清理（固件偶发漏打 Record Start 但编码在跑，devlog `20260827_0721`）
 - video 录像前暂时取消 `cam_set`（`if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复，devlog `20260827_0739`）
 - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，报告也按天分，problem 记录归入 `logs/<场景>/problem/`
+- 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试，`downloads/` 加入 .gitignore
+- 修复 download 完整性校验 + 逐文件日志（devlog `20260831_1753`）：`ftp_client.download` 远端大小未知不静默成功（重查兜底+可疑失败），download 逐文件成功/失败日志带两端大小
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底 + 录像前取消 cam_set）+ 20260831 改动（日志目录三级分层）全部未跑真机。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底 + 录像前取消 cam_set）+ 20260831 改动（日志目录三级分层 + download 场景/模块 + 下载完整性修复）全部未跑真机。
 - **临时禁用待恢复**：`video.py` 录像前 `cam_set` 已用 `if False:` 跳过（`TODO-TEMP-DISABLE-CAM_SET`），真机验证后需按标记恢复。
 
 ## Known Issues

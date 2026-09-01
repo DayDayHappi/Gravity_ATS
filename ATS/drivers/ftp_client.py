@@ -221,7 +221,7 @@ class FtpClient:
             return -1
 
     def download(self, remote_path: str, local_path: str, timeout: float = 30.0,
-                 retries: int = 5) -> bool:
+                 retries: int = 5, out: dict = None) -> bool:
         """从板子复制文件到本地（二进制下载，支持断点续传）。
 
         板子 FTP 会话空闲超过约 3s 会被服务端断开，不能假设调用前的旧连接
@@ -233,24 +233,39 @@ class FtpClient:
         固件 FTP 传大文件易卡死。用全局 socket 超时使卡死的 recv 抛异常（不无限阻塞），
         失败后用 REST 命令断点续传（从已下载位置继续，不从头）。多次续传可下完大文件。
 
+        完整性校验（2026-08-31 修复）：远端大小 ``total <= 0``（size() 解析不到/为 0）时
+        **不静默判成功**——下载结束后重查一次 size() 兜底比对；仍拿不到则打印 warn 并
+        按失败/可疑返回，避免残缺文件静默入库。
+
         Args:
             remote_path: 板子上的文件路径。
             local_path: 本地保存路径。
             timeout: 单次 socket 操作超时秒数（卡死即中断续传）。
             retries: 断点续传最大尝试次数。
+            out: 可选 dict，回传本次下载详情：``remote_size``（-1=未知）、``local_size``、
+                ``resumed``（是否走过断点续传）、``verified``（是否完成完整性校验）。
 
         Returns:
-            True 下载成功（本地 >= 远端）；False 失败/不完整（保留部分文件）。
+            True 下载成功（远端大小已知且本地 >= 远端）；False 失败/不完整/无法校验（保留部分文件）。
         """
         import socket as _socket
         old_timeout = _socket.getdefaulttimeout()
         _socket.setdefaulttimeout(timeout)
+        result = out if out is not None else {}
+
+        def _fill(remote_sz, local_sz, resumed, verified):
+            result.update(remote_size=remote_sz, local_size=local_sz,
+                          resumed=resumed, verified=verified)
+
+        resumed = False
+        total = -1
         try:
             # 独立于此前任何操作，先建一条全新连接用于本次下载
             try:
                 self.connect()
             except FtpError as e:
                 logger.warn(f"下载前建连失败: {e}")
+                _fill(-1, 0, False, False)
                 return False
             total = self.size(remote_path)
             for attempt in range(1, retries + 1):
@@ -263,6 +278,7 @@ class FtpClient:
                 # 已下载字节数（续传起点）
                 offset = os.path.getsize(local_path) if os.path.exists(local_path) else 0
                 if total > 0 and offset >= total:
+                    _fill(total, offset, resumed, True)
                     return True  # 已下完
                 try:
                     os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
@@ -271,10 +287,22 @@ class FtpClient:
                     with open(local_path, mode) as f:
                         # retrbinary 的 rest 参数让服务器从 offset 开始传
                         self._ftp.retrbinary(f"RETR {remote_path}", f.write, rest=offset if offset > 0 else None)
+                    if offset > 0:
+                        resumed = True
                     # 检查完整性
                     local_sz = os.path.getsize(local_path)
-                    if total <= 0 or local_sz >= total:
+                    if total <= 0:
+                        # 远端大小未知：重查一次 size() 兜底比对
+                        total = self.size(remote_path)
+                    if total > 0 and local_sz >= total:
+                        _fill(total, local_sz, resumed, True)
                         return True
+                    if total <= 0:
+                        # 仍拿不到远端大小：无法校验完整性，不静默成功，按可疑失败处理
+                        logger.warn(f"下载 {remote_path}: 远端大小未知，无法校验完整性"
+                                    f"（本地 {local_sz}B），按可疑处理")
+                        _fill(-1, local_sz, resumed, False)
+                        return False
                     logger.warn(f"下载提前结束({local_sz//1024}KB/{total//1024}KB)，续传 {attempt}/{retries}")
                 except Exception as e:
                     logger.warn(f"下载异常(尝试{attempt}/{retries})，已传"
@@ -285,9 +313,11 @@ class FtpClient:
                     self.connect()
                 except FtpError:
                     pass
-            # 最终检查
+            # 最终检查（retries 用尽仍不完整）
             local_sz = os.path.getsize(local_path) if os.path.exists(local_path) else 0
-            return total > 0 and local_sz >= total
+            ok = total > 0 and local_sz >= total
+            _fill(total, local_sz, resumed, total > 0)
+            return ok
         finally:
             _socket.setdefaulttimeout(old_timeout)
 

@@ -1,0 +1,19 @@
+# 仅下载场景：从板端 FTP 下载文件到本地，不做任何业务测试。
+# 配合纯录像场景（stress_traverse_photo_mode，video_ftp_download=false）使用：
+# 拍摄脚本走完（不启 WiFi/FTP）后，手动 `--scenario download` 补齐环境并下载。
+scenario:
+  name: download
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - wifi_connect
+    - ftp_ready
+  loop:
+    enable: false
+  tasks:
+    - module: download
+      override:
+        latest_n: 20
+  cleanup:
+    - close_serial

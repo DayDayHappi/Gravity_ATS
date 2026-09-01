@@ -9,6 +9,7 @@ tools/
 # 运行产物
 logs/
 reports/
+downloads/
 
 # 实测样本（开发参考，保留本地）
 res/
