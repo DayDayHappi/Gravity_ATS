@@ -13,7 +13,7 @@ VX100 EVB 上位机自动化测试脚本工程。入口：`python3 -m ATS.main -
 
 - 以 Code Agent 身份工作 → 先读 `.claude/agents/code-agent.md`。
 - 以 Document Agent 身份工作 → 先读 `.claude/agents/document-agent.md`。
-- 两者交接规则 → 读 `.claude/agents/agent-workflow.md`。
+- 两者交接规则 → 读 `.claude/agent-workflow.md`。
 - **若需要另一角色**：停止当前任务，产出交接请求，结束本 session；不要自己代做。
 - Code Agent 发现文档影响时：**只报告（Document Agent Request），不修改**。
 

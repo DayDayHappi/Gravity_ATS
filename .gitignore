@@ -17,6 +17,7 @@ res/
 .claude/*
 !.claude/agents/
 !.claude/agents/document-agent.md
+!.claude/agent-workflow.md
 
 # 根目录杂项
 migrate.sh
