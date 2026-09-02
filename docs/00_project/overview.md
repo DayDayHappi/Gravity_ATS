@@ -44,3 +44,9 @@ PC (Python) ──串口 2000000bps──>  EVB (msh shell)
 ```
 
 系统采用 **scenario 驱动的分层执行模型**，详见 [../01_architecture/system_architecture.md](../01_architecture/system_architecture.md)。
+
+## 6. 分支约定（Branch Convention）
+
+- **主分支 = `new_arch`**：项目活跃开发与稳定代码的汇聚分支，所有改动默认基于 `new_arch`。
+- `main`：仓库默认分支，保留但**非**本项目开发主线。
+- 功能/验证分支（如 `testvideo`）从 `new_arch` 拉取，完成后合回 `new_arch`。
