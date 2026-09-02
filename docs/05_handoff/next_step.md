@@ -29,6 +29,16 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 > - `system.yaml` WiFi 默认值改为 `ftp_test_2_4G`/`12345678`（历史候选 SW-test-2.4G/ftp_hw_2_4g/G-Demo 已注释）。
 > - 场景注释与参数脱钩**已完成**（commit `199ad95`）：头部与 `repeat` 行注释去掉写死的时长/次数，改为「自行按需配置」，纯注释不动参数。
 
+## 🟡 P1 — H265 视频完整性检测模块（已实施·离线验证通过，待接线 + 真机）
+
+需求已评审：[新增需求_H265视频完整性检测模块.md](../03_development/archive/新增需求_H265视频完整性检测模块.md)（Document Agent，2026-09-02，结论：与现有架构无冲突，按模块扩展机制实现，无需新 ADR）。
+
+- **已实施**（devlog `20260902_1339`）：`ATS/modules/video_integrity.py` + `ATS/drivers/h265_validator.py` + `ATS/config/modules/video_integrity.yaml` + `ATS/config/scenarios/video_integrity.yaml`；`modules/__init__.py` 追加 import 触发 `@register`。核心验收点全部通过：不改 core、不碰 video.py、无新增 ctx 契约、模块内 deep-merge（§7）、argv list + timeout/kill 内存安全、单个 aggregate TestResult、manifest 去重（path+size+mtime_ns）、`.part` 过滤、Stage0 预检查。
+- **离线验证已通过**（Document Agent 复核）：`py_compile` OK；`--list-modules`/`--list-scenarios` 识别；`trace_headers`/`showinfo` 正则与真实样本输出实测匹配；good.h265 → PASS，损坏样本 → FAIL（MISSING_REFERENCE）。
+- **待决策**：normal/stress **未接线**（Code Agent 只交付 standalone 场景，`normal.yaml`/`stress.yaml` 未插入 `- module: video_integrity`）。原因：normal/stress 本身仍在「待真机验证」批次，插入未验证 task 有风险。需拍板：现在接线 vs 基础链路真机通过后再接线。
+- **待真机**：Case B/C（normal/stress 录像后检测）未真机验证。
+- **次要遗留（NON-BLOCKING）**：`_detect_missing_poc` 未用 `expected_gop_size` 校验实际 GOP 长度（`fixed_gop` confidence 未验证 GOP=30）；`_merge` 对 base 缺失的 deep-merge 段会静默丢弃（现状无害）；`NO_MATCHING_VIDEO` 已定义但从未产出。
+
 ## 🟡 P1 — 新增场景 stress_traverse_photo_mode_seq（待实施）
 
 需求已整理：[新增场景需求_stress_traverse_photo_mode_seq.md](../03_development/archive/新增场景需求_stress_traverse_photo_mode_seq.md)。
