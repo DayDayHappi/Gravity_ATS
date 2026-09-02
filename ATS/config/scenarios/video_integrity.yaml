@@ -1,0 +1,13 @@
+# 独立 H265 完整性检测场景：不连板子/不探串口/不连 WiFi/不启动 FTP/不连 nginx，
+# 只扫本地目录做检测，真机断开也能跑。
+scenario:
+  name: video_integrity
+  prepare: []
+  tasks:
+    - module: video_integrity
+      override:
+        input:
+          source: "directory"
+          directory: "/home/gravity/h265_cases"
+          selection: "all"
+  cleanup: []

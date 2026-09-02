@@ -2,6 +2,12 @@
 
 VX100 EVB 上位机自动化测试脚本工程。入口：`python3 -m ATS.main --scenario <name>`（默认 `normal`）。
 
+## 分支约定（Branch Convention）
+
+- **主分支 = `new_arch`**：本项目活跃开发与稳定代码的汇聚分支，所有 Agent 改动默认基于 `new_arch`。
+- `main`：仓库默认分支，保留但**非**本项目开发主线。
+- 功能/验证分支（如 `testvideo`）从 `new_arch` 拉取，完成后合回 `new_arch`。
+
 ## Agent 边界规则（Agent Boundary Rules，最高优先级）
 
 本工程采用角色分离的 Agent 体系，一个会话 = 一个固定角色，**不得自动切换角色**。

@@ -1,0 +1,32 @@
+# H.265 本地视频完整性检测模块
+
+ffmpeg_path: "tools/ffmpeg/ffmpeg"
+
+input:
+  source: "current_run"          # current_run | directory
+  current_run_subdir: "videos"   # current_run 时相对 logger.log_dir() 的子目录
+  directory: ""                  # directory 时扫描的绝对目录
+  patterns:
+    - "*.h265"
+    - "*.hevc"
+  selection: "latest_unchecked"  # all | latest | latest_unchecked | explicit
+  explicit_files: []             # selection=explicit 时使用
+  recursive: false               # 是否递归扫描子目录
+  empty_input_policy: "fail"     # fail | skip
+
+analysis:
+  decode_check: true
+  locate_on_error: true
+  trace_headers_on_error: true
+  decode_timeout: 900
+  showinfo_timeout: 900
+  trace_timeout: 900
+
+hevc:
+  expected_fps: 30
+  expected_gop_size: 30
+  poc_policy: "fixed_gop"        # 当前产品固定 GOP；非固定 GOP 时退化为 REFERENCE_CHAIN_ERROR
+
+diagnostic:
+  keep_failure_logs: true
+  keep_full_trace: false
