@@ -18,6 +18,7 @@
 import fnmatch
 import json
 import os
+import re
 import time
 
 from .base import TestModule, register
@@ -29,6 +30,11 @@ _DEEP_MERGE_SECTIONS = ("input", "analysis", "hevc", "diagnostic")
 
 # error_type -> TestResult.status 映射（§10 + §20.2）
 _ENV_ERRORS = {"TOOL_NOT_FOUND", "INPUT_NOT_FOUND", "INPUT_NOT_READABLE", "INVALID_INPUT"}
+
+# 从 first_decode_error 提取 POC（"Could not find ref with POC 6" -> 6）
+_POC_IN_ERR_RE = re.compile(r"Could not find ref with POC\s*(\d+)", re.I)
+# ffmpeg 日志行前缀 "[hevc @ 0x...]" 噪声清理
+_FFMPEG_PREFIX_RE = re.compile(r"\[[^\]]*\]\s*")
 
 
 @register("video_integrity")
@@ -221,8 +227,9 @@ class VideoIntegrityModule(TestModule):
         res = validator.validate(fp, work_dir)
         elapsed = time.monotonic() - t0
         status = self._map_status(res.error_type)
-        # 每文件结果同时打到 run.log（§12）
-        logger.info(f"    [{status}] {name} {res.error_type} ({elapsed:.1f}s)")
+        # 失败/错误时终端行补齐定位字段（POC/全局帧号/时间）；PASS 保持轻量。
+        suffix = self._locate_suffix(res) if status in (FAILED, ERROR) else ""
+        logger.info(f"    [{status}] {name} {res.error_type}{suffix} ({elapsed:.1f}s)")
         return {"file": fp, "name": name, "res": res, "status": status}
 
     @staticmethod
@@ -236,14 +243,67 @@ class VideoIntegrityModule(TestModule):
             return FAILED  # 由 run() 里的 empty_input_policy 提前处理，这里兜底
         return FAILED
 
+    @staticmethod
+    def _poc_from_error(first_decode_error):
+        """从 first_decode_error 提取 POC（"Could not find ref with POC 6" -> 6）。"""
+        m = _POC_IN_ERR_RE.search(first_decode_error or "")
+        return int(m.group(1)) if m else None
+
+    @staticmethod
+    def _locate_suffix(res) -> str:
+        """终端行定位后缀（紧凑）：MISSING_PICTURE 显示 POC+全局帧+时间，
+        其它失败显示 first_decode_error 的 POC + last_good 帧/时间。"""
+        parts = []
+        if res.error_type == "MISSING_PICTURE":
+            if res.missing_poc is not None:
+                parts.append(f"missing_poc={res.missing_poc}")
+            if res.frame_number is not None:
+                parts.append(f"全局帧={res.frame_number}")
+            elif res.coded_frame_index is not None:
+                parts.append(f"coded_frame_index={res.coded_frame_index}")
+            if res.approx_timestamp is not None:
+                parts.append(f"~{res.approx_timestamp}s")
+        else:
+            poc = VideoIntegrityModule._poc_from_error(res.first_decode_error)
+            if poc is not None:
+                parts.append(f"POC={poc}")
+            if res.last_good_decoded_frame is not None:
+                parts.append(f"last_good_frame={res.last_good_decoded_frame}")
+            if res.last_good_pts_time is not None:
+                parts.append(f"last_good_pts={res.last_good_pts_time:.3f}s")
+        return (" " + " ".join(parts)) if parts else ""
+
+    @staticmethod
+    def _detail_fields(res) -> str:
+        """detail 行的完整定位字段（含终端未展示的 gop_index/coded_frame_index/frame_number）。"""
+        fields = []
+        if res.missing_poc is not None:
+            fields.append(f"missing_poc={res.missing_poc}")
+        if res.gop_index is not None:
+            fields.append(f"gop_index={res.gop_index}")
+        if res.coded_frame_index is not None:
+            fields.append(f"coded_frame_index={res.coded_frame_index}")
+        if res.frame_number is not None:
+            fields.append(f"frame_number={res.frame_number}")
+        if res.approx_timestamp is not None:
+            fields.append(f"approx_timestamp={res.approx_timestamp}s")
+        if res.last_good_decoded_frame is not None:
+            fields.append(f"last_good_decoded_frame={res.last_good_decoded_frame}")
+        if res.last_good_pts_time is not None:
+            fields.append(f"last_good_pts_time={res.last_good_pts_time:.3f}s")
+        poc = VideoIntegrityModule._poc_from_error(res.first_decode_error)
+        if poc is not None:
+            fields.append(f"decoder_poc={poc}")
+        return " ".join(fields)
+
     def _write_summary(self, base_work, fp, r):
         try:
             res = r["res"]
             with open(os.path.join(base_work, "summary.log"), "a", encoding="utf-8") as f:
+                fields = self._detail_fields(res)
                 line = (f"[{r['status']}] {r['name']} {res.error_type}"
-                        f" missing_poc={res.missing_poc}"
-                        f" timestamp={res.approx_timestamp}"
-                        f" reason={res.reason}\n")
+                        + (f" {fields}" if fields else "")
+                        + f" reason={res.reason}\n")
                 f.write(line)
         except OSError:
             pass
@@ -269,10 +329,9 @@ class VideoIntegrityModule(TestModule):
             line = f"[{tag}] {r['name']}"
             if res.error_type != "PASS":
                 line += f" ({res.error_type}"
-                if res.missing_poc is not None:
-                    line += f" missing_poc={res.missing_poc}"
-                if res.approx_timestamp is not None:
-                    line += f" ~{res.approx_timestamp}s"
+                fields = self._detail_fields(res)
+                if fields:
+                    line += f" {fields}"
                 line += ")"
             detail_lines.append(line)
 

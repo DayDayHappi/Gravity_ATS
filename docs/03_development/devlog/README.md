@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-02 | [20260902_1549_H265检测结果终端补齐定位字段.md](20260902_1549_H265检测结果终端补齐定位字段.md) | H265 检测结果终端补齐定位字段：FAIL 行加 POC/全局帧号/时间（MISSING_PICTURE 显示 missing_poc+帧号+时间，其它失败显示 first_decode_error 的 POC+last_good 帧/时间），detail/summary 同步补全；仅改 module 层，不改 driver/core |
+| 2026-09-02 | [20260902_1445_新增video_loop场景.md](20260902_1445_新增video_loop场景.md) | 新增 video_loop 场景：录像+下载+完整性检测整轮循环（video_ftp_download=true + video_integrity 检测），纯配置，不改源码 |
 | 2026-09-02 | [20260902_1339_新增H265视频完整性检测模块.md](20260902_1339_新增H265视频完整性检测模块.md) | 新增 H265 视频完整性检测：drivers/h265_validator.py（FFmpeg 三阶段诊断+错误分类+POC gap 判定）+ modules/video_integrity.py（文件选择+manifest 去重+聚合 TestResult，模块内 deep-merge）+ 配置与 standalone 场景 |
 | 2026-08-31 | [20260831_1753_修复download下载完整性与逐文件日志.md](20260831_1753_修复download下载完整性与逐文件日志.md) | 修复 download 完整性校验（ftp_client.download 远端大小未知不静默成功，重查兜底+可疑失败）+ download.py 补逐文件成功日志（两端大小+续传标记）+ 汇总加目录总数/实际取数明细 |
 | 2026-08-31 | [20260831_1419_新增download场景仅下载不测试.md](20260831_1419_新增download场景仅下载不测试.md) | 新增 download 场景+模块：只从板端 FTP 下载（sources 可配 video/photo、latest_n 最新 N 个、不删板端文件），配合纯录像场景手动下载；downloads/ 加入 .gitignore |

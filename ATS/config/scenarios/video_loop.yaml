@@ -1,0 +1,29 @@
+# 重复录像测试场景：录像 + FTP 下载 + H265 完整性检测，整轮循环。
+# 时序（每 cycle）：video（录 N 秒并 FTP 下载到 <run>/videos/）→ video_integrity（检测最新未检文件）。
+# 与「纯录像场景」（stress_traverse_photo_mode，video_ftp_download=false）的区别：
+# 本场景 video_ftp_download=true + 新增 video_integrity 检测 task。
+scenario:
+  name: video_loop
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: true
+    count: 3            # 循环次数自行按需配置
+  tasks:
+    - module: video
+      duration: 66      # 单次录像时长（秒），自行按需配置
+      override:
+        video_ftp_download: true
+    - module: video_integrity
+      override:
+        input:
+          source: "current_run"
+          selection: "latest_unchecked"
+          empty_input_policy: "skip"
+  cleanup:
+    - close_serial
