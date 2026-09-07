@@ -17,8 +17,9 @@
 5. 列新目录找 .h265 文件，下载验证大小 > 阈值
 
 流程（纯录像模式，video_ftp_download=false）：
-1. ``dfs_video_start`` -> sleep(录像时长) -> ``dfs_video_stop``
-2. 等到 ``Video recording completed successfully.`` 即 PASS
+1. ``cam_set video 1080p``
+2. ``dfs_video_start`` -> sleep(录像时长) -> ``dfs_video_stop``
+3. 等到 ``Video recording completed successfully.`` 即 PASS
 """
 import os
 import time
@@ -67,13 +68,9 @@ class VideoModule(TestModule):
         before = set(self._list_video_dirs(ftp))
 
         # 2. 设置分辨率
-        # TODO-TEMP-DISABLE-CAM_SET: 录像前暂不切分辨率，直接 dfs_video_start；后续恢复 cam_set video。
-        #   临时禁用（用户口述）：跳过 cam_set，直接进入 dfs_video_start。恢复时删掉下面这段跳过逻辑、
-        #   还原 cam_set 调用即可。resolution 变量保留（logger.step / logger.info 仍在使用）。
-        if False:
-            r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
-            if not r.success:
-                return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
+        r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
+        if not r.success:
+            return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
 
         # 3. 开始录像。录像命令输出海量日志会打乱哨兵，用 exec_async 等正则。
         #    启动成功判据：Record Start（正常路径）或 f_index（录像编码心跳，无 [RTMP] 前缀，
@@ -164,12 +161,9 @@ class VideoModule(TestModule):
 
         logger.step(f"  录像测试（纯录像，不下载）: {resolution} / {duration}s")
 
-        # TODO-TEMP-DISABLE-CAM_SET: 录像前暂不切分辨率，直接 dfs_video_start（与 FTP 模式
-        #   同一临时禁用约定）。恢复时删掉这段跳过逻辑、还原 cam_set 调用即可。
-        if False:
-            r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
-            if not r.success:
-                return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
+        r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
+        if not r.success:
+            return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
 
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
         rec_start = time.monotonic()

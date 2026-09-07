@@ -2,7 +2,7 @@
 
 ## Current Version
 
-分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据加 f_index 兜底 + 失败清理、录像前暂时取消 cam_set），**均尚未真机验证**。
+分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据加 f_index 兜底 + 失败清理），**均尚未真机验证**。
 
 20260828 改动（commit `177976c`）：`stress_traverse_photo_mode` 参数调为冒烟值（loop 200 / photo repeat 1 / video 20s / rtmp 20s）+ WiFi 默认值改 `ftp_test_2_4G`；场景注释与参数脱钩已完成（commit `199ad95`，纯注释）。
 
@@ -32,15 +32,14 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - video 判据修复：`Save Video Successful` → `Video recording completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（与 photo 同类的对称 bug，离线验证通过，待真机）
 - 新增场景 `stress_traverse_photo_mode.yaml`（photo task 用 `override.photo_modes` 遍历全部拍照模式压测；`hdr` 模式名待真机核实 TODO-CONFIRM）
 - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=`，失败分支补发 `dfs_video_stop` 清理（固件偶发漏打 Record Start 但编码在跑，devlog `20260827_0721`）
-- video 录像前暂时取消 `cam_set`（`if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复，devlog `20260827_0739`）
+- video 录像前恢复 `cam_set video <resolution>`：还原 `run()` 与 `_run_no_ftp()` 两处 `TODO-TEMP-DISABLE-CAM_SET` 跳过逻辑为 `cam_set` 同步调用（devlog `20260907_1652`；此前 20260827 临时禁用已撤销）
 - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，报告也按天分，problem 记录归入 `logs/<场景>/problem/`
 - 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试，`downloads/` 加入 .gitignore
 - 修复 download 完整性校验 + 逐文件日志（devlog `20260831_1753`）：`ftp_client.download` 远端大小未知不静默成功（重查兜底+可疑失败），download 逐文件成功/失败日志带两端大小
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底 + 录像前取消 cam_set）+ 20260831 改动（日志目录三级分层 + download 场景/模块 + 下载完整性修复）全部未跑真机。
-- **临时禁用待恢复**：`video.py` 录像前 `cam_set` 已用 `if False:` 跳过（`TODO-TEMP-DISABLE-CAM_SET`），真机验证后需按标记恢复。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层 + download 场景/模块 + 下载完整性修复）+ 20260907 改动（video 录像前恢复 cam_set）全部未跑真机。
 
 ## Known Issues
 

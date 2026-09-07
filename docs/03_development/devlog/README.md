@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-07 | [20260907_1705_video_loop录像分辨率设为3k.md](20260907_1705_video_loop录像分辨率设为3k.md) | video_loop 场景录像分辨率设为 3k：video task override 新增 video_resolution:"3k"（纯配置）；TODO-CONFIRM 经真机串口日志核实 3k 合法（板端回显 w(2520)*h(1890) is 3k，录像 PASS），4k/1080p 两档历史认知已过时 |
+| 2026-09-07 | [20260907_1652_video录像前恢复cam_set.md](20260907_1652_video录像前恢复cam_set.md) | video 录像前恢复 cam_set 发送：还原 run() 与 _run_no_ftp() 两处 TODO-TEMP-DISABLE-CAM_SET 跳过逻辑为 cam_set video 同步调用，docstring 纯录像流程补列 cam_set；仅改 video.py |
 | 2026-09-02 | [20260902_1549_H265检测结果终端补齐定位字段.md](20260902_1549_H265检测结果终端补齐定位字段.md) | H265 检测结果终端补齐定位字段：FAIL 行加 POC/全局帧号/时间（MISSING_PICTURE 显示 missing_poc+帧号+时间，其它失败显示 first_decode_error 的 POC+last_good 帧/时间），detail/summary 同步补全；仅改 module 层，不改 driver/core |
 | 2026-09-02 | [20260902_1445_新增video_loop场景.md](20260902_1445_新增video_loop场景.md) | 新增 video_loop 场景：录像+下载+完整性检测整轮循环（video_ftp_download=true + video_integrity 检测），纯配置，不改源码 |
 | 2026-09-02 | [20260902_1339_新增H265视频完整性检测模块.md](20260902_1339_新增H265视频完整性检测模块.md) | 新增 H265 视频完整性检测：drivers/h265_validator.py（FFmpeg 三阶段诊断+错误分类+POC gap 判定）+ modules/video_integrity.py（文件选择+manifest 去重+聚合 TestResult，模块内 deep-merge）+ 配置与 standalone 场景 |

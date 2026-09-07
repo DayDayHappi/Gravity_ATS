@@ -19,6 +19,7 @@ scenario:
       duration: 66      # 单次录像时长（秒），自行按需配置
       override:
         video_ftp_download: true
+        video_resolution: "3k"
     - module: video_integrity
       override:
         input:

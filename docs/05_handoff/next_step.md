@@ -14,7 +14,8 @@
   - 新增场景 `stress_traverse_photo_mode.yaml`：photo task 用 `override.photo_modes` 遍历全部拍照模式（`auto/single/mfnr/hdr_0~3`），其余与 stress 一致；`hdr` 模式名待真机核实（TODO-CONFIRM，见场景文件注释）
 - 20260827 改动：
   - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=` + 失败分支补发 `dfs_video_stop` 清理（devlog `20260827_0721`）
-  - video 录像前暂时取消 `cam_set`（`if False:` 跳过，`TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复）
+- 20260907 改动：
+  - video 录像前恢复 `cam_set video <resolution>`：还原 `run()` 与 `_run_no_ftp()` 两处 `TODO-TEMP-DISABLE-CAM_SET` 跳过逻辑为 `cam_set` 同步调用，docstring 同步（devlog `20260907_1652`；撤销 20260827 临时禁用）
 - 20260831 改动：
   - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`（去掉中间冗余 logs 层），报告也按天分（normal→`reports/<日期>/`、非 normal→`logs/<场景>/report/<日期>/`），problem 记录归入 `logs/<场景>/problem/<run_ts>.log`
   - 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试（`--scenario download`）
