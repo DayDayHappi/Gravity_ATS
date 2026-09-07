@@ -24,3 +24,5 @@
 | `ATS/README.md` | 第 5 节哨兵机制仍写 `cmd; echo <TOKEN>`（旧写法），实际已改换行分隔 |
 | 使用手册 | CLI 命令（`--modules`/`--skip`/`--config`）已失效，未同步 `--scenario` |
 | `migrate.sh` | 提示里的 `--skip rtmp` 已失效（`--skip` 移除），应改 `--scenario` |
+| `devlog 20260817_0203` L37 | 「板子分辨率只支持 `4k`/`1080p` 两档」已过时——真机日志证实固件支持 `3k` 档（`cam_set video 3k 2` → 回显 `w(2520)*h(1890) is 3k`，devlog `20260907_1705`） |
+| `archive/VX100_EVB_自动化测试_软件需求文档.md` L166 | 「v1p2 已删除 4K，仅测 1080p」与当前 video_loop 设 `3k` 冲突，3K 属新增档位还是临时验证待用户拍板 |

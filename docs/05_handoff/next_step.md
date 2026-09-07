@@ -16,6 +16,7 @@
   - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=` + 失败分支补发 `dfs_video_stop` 清理（devlog `20260827_0721`）
 - 20260907 改动：
   - video 录像前恢复 `cam_set video <resolution>`：还原 `run()` 与 `_run_no_ftp()` 两处 `TODO-TEMP-DISABLE-CAM_SET` 跳过逻辑为 `cam_set` 同步调用，docstring 同步（devlog `20260907_1652`；撤销 20260827 临时禁用）
+  - video_loop 场景录像分辨率设为 `3k`：video task `override` 新增 `video_resolution: "3k"`，真机日志证实固件支持 `3k` 档（devlog `20260907_1705`）；⚠️ 遗留待决：`cam_set video 3k` 不带 EIS 参数，历史命令均为 `cam_set video 3k 2`，需真机确认不带 EIS 是否仍正常录像
 - 20260831 改动：
   - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`（去掉中间冗余 logs 层），报告也按天分（normal→`reports/<日期>/`、非 normal→`logs/<场景>/report/<日期>/`），problem 记录归入 `logs/<场景>/problem/<run_ts>.log`
   - 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试（`--scenario download`）

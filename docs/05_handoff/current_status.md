@@ -33,13 +33,15 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - 新增场景 `stress_traverse_photo_mode.yaml`（photo task 用 `override.photo_modes` 遍历全部拍照模式压测；`hdr` 模式名待真机核实 TODO-CONFIRM）
 - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=`，失败分支补发 `dfs_video_stop` 清理（固件偶发漏打 Record Start 但编码在跑，devlog `20260827_0721`）
 - video 录像前恢复 `cam_set video <resolution>`：还原 `run()` 与 `_run_no_ftp()` 两处 `TODO-TEMP-DISABLE-CAM_SET` 跳过逻辑为 `cam_set` 同步调用（devlog `20260907_1652`；此前 20260827 临时禁用已撤销）
+- video_loop 场景录像分辨率设为 `3k`：video task `override` 新增 `video_resolution: "3k"`（devlog `20260907_1705`；真机日志证实固件支持 `3k` 档 `2520×1890`）
 - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，报告也按天分，problem 记录归入 `logs/<场景>/problem/`
 - 新增独立 `download` 场景+模块（devlog `20260831_1419`）：仅从板端 FTP 下载、不做测试，`downloads/` 加入 .gitignore
 - 修复 download 完整性校验 + 逐文件日志（devlog `20260831_1753`）：`ftp_client.download` 远端大小未知不静默成功（重查兜底+可疑失败），download 逐文件成功/失败日志带两端大小
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层 + download 场景/模块 + 下载完整性修复）+ 20260907 改动（video 录像前恢复 cam_set）全部未跑真机。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层 + download 场景/模块 + 下载完整性修复）+ 20260907 改动（video 录像前恢复 cam_set + video_loop 设 3k）全部未跑真机。
+- **TODO-CONFIRM（待用户/工程师拍板）**：video_loop 的 `cam_set video 3k` 不带 EIS 参数，而历史真机命令均为 `cam_set video 3k 2`（带 EIS `2`）。`3k` 档位合法，但**不带 EIS 是否仍按 3k 正常录像**未经确认；若固件要求显式 EIS 参数，需另立需求扩展 `video.py`。详见 devlog `20260907_1705` Known Limitations。
 
 ## Known Issues
 
