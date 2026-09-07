@@ -1,3 +1,4 @@
+
 """场景管理器：加载场景、编排 prepare → tasks(loop) → cleanup。
 
 职责边界：ScenarioManager 只负责「加载 + 编排」，具体模块执行交给 TestRunner，
@@ -17,6 +18,7 @@ from .scenario import (
     prepare_action, cleanup_action, PREPARE_ACTIONS, CLEANUP_ACTIONS,
 )
 from .serial_console import SerialConsole, detect_port, SerialError
+from .cancellation import CancellationToken, OperationCancelled
 
 
 class ScenarioError(Exception):
@@ -35,33 +37,61 @@ def _action_serial_init(ctx, system_cfg):
     baudrate = ser_cfg.get("baudrate", 2000000)
 
     if port in ("auto", "", None):
+        services = getattr(ctx, "platform_services", None)
+        port_provider = getattr(services, "serial_ports", None) if services else None
         port, detected_baud = detect_port(
             baudrate=baudrate,
             baud_candidates=ser_cfg.get("baudrate_candidates"),
             interactive=True,
             detect_timeout=ser_cfg.get("detect_timeout", 2.0),
+            cancellation_token=getattr(ctx, "cancellation_token", None),
+            port_provider=port_provider,
+            interaction_provider=getattr(ctx, "interaction_provider", None),
         )
         if port is None:
             raise ScenarioError("无法确定 EVB 串口，测试中止")
         baudrate = detected_baud
+
+    services = getattr(ctx, "platform_services", None)
+    registry = getattr(services, "serial_registry", None) if services else None
+    owner = getattr(ctx, "run_id", "ats-test") or "ats-test"
+    if registry is not None and not registry.acquire(port, owner):
+        raise ScenarioError(f"串口 {port} 已被 {registry.owner(port)} 占用")
+    ctx.serial_port = port
+    ctx.serial_owner = owner
 
     console = SerialConsole(
         port=port, baudrate=baudrate,
         timeout=ser_cfg.get("timeout", 2.0),
         ready_timeout=ser_cfg.get("ready_timeout", 60),
         sentinel_timeout=ser_cfg.get("sentinel_timeout", 5.0),
+        cancellation_token=getattr(ctx, "cancellation_token", None),
     )
+    def release_local_console():
+        try:
+            console.close()
+        except Exception:
+            pass
+        if registry is not None:
+            registry.release(port, owner)
+
     try:
         console.open()
     except SerialError as e:
+        release_local_console()
         raise ScenarioError(str(e))
 
-    if not console.wait_for_ready():
-        console.close()
-        raise ScenarioError("EVB 未就绪（等待 msh 超时）")
-    if not console.health_check():
-        console.close()
-        raise ScenarioError("串口自检失败，请检查波特率/接线")
+    try:
+        if not console.wait_for_ready():
+            raise ScenarioError("EVB 未就绪（等待 msh 超时）")
+        if not console.health_check():
+            raise ScenarioError("串口自检失败，请检查波特率/接线")
+    except BaseException:
+        # ``ctx.console`` is not published until the port is healthy, so the
+        # scenario cleanup action cannot see this local object. Close/release
+        # here for cancellation, timeout, and unexpected failures alike.
+        release_local_console()
+        raise
 
     ctx.console = console
 
@@ -100,13 +130,15 @@ def _action_wifi_connect(ctx, system_cfg):
 
     no_interactive = getattr(ctx, "no_interactive_wifi", False)
 
-    print("\n" + "=" * 50)
-    print("WiFi 连接")
-    print("=" * 50)
+    provider = getattr(ctx, "interaction_provider", None)
     use_default = True
     if not no_interactive and wifi_cfg.get("interactive", True):
-        ans = input(f"是否连接默认 WiFi [{default_ssid}]? [Y/n]: ").strip().lower()
-        use_default = ans != "n"
+        if provider is None:
+            logger.warn("未提供 InteractionProvider，使用默认 WiFi 配置")
+        else:
+            use_default = provider.confirm(
+                f"是否连接默认 WiFi [{default_ssid}]?", default=True
+            )
 
     if no_interactive:
         ssid, pwd = default_ssid, default_pwd
@@ -125,15 +157,11 @@ def _action_wifi_connect(ctx, system_cfg):
         if not aps:
             logger.error("扫描无结果，无法选择")
             return
-        print("扫描到的 AP:")
-        for i, (s, rssi) in enumerate(aps):
-            print(f"  [{i}] {s}  (RSSI {rssi})")
-        sel = input("选择序号(或直接输入 SSID): ").strip()
-        if sel.isdigit() and int(sel) < len(aps):
-            ssid = aps[int(sel)][0]
-        else:
-            ssid = sel
-        pwd = input(f"输入 [{ssid}] 的密码: ").strip()
+        labels = [f"{s} (RSSI {rssi})" for s, rssi in aps]
+        chosen = provider.choose("扫描到的 AP", labels, default_index=0)
+        index = labels.index(chosen)
+        ssid = aps[index][0]
+        pwd = provider.ask_text(f"输入 [{ssid}] 的密码", secret=True)
 
     if not ssid:
         logger.error("SSID 为空")
@@ -149,7 +177,11 @@ def _action_wifi_connect(ctx, system_cfg):
         ctx.evb_ip = r.matched
         ctx.skip_wifi = True
         logger.info(f"WiFi 连接成功: {ssid} / IP={r.matched}")
-        time.sleep(5.0)  # 等 wifi join 后板子状态稳定，再发下一条命令
+        token = getattr(ctx, "cancellation_token", None)
+        if token is None:
+            time.sleep(5.0)
+        elif token.wait(5.0):
+            token.raise_if_cancelled()
     else:
         logger.error(f"WiFi 连接失败: {r.error}")
         logger.error(f"输出: {r.clean}")
@@ -166,7 +198,18 @@ def _action_preclean(ctx, system_cfg):
         console.exec_sync("cd /", timeout=5.0)
         console.exec_async("dfs_video_stop",
                            expect=r"Save Video|Please start|recording completed",
-                           result_timeout=8.0)
+                           result_timeout=8.0, honor_cancellation=False)
+    except OperationCancelled:
+        try:
+            console.exec_async(
+                "dfs_video_stop",
+                expect=r"Save Video|Please start|recording completed",
+                result_timeout=3.0,
+                honor_cancellation=False,
+            )
+        except Exception as cleanup_exc:
+            logger.warn(f"取消时预清理录像停止失败: {cleanup_exc}")
+        raise
     except Exception as e:
         logger.warn(f"预清理异常(可忽略): {e}")
 
@@ -230,12 +273,22 @@ def _action_preview_start(ctx, system_cfg):
 
     # nginx-rtmp 就绪（复用现有 driver），未就绪则跳过（不影响判据）
     try:
-        RtmpServer(port=1935).check_ready()
+        services = getattr(ctx, "platform_services", None)
+        RtmpServer(
+            port=1935,
+            backend=getattr(services, "rtmp_backend", None) if services else None,
+        ).check_ready(cancellation_token=getattr(ctx, "cancellation_token", None))
     except RtmpServerError as e:
         logger.warn(f"preview_start: RTMP 服务端未就绪，跳过画面观察: {e}")
         return
 
-    mgr = PreviewManager(preview_cfg)
+    services = getattr(ctx, "platform_services", None)
+    mgr = PreviewManager(
+        preview_cfg,
+        process_controller=getattr(services, "processes", None) if services else None,
+        resource_locator=getattr(services, "resources", None) if services else None,
+        desktop_environment=getattr(services, "desktop", None) if services else None,
+    )
     mgr.start(url)
     ctx.preview_manager = mgr
 
@@ -253,7 +306,7 @@ def _action_stop_stream(ctx, system_cfg):
     try:
         console.exec_async("rtmp_video_stop",
                            expect=r"Push Stop|Stop requested",
-                           result_timeout=8.0)
+                           result_timeout=8.0, honor_cancellation=False)
     except Exception:
         pass
 
@@ -265,9 +318,13 @@ def _action_preview_stop(ctx, system_cfg):
     if mgr is None:
         return
     try:
-        mgr.stop()
+        stopped = mgr.stop()
+        if stopped is False:
+            logger.error("preview_stop 超时：保留 manager 引用以便再次清理")
+            return
     except Exception as e:
         logger.warn(f"preview_stop 异常(可忽略): {e}")
+        return
     ctx.preview_manager = None
 
 
@@ -280,6 +337,12 @@ def _action_close_serial(ctx, system_cfg):
             console.close()
         except Exception:
             pass
+    services = getattr(ctx, "platform_services", None)
+    registry = getattr(services, "serial_registry", None) if services else None
+    port = getattr(ctx, "serial_port", None)
+    owner = getattr(ctx, "serial_owner", None)
+    if registry is not None and port and owner:
+        registry.release(port, owner)
 
 
 # ---------------------------------------------------------------------------
@@ -289,11 +352,16 @@ def _action_close_serial(ctx, system_cfg):
 class ScenarioManager:
     """加载并编排一个测试场景。"""
 
-    def __init__(self, config_dir: str = None):
+    def __init__(self, config_dir: str = None, interaction_provider=None, event_sink=None, run_id: str = "", **_kwargs):
         self.config_dir = config_dir or CONFIG_DIR
+        self.interaction_provider = interaction_provider
+        self.event_sink = event_sink
+        self.run_id = run_id
         self.system_cfg = None
         self.ctx = None
         self.preview_cfg = {}   # scenario 层 preview 开关（ADR-010），load 时解析
+        self.last_results = []
+        self.cancellation_token = None
 
     def load(self, name: str) -> Scenario:
         """加载场景名 -> Scenario 对象（含参数合并前的原始 task）。"""
@@ -302,7 +370,8 @@ class ScenarioManager:
         return self._parse_scenario(raw, name)
 
     def run(self, scenario_name: str, no_interactive_wifi: bool = False,
-            module_overrides: dict = None, system_cfg: dict = None) -> list:
+            module_overrides: dict = None, system_cfg: dict = None,
+            cancellation_token: CancellationToken = None, platform_services=None) -> list:
         """执行一个场景：prepare → (loop: tasks) → cleanup，返回 TestResult 列表。
 
         Args:
@@ -320,18 +389,30 @@ class ScenarioManager:
         ctx.system_config = self.system_cfg
         ctx.no_interactive_wifi = no_interactive_wifi
         ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
+        ctx.interaction_provider = self.interaction_provider
+        ctx.run_id = self.run_id
+        ctx.cancellation_token = cancellation_token or CancellationToken()
+        ctx.platform_services = platform_services
+        self.cancellation_token = ctx.cancellation_token
         self.ctx = ctx
 
         results = []
         try:
             # prepare
             for action in scenario.prepare:
+                ctx.cancellation_token.raise_if_cancelled()
                 self._run_action(action, ctx, "prepare")
 
             # tasks（loop 由 runner 控制）
             from .runner import TestRunner
-            runner = TestRunner(self.system_cfg, ctx, scenario)
-            results = runner.run()
+            runner = TestRunner(
+                self.system_cfg, ctx, scenario, event_sink=self.event_sink,
+                cancellation_token=ctx.cancellation_token, config_dir=self.config_dir,
+            )
+            try:
+                results = runner.run()
+            finally:
+                self.last_results = list(runner.results)
         finally:
             # cleanup 始终执行
             for action in scenario.cleanup:
@@ -345,6 +426,7 @@ class ScenarioManager:
             except Exception:
                 pass
 
+        self.last_results = list(results)
         return results
 
     # ---------- 内部 ----------

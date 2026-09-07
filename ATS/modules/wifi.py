@@ -1,3 +1,4 @@
+
 """WiFi 模块：连接检测、扫描与连接。
 
 成功判据（对齐实测日志字节）：
@@ -21,6 +22,7 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
+from ..core.cancellation import token_from
 
 # 扫描结果表头（实测 wifi_scan_connect.txt）
 _SCAN_HEADER_RE = re.compile(r"SSID\s+MAC\s+security\s+rssi\s+chn\s+Mbps")
@@ -138,7 +140,11 @@ class WifiJoinModule(TestModule):
             return self._fail(f"连接失败或未获取 IP ({ssid})", detail=r.clean)
         ctx.evb_ip = r.matched
         ctx.wifi_ssid = ssid
-        time.sleep(5.0)  # 等 wifi join 后板子状态稳定，再发下一条命令
+        token = token_from(ctx)
+        if token is None:
+            time.sleep(5.0)
+        elif token.wait(5.0):
+            token.raise_if_cancelled()
         res = self._pass(f"已连接 {ssid}，IP={r.matched}")
         res.elapsed_ms = timer.elapsed_ms()
         return res

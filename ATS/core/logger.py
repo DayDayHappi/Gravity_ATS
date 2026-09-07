@@ -1,3 +1,4 @@
+
 """日志系统。
 
 两类输出：
@@ -15,12 +16,15 @@
 import os
 import sys
 import datetime as _dt
+import threading
 
 _RUN_TS = None          # 本次运行时间戳（目录名）
 _LOG_DIR = None         # 本次运行日志目录
 _SERIAL_FP = None       # serial.log 文件句柄
 _RUN_FP = None          # run.log 文件句柄
 _VERBOSE = False        # 详细模式
+_RUN_LISTENERS = []        # generic callbacks(level, message, timestamp)
+_LISTENERS_LOCK = threading.RLock()
 
 
 def _now() -> str:
@@ -30,7 +34,7 @@ def _now() -> str:
     )
 
 
-def init_logger(log_root: str, verbose: bool = False) -> str:
+def init_logger(log_root: str, verbose: bool = False, run_ts: str = None) -> str:
     """初始化本次运行的日志目录。
 
     Args:
@@ -41,7 +45,7 @@ def init_logger(log_root: str, verbose: bool = False) -> str:
         本次运行的时间戳（用作 reports/logs 子目录名）。
     """
     global _RUN_TS, _LOG_DIR, _VERBOSE
-    _RUN_TS = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    _RUN_TS = run_ts or _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     _LOG_DIR = os.path.join(log_root, _RUN_TS)
     os.makedirs(_LOG_DIR, exist_ok=True)
     _VERBOSE = verbose
@@ -82,12 +86,38 @@ def log_serial_raw(direction: str, data: bytes):
     log_serial(direction, text)
 
 
+
+def add_listener(callback):
+    """Subscribe to run-log records without changing file/stdout behavior."""
+    with _LISTENERS_LOCK:
+        _RUN_LISTENERS.append(callback)
+
+
+def remove_listener(callback):
+    """Remove a previously registered run-log observer."""
+    with _LISTENERS_LOCK:
+        while callback in _RUN_LISTENERS:
+            _RUN_LISTENERS.remove(callback)
+
+
+def _notify_listeners(level: str, msg: str, timestamp: str):
+    with _LISTENERS_LOCK:
+        listeners = tuple(_RUN_LISTENERS)
+    for callback in listeners:
+        try:
+            callback(level, msg, timestamp)
+        except Exception:
+            pass
+
+
 def _write_run(level: str, msg: str, to_console: bool):
+    timestamp = _now()
     if _RUN_FP is not None:
-        _RUN_FP.write(f"[{_now()}] [{level}] {msg}\n")
+        _RUN_FP.write(f"[{timestamp}] [{level}] {msg}\n")
         _RUN_FP.flush()
     if to_console:
         print(f"[{level}] {msg}", flush=True)
+    _notify_listeners(level, msg, timestamp)
 
 
 def info(msg: str, to_console: bool = True):
@@ -109,14 +139,17 @@ def error(msg: str, to_console: bool = True):
 
 def step(msg: str):
     """测试步骤提示（不带级别前缀，控制台醒目）。"""
+    timestamp = _now()
     if _RUN_FP is not None:
-        _RUN_FP.write(f"[{_now()}] {msg}\n")
+        _RUN_FP.write(f"[{timestamp}] {msg}\n")
         _RUN_FP.flush()
     print(msg, flush=True)
+    _notify_listeners("STEP", msg, timestamp)
 
 
 def result_line(status: str, name: str, elapsed_ms: int, msg: str = ""):
     """控制台打印一行测试结果，带颜色。"""
+    timestamp = _now()
     color = {
         "PASS": "\033[32m",   # 绿
         "FAIL": "\033[31m",   # 红
@@ -129,9 +162,10 @@ def result_line(status: str, name: str, elapsed_ms: int, msg: str = ""):
         line += f" - {msg}"
     if _RUN_FP is not None:
         # 文件里不写颜色码
-        _RUN_FP.write(f"[{_now()}] [{status}] {name} ({elapsed_ms}ms) - {msg}\n")
+        _RUN_FP.write(f"[{timestamp}] [{status}] {name} ({elapsed_ms}ms) - {msg}\n")
         _RUN_FP.flush()
     print(line, flush=True)
+    _notify_listeners(status, f"{name} ({elapsed_ms}ms)" + (f" - {msg}" if msg else ""), timestamp)
 
 
 def close():

@@ -1,3 +1,4 @@
+
 """拍照模块：遍历模式 + 每拍即 FTP 验证。
 
 实测文件结构（与手册不同）：
@@ -20,6 +21,8 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
+from ..core.artifacts import Artifact
+from ..core.cancellation import token_from
 
 # JPEG magic number
 _JPEG_MAGIC = b"\xff\xd8\xff"
@@ -68,7 +71,11 @@ class PhotoModule(TestModule):
         if not r.success:
             return self._mk(name, "FAIL", f"设置模式 {mode} 失败", r.clean, timer)
         if settle > 0:
-            time.sleep(settle)
+            token = token_from(ctx)
+            if token is None:
+                time.sleep(settle)
+            elif token.wait(settle):
+                token.raise_if_cancelled()
 
         # 2. 拍照 + 等保存完成。
         # 拍照命令输出海量摄像头初始化日志，会打乱哨兵定界，故用 exec_async
@@ -102,7 +109,11 @@ class PhotoModule(TestModule):
         jpgs = self._list_jpgs(ftp2, save_dir)
         if not jpgs:
             # 再等一会重试一次
-            time.sleep(1.5)
+            token = token_from(ctx)
+            if token is None:
+                time.sleep(1.5)
+            elif token.wait(1.5):
+                token.raise_if_cancelled()
             jpgs = self._list_jpgs(ftp2, save_dir)
         if not jpgs:
             return self._mk(name, "PASS", f"{msg_base}（未列出 jpg 辅助验证）", r.clean[-200:], timer)
@@ -117,7 +128,14 @@ class PhotoModule(TestModule):
         status = "PASS" if ok else "FAIL"
         # message 含本地存储路径，便于用户找到下载的照片
         msg = f"{vmsg} | {msg_base} | 已下载到 {local}"
-        return self._mk(name, status, msg, f"含 {len(jpgs)} 个 jpg", timer)
+        result = self._mk(name, status, msg, f"含 {len(jpgs)} 个 jpg", timer)
+        result.artifacts.append(Artifact(
+            kind="photo",
+            path=os.path.abspath(local),
+            label=jpg0,
+            metadata={"mode": mode, "remote_path": remote, "verified": bool(ok)},
+        ))
+        return result
 
     def _list_pic_dirs(self, ftp):
         """列 /emmc/PIC 下的时间戳目录（仅目录名）。"""

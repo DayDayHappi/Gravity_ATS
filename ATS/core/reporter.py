@@ -1,3 +1,4 @@
+
 """测试报告生成器：JSON + JUnit XML + HTML + 控制台汇总。
 
 - JSON:  ``reports/<ts>/result.json``  机器可读，含每条用例详情
@@ -34,6 +35,10 @@ def _result_to_dict(r):
         "elapsed_ms": r.elapsed_ms, "message": r.message,
         "detail": r.detail, "timestamp": r.timestamp,
         "scenario": r.scenario, "cycle": r.cycle,
+        "artifacts": [
+            artifact.to_dict() if hasattr(artifact, "to_dict") else dict(artifact)
+            for artifact in getattr(r, "artifacts", [])
+        ],
     }
 
 

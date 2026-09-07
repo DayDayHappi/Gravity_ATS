@@ -1,3 +1,4 @@
+
 """FTP 客户端封装。
 
 封装标准库 ``ftplib``，连接 EVB 上的 FTP 服务，用于：
@@ -18,6 +19,7 @@ import threading
 from ftplib import FTP, error_perm, error_temp, error_proto
 
 from ..core import logger
+from ..core.cancellation import OperationCancelled
 
 
 class FtpError(Exception):
@@ -31,7 +33,8 @@ class FtpClient:
     """
 
     def __init__(self, host, port=21, user="loogg", password="loogg",
-                 retry=3, interval=1.0, pasv=False, timeout=10):
+                 retry=3, interval=1.0, pasv=False, timeout=10,
+                 cancellation_token=None):
         """EVB FTP（RT-Thread）默认用主动模式：该服务不支持 PASV（502）。
         主动模式需 PC 防火墙放行入站数据端口（或临时关闭防火墙）。
         """
@@ -43,40 +46,63 @@ class FtpClient:
         self.interval = interval
         self.pasv = pasv
         self.timeout = timeout
+        self.cancellation_token = cancellation_token
         self._ftp = None
+
+    def _check_cancelled(self):
+        if self.cancellation_token is not None:
+            self.cancellation_token.raise_if_cancelled()
+
+    def _wait_retry(self):
+        if self.cancellation_token is None:
+            time.sleep(self.interval)
+        elif self.cancellation_token.wait(self.interval):
+            self.cancellation_token.raise_if_cancelled()
 
     # ---------- 连接 ----------
 
     def connect(self) -> None:
-        """连接并登录 FTP，失败按 retry 重试。
-
-        每次调用都是与上一次完全独立的新连接：新 socket -> connect(读欢迎信息，
-        ftplib 内部 getresp() 已读净，不留缓冲) -> USER/PASS 登录 -> 主动模式 ->
-        cwd 根目录（恢复工作目录到已知基线，后续按绝对路径操作）。
-        板子 FTP 会话空闲一段时间会被服务端断开，调用方不应假设旧连接仍然存活，
-        需要时直接调用本方法重连，而不是复用/探测旧连接。
-        """
+        """Connect/login with retry; STOP interrupts connect and retry waits."""
         last_err = None
-        # 若已存在旧连接（同一对象复用），先关闭避免泄漏旧 socket。
         self._safe_close()
         for attempt in range(1, self.retry + 1):
+            self._check_cancelled()
+            ftp = FTP()
+            unregister = None
+            if self.cancellation_token is not None:
+                unregister = self.cancellation_token.register(ftp.close)
             try:
-                ftp = FTP()
                 ftp.connect(self.host, self.port, timeout=self.timeout)
+                self._check_cancelled()
                 ftp.login(self.user, self.password)
                 ftp.set_pasv(self.pasv)
                 try:
                     ftp.cwd("/")
                 except Exception:
                     pass
+                self._check_cancelled()
                 self._ftp = ftp
                 logger.debug(f"FTP 已连接 {self.host}:{self.port} (尝试 {attempt})")
                 return
-            except Exception as e:
-                last_err = e
-                logger.debug(f"FTP 连接失败(尝试 {attempt}/{self.retry}): {e}")
+            except OperationCancelled:
+                try:
+                    ftp.close()
+                except Exception:
+                    pass
+                raise
+            except Exception as exc:
+                last_err = exc
+                logger.debug(f"FTP 连接失败(尝试 {attempt}/{self.retry}): {exc}")
+                try:
+                    ftp.close()
+                except Exception:
+                    pass
                 self._safe_close()
-                time.sleep(self.interval)
+                if attempt < self.retry:
+                    self._wait_retry()
+            finally:
+                if unregister is not None:
+                    unregister()
         raise FtpError(f"FTP 连接失败（重试 {self.retry} 次）: {last_err}")
 
     def _ensure(self):
@@ -101,8 +127,11 @@ class FtpClient:
         self._ensure()
         last_err = None
         for attempt in range(1, self.retry + 1):
+            self._check_cancelled()
             try:
                 return fn()
+            except OperationCancelled:
+                raise
             except (error_temp, error_proto, EOFError, OSError) as e:
                 # 临时性错误：重连重试
                 last_err = e
@@ -110,7 +139,7 @@ class FtpClient:
                 try:
                     self.connect()
                 except FtpError:
-                    time.sleep(self.interval)
+                    self._wait_retry()
             except error_perm as e:
                 # 权限/永久错误：不重试
                 raise FtpError(f"FTP {op_name} 权限错误: {e}")
@@ -209,87 +238,102 @@ class FtpClient:
     def size(self, remote_path: str) -> int:
         """获取远程文件大小。该FTP不支持SIZE命令，用LIST父目录解析。"""
         try:
+            self._check_cancelled()
             self._ensure()
             remote_path = remote_path.rstrip("/")
             parent = remote_path.rsplit("/", 1)[0] or "/"
             base = remote_path.rsplit("/", 1)[-1]
             for name, is_dir, sz in self._list_entries(parent):
+                self._check_cancelled()
                 if name == base and not is_dir:
                     return sz
             return -1
+        except OperationCancelled:
+            raise
         except Exception:
             return -1
 
     def download(self, remote_path: str, local_path: str, timeout: float = 30.0,
                  retries: int = 5) -> bool:
-        """从板子复制文件到本地（二进制下载，支持断点续传）。
+        """Download with REST resume, inactivity timeout, and cooperative cancellation."""
+        import socket
 
-        板子 FTP 会话空闲超过约 3s 会被服务端断开，不能假设调用前的旧连接
-        还活着。每次下载开始时都先重新 connect()（全新独立的控制连接：新
-        socket -> 重新登录 -> cwd 根目录），基于这条新连接查大小、发起传输；
-        续传重试同样重新 connect()，不复用可能已死的旧连接。数据连接（主动
-        模式 PORT）由 ftplib 在每次实际传输时自动重新协商，天然使用新端口。
-
-        固件 FTP 传大文件易卡死。用全局 socket 超时使卡死的 recv 抛异常（不无限阻塞），
-        失败后用 REST 命令断点续传（从已下载位置继续，不从头）。多次续传可下完大文件。
-
-        Args:
-            remote_path: 板子上的文件路径。
-            local_path: 本地保存路径。
-            timeout: 单次 socket 操作超时秒数（卡死即中断续传）。
-            retries: 断点续传最大尝试次数。
-
-        Returns:
-            True 下载成功（本地 >= 远端）；False 失败/不完整（保留部分文件）。
-        """
-        import socket as _socket
-        old_timeout = _socket.getdefaulttimeout()
-        _socket.setdefaulttimeout(timeout)
         try:
-            # 独立于此前任何操作，先建一条全新连接用于本次下载
-            try:
-                self.connect()
-            except FtpError as e:
-                logger.warn(f"下载前建连失败: {e}")
-                return False
-            total = self.size(remote_path)
-            for attempt in range(1, retries + 1):
-                if self._ftp is None:
-                    try:
-                        self.connect()
-                    except FtpError as e:
-                        logger.warn(f"下载前重连失败(尝试{attempt}/{retries}): {e}")
-                        continue
-                # 已下载字节数（续传起点）
-                offset = os.path.getsize(local_path) if os.path.exists(local_path) else 0
-                if total > 0 and offset >= total:
-                    return True  # 已下完
-                try:
-                    os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
-                    # 追加模式，REST 设置服务器偏移
-                    mode = "ab" if offset > 0 else "wb"
-                    with open(local_path, mode) as f:
-                        # retrbinary 的 rest 参数让服务器从 offset 开始传
-                        self._ftp.retrbinary(f"RETR {remote_path}", f.write, rest=offset if offset > 0 else None)
-                    # 检查完整性
-                    local_sz = os.path.getsize(local_path)
-                    if total <= 0 or local_sz >= total:
-                        return True
-                    logger.warn(f"下载提前结束({local_sz//1024}KB/{total//1024}KB)，续传 {attempt}/{retries}")
-                except Exception as e:
-                    logger.warn(f"下载异常(尝试{attempt}/{retries})，已传"
-                                f"{os.path.getsize(local_path)//1024 if os.path.exists(local_path) else 0}KB: {e}")
-                # 连接已不可用，重连（全新会话）后续传
-                self._safe_close()
+            self.connect()
+        except OperationCancelled:
+            raise
+        except FtpError as exc:
+            logger.warn(f"下载前建连失败: {exc}")
+            return False
+        total = self.size(remote_path)
+        for attempt in range(1, retries + 1):
+            self._check_cancelled()
+            if self._ftp is None:
                 try:
                     self.connect()
+                except OperationCancelled:
+                    raise
+                except FtpError as exc:
+                    logger.warn(f"下载前重连失败(尝试{attempt}/{retries}): {exc}")
+                    continue
+            offset = os.path.getsize(local_path) if os.path.exists(local_path) else 0
+            if total > 0 and offset >= total:
+                return True
+            data_socket = None
+            try:
+                os.makedirs(os.path.dirname(local_path) or ".", exist_ok=True)
+                command = f"RETR {remote_path}"
+                data_socket = self._ftp.transfercmd(command, rest=offset if offset > 0 else None)
+                data_socket.settimeout(min(0.5, max(0.1, timeout)))
+                last_data = time.monotonic()
+                with open(local_path, "ab" if offset > 0 else "wb") as handle:
+                    while True:
+                        self._check_cancelled()
+                        try:
+                            block = data_socket.recv(64 * 1024)
+                        except socket.timeout:
+                            if time.monotonic() - last_data >= timeout:
+                                raise TimeoutError(f"FTP data inactivity timeout ({timeout}s)")
+                            continue
+                        if not block:
+                            break
+                        handle.write(block)
+                        last_data = time.monotonic()
+                data_socket.close()
+                data_socket = None
+                self._ftp.voidresp()
+                local_size = os.path.getsize(local_path)
+                if total <= 0 or local_size >= total:
+                    return True
+                logger.warn(
+                    f"下载提前结束({local_size//1024}KB/{total//1024}KB)，续传 {attempt}/{retries}"
+                )
+            except OperationCancelled:
+                if data_socket is not None:
+                    try:
+                        data_socket.close()
+                    except Exception:
+                        pass
+                self._safe_close()
+                raise
+            except Exception as exc:
+                if data_socket is not None:
+                    try:
+                        data_socket.close()
+                    except Exception:
+                        pass
+                current = os.path.getsize(local_path) if os.path.exists(local_path) else 0
+                logger.warn(f"下载异常(尝试{attempt}/{retries})，已传{current//1024}KB: {exc}")
+            self._safe_close()
+            if attempt < retries:
+                try:
+                    self.connect()
+                except OperationCancelled:
+                    raise
                 except FtpError:
                     pass
-            # 最终检查
-            local_sz = os.path.getsize(local_path) if os.path.exists(local_path) else 0
-            return total > 0 and local_sz >= total
-        finally:
-            _socket.setdefaulttimeout(old_timeout)
+        local_size = os.path.getsize(local_path) if os.path.exists(local_path) else 0
+        return total > 0 and local_size >= total
 
     def upload(self, local_path: str, remote_path: str) -> bool:
         """从本地上传文件到板子。

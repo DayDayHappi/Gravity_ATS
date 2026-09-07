@@ -1,24 +1,14 @@
-"""测试编排器：按 Scenario 的 Task 列表调度模块执行，支持 repeat/loop。
+"""Scenario task scheduler with repeat/loop, events, and cooperative cancellation."""
+from __future__ import annotations
 
-职责边界：
-- **Runner**：什么时候执行（调度）——不关心模块怎么测，只按 Task 列表驱动。
-- **Module**：怎么测（能力）。
-- **Scenario**：怎么组合测试（流程/循环次数/持续时间）。
-
-职责：
-1. 按 ``scenario.tasks`` 声明顺序执行（顺序即流程，不再拓扑排序）。
-2. 每个 Task 支持 ``repeat``（重复次数，Runner 循环驱动，模块内不写 for）。
-3. 外层 ``loop`` 支持整轮循环（count 次数 / duration 时长 / 无限）。
-4. 参数合并：module 默认(config/modules/*.yaml) + task.override + task.duration(经 duration_key)。
-5. fail-fast：依赖模块 FAIL/ERROR 则本模块 SKIP（SKIP 不阻断依赖）。
-6. 收集所有 TestResult，交 reporter 输出。
-"""
 import datetime as _dt
 import time
 
 from . import logger
+from .cancellation import CancellationToken, OperationCancelled
 from .config import load_module_config
-from .result import TestResult, PASSED, FAILED, SKIPPED, ERROR
+from .events import Event, EventType
+from .result import CANCELLED, ERROR, FAILED, PASSED, SKIPPED, TestResult
 
 
 class RunnerError(Exception):
@@ -26,25 +16,41 @@ class RunnerError(Exception):
 
 
 class TestRunner:
-    """按场景 Task 列表执行模块的编排器。"""
+    """Execute a Scenario in declaration order without knowing module internals."""
 
-    def __init__(self, system_cfg, ctx, scenario):
+    __test__ = False
+
+    def __init__(
+        self,
+        system_cfg,
+        ctx,
+        scenario,
+        event_sink=None,
+        cancellation_token: CancellationToken | None = None,
+        config_dir: str | None = None,
+    ):
         self.system_cfg = system_cfg
         self.ctx = ctx
         self.scenario = scenario
+        self.event_sink = event_sink
+        self.run_id = getattr(ctx, "run_id", "") or ""
         self.console = getattr(ctx, "console", None)
-        self.results: list = []           # 所有 TestResult
-        self.module_status: dict = {}     # module name -> PASS/FAIL/SKIP/ERROR（本 cycle）
+        self.cancellation_token = (
+            cancellation_token
+            or getattr(ctx, "cancellation_token", None)
+            or CancellationToken()
+        )
+        self.config_dir = config_dir
+        self.results: list[TestResult] = []
+        self.module_status: dict[str, str] = {}
         runner_cfg = system_cfg.get("runner", {}) or {}
-        self.retry = int(runner_cfg.get("retry_on_fail", 1))
+        self.retry = max(1, int(runner_cfg.get("retry_on_fail", 1)))
         self.fail_fast = bool(runner_cfg.get("fail_fast", True))
 
-    def run(self) -> list:
-        """执行场景的全部 cycle，返回 TestResult 列表。"""
-        from ..modules.base import get_module_cls
+    def run(self) -> list[TestResult]:
         import importlib
-        importlib.import_module("ATS.modules")  # 触发模块注册
 
+        importlib.import_module("ATS.modules")
         loop = self.scenario.loop
         cycle = 0
         deadline = None
@@ -53,11 +59,25 @@ class TestRunner:
 
         try:
             while True:
+                self.cancellation_token.raise_if_cancelled()
                 cycle += 1
+                before = len(self.results)
+                self._emit(EventType.CYCLE_STARTED, cycle=cycle)
                 logger.step(f"===== Scenario [{self.scenario.name}] cycle {cycle} 开始 =====")
-                self._run_tasks(cycle)
+                try:
+                    self._run_tasks(cycle)
+                except OperationCancelled:
+                    logger.warn(f"Scenario [{self.scenario.name}] cycle {cycle} 已取消")
+                    self._emit(EventType.CYCLE_FINISHED, cycle=cycle, status=CANCELLED)
+                    raise
+                cycle_results = self.results[before:]
+                cycle_status = FAILED if any(
+                    result.status in (FAILED, ERROR) for result in cycle_results
+                ) else PASSED
                 logger.step(f"===== Scenario [{self.scenario.name}] cycle {cycle} 结束 =====")
+                self._emit(EventType.CYCLE_FINISHED, cycle=cycle, status=cycle_status)
 
+                self.cancellation_token.raise_if_cancelled()
                 if not loop.enable:
                     break
                 if loop.count is not None and cycle >= int(loop.count):
@@ -65,127 +85,218 @@ class TestRunner:
                 if deadline is not None and time.monotonic() >= deadline:
                     break
                 if loop.count is None and loop.duration is None:
-                    logger.info(f"loop 无限循环，cycle {cycle} 完成，继续...（Ctrl+C 中断）")
-        except KeyboardInterrupt:
-            logger.warn("用户中断循环")
+                    logger.info(f"loop 无限循环，cycle {cycle} 完成，继续...（STOP/Ctrl+C 中断）")
+        except KeyboardInterrupt as exc:
+            self.cancellation_token.cancel("keyboard interrupt")
+            raise OperationCancelled("keyboard interrupt") from exc
         return self.results
 
-    def _run_tasks(self, cycle: int):
-        """执行一轮 tasks（按声明顺序）。"""
+    def _run_tasks(self, cycle: int) -> None:
         from ..modules.base import get_module_cls
-        self.module_status = {}   # 每 cycle 独立判定 fail-fast
 
+        self.module_status = {}
         for task in self.scenario.tasks:
+            self.cancellation_token.raise_if_cancelled()
             cls = get_module_cls(task.module)
             if cls is None:
                 self._record(TestResult(
-                    name=task.module, module=task.module, status=ERROR,
-                    message="模块未注册"), cycle)
+                    name=task.module,
+                    module=task.module,
+                    status=ERROR,
+                    message="模块未注册",
+                ), cycle)
                 self.module_status[task.module] = ERROR
                 continue
 
-            # fail-fast：依赖模块 FAIL/ERROR 则跳过；SKIP 不阻断
             deps = getattr(cls, "depends", []) or []
-            blocked = [d for d in deps if self.module_status.get(d) in (FAILED, ERROR)]
+            blocked = [dep for dep in deps if self.module_status.get(dep) in (FAILED, ERROR)]
             if blocked:
                 self._record(TestResult(
-                    name=task.module, module=task.module, status=SKIPPED,
-                    message=f"依赖模块未通过: {blocked}"), cycle)
+                    name=task.module,
+                    module=task.module,
+                    status=SKIPPED,
+                    message=f"依赖模块未通过: {blocked}",
+                ), cycle)
                 self.module_status[task.module] = SKIPPED
                 continue
 
-            # 参数合并：module 默认 + task.override + task.duration(经 duration_key)
-            module_defaults = load_module_config(task.module)
+            module_defaults = load_module_config(task.module, self.config_dir)
             params = dict(task.override or {})
-            dk = getattr(cls, "duration_key", None)
-            if task.duration is not None and dk:
-                params[dk] = task.duration
+            duration_key = getattr(cls, "duration_key", None)
+            if task.duration is not None and duration_key:
+                params[duration_key] = task.duration
 
             repeat_total = max(1, int(task.repeat or 1))
-            for rep in range(repeat_total):
-                self._run_module(task.module, cls, module_defaults, params,
-                                 cycle, rep, repeat_total)
+            for rep_index in range(repeat_total):
+                self.cancellation_token.raise_if_cancelled()
+                self._emit(
+                    EventType.TASK_STARTED,
+                    cycle=cycle,
+                    module=task.module,
+                    repeat=rep_index + 1,
+                    repeat_total=repeat_total,
+                )
+                task_status = ERROR
+                try:
+                    self._run_module(
+                        task.module,
+                        cls,
+                        module_defaults,
+                        params,
+                        cycle,
+                        rep_index,
+                        repeat_total,
+                    )
+                    task_status = self.module_status.get(task.module, ERROR)
+                except OperationCancelled:
+                    task_status = CANCELLED
+                    self.module_status[task.module] = CANCELLED
+                    raise
+                finally:
+                    self._emit(
+                        EventType.TASK_FINISHED,
+                        cycle=cycle,
+                        module=task.module,
+                        repeat=rep_index + 1,
+                        repeat_total=repeat_total,
+                        status=task_status,
+                    )
 
-    def _run_module(self, name, cls, config, params, cycle, rep_index, repeat_total):
-        """执行单次模块：实例化 -> setup -> run(带重试) -> teardown。"""
+    def _run_module(self, name, cls, config, params, cycle, rep_index, repeat_total) -> None:
         label = name if repeat_total <= 1 else f"{name}[{rep_index + 1}/{repeat_total}]"
         mod_start = time.monotonic()
         logger.step(f">>> 模块 [{label}] 开始执行 (cycle {cycle})")
+        module = cls(config)
+        result = None
+        setup_ok = False
+        cancelled = False
         try:
-            module = cls(config)
-
+            self.cancellation_token.raise_if_cancelled()
             try:
                 module.setup(self.ctx, self.console)
-            except Exception as e:
-                logger.error(f"[{label}] setup 异常: {e}")
+                setup_ok = True
+            except OperationCancelled:
+                cancelled = True
+                self.module_status[name] = CANCELLED
+                raise
+            except Exception as exc:
+                logger.error(f"[{label}] setup 异常: {exc}")
                 self._record(TestResult(
-                    name=name, module=name, status=ERROR,
-                    message=f"setup 异常: {e}"), cycle)
+                    name=name,
+                    module=name,
+                    status=ERROR,
+                    message=f"setup 异常: {exc}",
+                ), cycle)
                 self.module_status[name] = ERROR
                 return
 
-            result = None
             last_err = None
             for attempt in range(1, self.retry + 1):
+                self.cancellation_token.raise_if_cancelled()
                 try:
-                    logger.step(f"    - 执行模块: {label}"
-                                + (f" (尝试 {attempt})" if attempt > 1 else ""))
+                    logger.step(
+                        f"    - 执行模块: {label}"
+                        + (f" (尝试 {attempt})" if attempt > 1 else "")
+                    )
                     result = module.run(self.ctx, self.console, params=params)
                     if self._overall_pass(result):
                         break
-                except Exception as e:
-                    last_err = e
-                    logger.warn(f"[{label}] 第 {attempt} 次执行异常: {e}")
-                    result = TestResult(name=name, module=name, status=ERROR,
-                                        message=f"执行异常: {e}")
+                except OperationCancelled:
+                    cancelled = True
+                    self.module_status[name] = CANCELLED
+                    raise
+                except Exception as exc:
+                    last_err = exc
+                    logger.warn(f"[{label}] 第 {attempt} 次执行异常: {exc}")
+                    result = TestResult(
+                        name=name,
+                        module=name,
+                        status=ERROR,
+                        message=f"执行异常: {exc}",
+                    )
                 if attempt < self.retry:
                     logger.info(f"[{label}] 失败，重试中...")
 
-            try:
-                module.teardown(self.ctx, self.console)
-            except Exception as e:
-                logger.warn(f"[{label}] teardown 异常: {e}")
-
             self._record_results(name, result, last_err, cycle)
             if isinstance(result, list):
-                st = PASSED if any(r.status in (PASSED, SKIPPED) for r in result) else FAILED
+                # Preserve baseline behavior: any PASS/SKIP makes the module non-blocking.
+                status = PASSED if any(
+                    item.status in (PASSED, SKIPPED) for item in result
+                ) else FAILED
             elif result is not None:
-                st = result.status
+                status = result.status
             else:
-                st = FAILED
-            self.module_status[name] = st
+                status = FAILED
+            self.module_status[name] = status
         finally:
+            try:
+                module.teardown(self.ctx, self.console)
+            except Exception as exc:
+                logger.warn(f"[{label}] teardown 异常: {exc}")
             elapsed = time.monotonic() - mod_start
-            status = self.module_status.get(name, "?")
+            status = CANCELLED if cancelled else self.module_status.get(name, "?")
             logger.step(f"<<< 模块 [{label}] 结束，耗时 {elapsed:.1f}s（结果 {status}）")
 
-    def _record_results(self, name, result, last_err, cycle):
-        """把模块返回的结果（单条或多条）记录进 self.results 并打印。"""
+    def _record_results(self, name, result, last_err, cycle) -> None:
         if result is None:
-            self._record(TestResult(name=name, module=name, status=FAILED,
-                                    message="模块未返回结果"), cycle)
+            self._record(TestResult(
+                name=name,
+                module=name,
+                status=FAILED,
+                message="模块未返回结果",
+            ), cycle)
             return
         if isinstance(result, list):
-            for r in result:
-                self._record(r, cycle)
+            for item in result:
+                self._record(item, cycle)
         else:
             self._record(result, cycle)
 
-    def _record(self, r: TestResult, cycle: int = 0):
-        r.timestamp = _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if not r.scenario:
-            r.scenario = self.scenario.name
-        if not r.cycle:
-            r.cycle = cycle
-        self.results.append(r)
-        logger.result_line(r.status, r.name, r.elapsed_ms, r.message)
+    def _record(self, result: TestResult, cycle: int = 0) -> None:
+        result.timestamp = _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if not result.scenario:
+            result.scenario = self.scenario.name
+        if not result.cycle:
+            result.cycle = cycle
+        self.results.append(result)
+        logger.result_line(result.status, result.name, result.elapsed_ms, result.message)
+        self._emit(
+            EventType.RESULT_PRODUCED,
+            cycle=result.cycle,
+            module=result.module,
+            status=result.status,
+            message=result.message,
+            result=result,
+        )
+        for artifact in getattr(result, "artifacts", []):
+            self._emit(
+                EventType.ARTIFACT_PRODUCED,
+                cycle=result.cycle,
+                module=result.module,
+                status=result.status,
+                message=getattr(artifact, "label", ""),
+                data=artifact.to_dict() if hasattr(artifact, "to_dict") else dict(artifact),
+            )
 
-    def _overall_pass(self, result) -> bool:
-        """判断模块返回结果是否整体通过。SKIP 视为通过（主动跳过不算失败）。"""
+    def _emit(self, event_type: EventType, **kwargs) -> None:
+        if self.event_sink is None:
+            return
+        try:
+            self.event_sink.emit(Event(
+                type=event_type,
+                run_id=self.run_id,
+                scenario=self.scenario.name,
+                **kwargs,
+            ))
+        except Exception:
+            pass
+
+    @staticmethod
+    def _overall_pass(result) -> bool:
         if result is None:
             return False
         if isinstance(result, list):
-            if not result:
-                return False
-            return any(r.status in (PASSED, SKIPPED) for r in result)
+            return bool(result) and any(
+                item.status in (PASSED, SKIPPED) for item in result
+            )
         return result.status in (PASSED, SKIPPED)

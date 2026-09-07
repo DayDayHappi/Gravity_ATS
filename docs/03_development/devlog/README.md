@@ -1,3 +1,4 @@
+
 # devBugLog - 修改记录索引
 
 本目录记录 ATS 脚本的所有修改（bug 修复、功能改进、重构等）。
@@ -29,6 +30,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-07 | [20260907_1646_UI_Windows_Phase1-9源码实施.md](20260907_1646_UI_Windows_Phase1-9源码实施.md) | 实施 ADR-011：Application/TestService、结构化事件、协作式取消、跨平台基础设施、PySide6 五页 GUI、通用 Artifact、Windows 验收脚本与 PyInstaller/Inno Setup；本地 90 pass/1 Qt skip，真实 Windows+EVB 与干净机项待外部关闭 |
 | 2026-09-02 | [20260902_1339_新增H265视频完整性检测模块.md](20260902_1339_新增H265视频完整性检测模块.md) | 新增 H265 视频完整性检测：drivers/h265_validator.py（FFmpeg 三阶段诊断+错误分类+POC gap 判定）+ modules/video_integrity.py（文件选择+manifest 去重+聚合 TestResult，模块内 deep-merge）+ 配置与 standalone 场景 |
 | 2026-08-31 | [20260831_1032_日志目录按场景日期运行时间戳分层.md](20260831_1032_日志目录按场景日期运行时间戳分层.md) | 日志目录按「场景/日期/run_ts」三级分层：所有场景日志统一 logs/<场景>/<日期>/（去掉中间冗余 logs 层），报告也按天分（normal->reports/<日期>/、非 normal->logs/<场景>/report/<日期>/），problem 记录不按天打散到 logs/<场景>/problem/ |
 | 2026-08-28 | [20260828_0233_stress_traverse注释去具体时长次数.md](20260828_0233_stress_traverse注释去具体时长次数.md) | stress_traverse_photo_mode.yaml 注释去具体时长/次数（video 3min/rtmp 10min/20 次 → 自行按需配置；repeat 行内注释去掉「50 次」），纯注释 |

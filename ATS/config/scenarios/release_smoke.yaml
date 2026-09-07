@@ -1,0 +1,26 @@
+# Release smoke：用于 Linux/Windows 真实设备发布回归。
+# 满足 Phase 7 最小压力闭环：loop=3、photo repeat=2、video=20s、rtmp=20s。
+scenario:
+  name: release_smoke
+  preview:
+    enabled: true
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+    - preview_start
+  loop:
+    enable: true
+    count: 3
+  tasks:
+    - module: photo
+      repeat: 2
+    - module: video
+      duration: 20
+    - module: rtmp
+      duration: 20
+  cleanup:
+    - stop_stream
+    - preview_stop
+    - close_serial

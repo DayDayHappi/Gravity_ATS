@@ -1,3 +1,4 @@
+
 """H.265 码流完整性检测 Driver（PC 端 FFmpeg 诊断）。
 
 职责边界（对应需求文档 §3）：
@@ -22,6 +23,7 @@ POC gap 判定（§9，不要造假精度）：
 - 只有「前进跳过且缺失值从未在文件中出现」时才高置信报 ``MISSING_PICTURE``；
 - 无法高置信重建时退化为 ``REFERENCE_CHAIN_ERROR`` / decoder 级分类，绝不硬算全局索引。
 """
+import copy
 import os
 import re
 import shutil
@@ -31,6 +33,9 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from ..core import logger
+from ..core.cancellation import OperationCancelled
+from ..platform.processes import ProcessController
+from ..platform.resources import ResourceLocator
 
 # ---------------------------------------------------------------------------
 # 错误分类（需求 §10 + §20.2 补充）
@@ -102,9 +107,16 @@ class H265Validator:
     工作，可复用于多个文件；``validate()`` 为单文件入口。
     """
 
-    def __init__(self, config: dict = None):
-        self.config = config or {}
-        self.ffmpeg = self._resolve_ffmpeg(self.config.get("ffmpeg_path", "tools/ffmpeg/ffmpeg"))
+    def __init__(self, config: dict = None, cancellation_token=None, process_controller=None):
+        raw_config = dict(config or {})
+        resource_locator = raw_config.pop("_resource_locator", None)
+        self.config = copy.deepcopy(raw_config)
+        self.cancellation_token = cancellation_token
+        self.process_controller = process_controller or ProcessController()
+        self.resource_locator = resource_locator or ResourceLocator()
+        self.ffmpeg = self.resource_locator.find_tool(
+            "ffmpeg", self.config.get("ffmpeg_path", "tools/ffmpeg/ffmpeg")
+        ) or self._resolve_ffmpeg(self.config.get("ffmpeg_path", "tools/ffmpeg/ffmpeg"))
         self.analysis = self.config.get("analysis", {}) or {}
         self.hevc = self.config.get("hevc", {}) or {}
         self.diagnostic = self.config.get("diagnostic", {}) or {}
@@ -131,11 +143,14 @@ class H265Validator:
     def _trace_available(self) -> bool:
         if self._trace_supported is None:
             try:
-                out = subprocess.run(
+                out = self.process_controller.run_capture(
                     [self.ffmpeg, "-hide_banner", "-bsfs"],
-                    capture_output=True, text=True, timeout=30,
+                    text=True, timeout=30,
+                    cancellation_token=self.cancellation_token,
                 )
                 self._trace_supported = "trace_headers" in (out.stdout or "")
+            except OperationCancelled:
+                raise
             except Exception:
                 self._trace_supported = False
         return self._trace_supported
@@ -174,17 +189,17 @@ class H265Validator:
     # ------------------------------------------------------------------
 
     def _spawn(self, argv, timeout, log_path, collector=None):
-        """运行 FFmpeg，stderr 写文件 + 逐行回调。返回 ``(returncode, timed_out)``。
-
-        collector(line) 在独立读线程内被调用，用于按行解析（海量日志不载入内存）。
-        """
+        """Run a child process with streamed stderr, timeout, and cooperative STOP."""
         os.makedirs(os.path.dirname(log_path), exist_ok=True) if log_path else None
         fh = open(log_path, "w", encoding="utf-8", errors="replace") if log_path else None
         timed_out = False
+        proc = None
+        reader = None
+        cancelled = False
         try:
-            proc = subprocess.Popen(
+            proc = self.process_controller.start(
                 argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
-                text=True, bufsize=1, errors="replace",
+                text=True, bufsize=1, errors="replace", show_window=False,
             )
 
             def _reader():
@@ -200,26 +215,32 @@ class H265Validator:
                 except Exception:
                     pass
 
-            t = threading.Thread(target=_reader, daemon=True)
-            t.start()
-            try:
-                rc = proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                timed_out = True
+            reader = threading.Thread(target=_reader, daemon=True)
+            reader.start()
+            deadline = __import__("time").monotonic() + float(timeout)
+            while proc.poll() is None:
+                if self.cancellation_token is not None and self.cancellation_token.is_cancelled:
+                    cancelled = True
+                    break
+                remaining = deadline - __import__("time").monotonic()
+                if remaining <= 0:
+                    timed_out = True
+                    break
                 try:
-                    proc.kill()
-                except Exception:
+                    proc.wait(timeout=min(0.1, remaining))
+                except subprocess.TimeoutExpired:
                     pass
-                try:
-                    proc.wait(timeout=5)
-                except Exception:
-                    pass
-                rc = proc.returncode if proc.returncode is not None else -9
-            finally:
-                t.join(timeout=2)
+            if cancelled or timed_out:
+                self.process_controller.terminate(proc, grace=1.0)
+            rc = proc.returncode if proc.returncode is not None else -9
         finally:
+            if reader is not None:
+                reader.join(timeout=2.0)
             if fh:
                 fh.close()
+        if cancelled:
+            self.cancellation_token.raise_if_cancelled()
+            raise OperationCancelled("cancelled")
         return rc, timed_out
 
     # ------------------------------------------------------------------
@@ -334,6 +355,8 @@ class H265Validator:
 
     def validate(self, file_path: str, work_dir: str = "") -> H265ValidationResult:
         """对单个 H.265 文件执行完整检测，返回结构化结果。"""
+        if self.cancellation_token is not None:
+            self.cancellation_token.raise_if_cancelled()
         res = H265ValidationResult(file_path=file_path)
         res.expected_fps = float(self.hevc.get("expected_fps", 30) or 30)
         res.expected_gop_size = int(self.hevc.get("expected_gop_size", 30) or 30)
@@ -386,6 +409,9 @@ class H265Validator:
         err_type = self._classify_decode_error(err_text)
         decoder_poc = self._extract_missing_poc(err_text)
 
+        if self.cancellation_token is not None:
+            self.cancellation_token.raise_if_cancelled()
+
         # Stage 2 showinfo 定位
         locate_on_error = bool(self.analysis.get("locate_on_error", True))
         if locate_on_error and work_dir:
@@ -402,8 +428,13 @@ class H265Validator:
                 res.last_good_decoded_frame = si["last_frame"]
                 res.last_good_pts_time = si["last_pts"]
                 res.diagnostic_logs.append(showinfo_log)
+            except OperationCancelled:
+                raise
             except Exception as e:
                 logger.warn(f"showinfo 定位失败(可忽略): {e}")
+
+        if self.cancellation_token is not None:
+            self.cancellation_token.raise_if_cancelled()
 
         # Stage 3 trace_headers 码流分析
         trace_on_error = bool(self.analysis.get("trace_headers_on_error", True))
@@ -444,6 +475,8 @@ class H265Validator:
                     res.error_type = err_type
                     res.confidence = "decode_only"
                     res.reason = self._decode_reason(err_type, err_text)
+            except OperationCancelled:
+                raise
             except Exception as e:
                 logger.warn(f"trace_headers 分析异常(可忽略): {e}")
                 res.error_type = err_type

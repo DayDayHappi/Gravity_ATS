@@ -1,3 +1,4 @@
+
 """H.265 视频完整性检测模块（本地文件，PC 端诊断）。
 
 职责边界（需求文档 §3/§4/§12）：
@@ -23,6 +24,7 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, PASSED, FAILED, SKIPPED, ERROR
+from ..core.artifacts import Artifact
 
 # 需要做递归合并的嵌套配置段（§7）
 _DEEP_MERGE_SECTIONS = ("input", "analysis", "hevc", "diagnostic")
@@ -71,7 +73,15 @@ class VideoIntegrityModule(TestModule):
             return self._fail("无匹配视频文件", "请检查 input.source/directory/patterns 配置")
 
         from ..drivers.h265_validator import H265Validator
-        validator = H265Validator(self.config)
+        validator_cfg = dict(self.config)
+        services = getattr(ctx, "platform_services", None)
+        if services is not None:
+            validator_cfg["_resource_locator"] = services.resources
+        validator = H265Validator(
+            validator_cfg,
+            cancellation_token=getattr(ctx, "cancellation_token", None),
+            process_controller=getattr(services, "processes", None) if services else None,
+        )
 
         # 日志目录（§13）：<log_dir>/video_integrity/
         base_work = os.path.join(logger.log_dir() or "logs", "video_integrity")
@@ -285,10 +295,37 @@ class VideoIntegrityModule(TestModule):
         detail = "\n".join(detail_lines)
 
         if overall == PASSED:
-            return self._pass(message)
-        if overall == ERROR:
-            return self._error(message, detail)
-        return self._fail(message, detail)
+            aggregate = self._pass(message)
+        elif overall == ERROR:
+            aggregate = self._error(message, detail)
+        else:
+            aggregate = self._fail(message, detail)
+
+        seen = set()
+        for item in results:
+            source = os.path.abspath(item["file"])
+            key = ("video-source", source)
+            if key not in seen:
+                aggregate.artifacts.append(Artifact(
+                    kind="video-source",
+                    path=source,
+                    label=item["name"],
+                    metadata={"status": item["status"], "error_type": item["res"].error_type},
+                ))
+                seen.add(key)
+            for diagnostic_path in item["res"].diagnostic_logs:
+                diagnostic = os.path.abspath(diagnostic_path)
+                key = ("diagnostic", diagnostic)
+                if key in seen:
+                    continue
+                aggregate.artifacts.append(Artifact(
+                    kind="diagnostic",
+                    path=diagnostic,
+                    label=os.path.basename(diagnostic),
+                    metadata={"source": source},
+                ))
+                seen.add(key)
+        return aggregate
 
     # ------------------------------------------------------------------
     # 结果工厂

@@ -1,3 +1,4 @@
+
 """FTP 模块：启动 EVB 端 FTP 服务 + PC 端连接验证。
 
 流程：
@@ -58,6 +59,7 @@ def ensure_ftp(ctx, console, force=False):
         user=cfg.get("user", "loogg"), password=cfg.get("password", "loogg"),
         retry=cfg.get("connect_retry", 5), interval=cfg.get("connect_interval", 1.5),
         pasv=cfg.get("pasv", False), timeout=cfg.get("timeout", 10),
+        cancellation_token=getattr(ctx, "cancellation_token", None),
     )
     try:
         client.connect()

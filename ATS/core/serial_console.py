@@ -1,3 +1,4 @@
+
 """串口通信层（核心）。
 
 实现设计文档第 3 章：
@@ -33,6 +34,7 @@ except ImportError:  # pragma: no cover
 from . import ansi
 from . import logger
 from .result import Response, Timer
+from .cancellation import OperationCancelled
 
 # EVB 指纹：启动日志或 msh 提示符，用于自动探测识别 EVB 串口
 _EVB_FINGERPRINTS = [
@@ -78,7 +80,7 @@ class SerialConsole:
     """
 
     def __init__(self, port, baudrate=2000000, timeout=2.0,
-                 ready_timeout=60, sentinel_timeout=5.0):
+                 ready_timeout=60, sentinel_timeout=5.0, cancellation_token=None):
         if serial is None:
             raise SerialError("缺少 pyserial 依赖，请先 pip install pyserial")
         self.port = port
@@ -86,6 +88,7 @@ class SerialConsole:
         self.timeout = timeout
         self.ready_timeout = ready_timeout
         self.sentinel_timeout = sentinel_timeout
+        self.cancellation_token = cancellation_token
 
         self._ser = None
         self._reader_thread = None
@@ -99,6 +102,10 @@ class SerialConsole:
         # 供 RTMPMonitor 等独立检测模块订阅 heartbeat，串口层不感知具体业务。
         self._listeners = set()
         self._listeners_lock = threading.Lock()
+
+    def _check_cancelled(self, honor_cancellation=True):
+        if honor_cancellation and self.cancellation_token is not None:
+            self.cancellation_token.raise_if_cancelled()
 
     # ---------- 生命周期 ----------
 
@@ -122,17 +129,27 @@ class SerialConsole:
         logger.info(f"串口已打开: {self.port} @ {self.baudrate} bps")
 
     def close(self):
-        """停止读线程并关闭串口。"""
+        """Stop reads first, close the port, then join the reader thread."""
         self._stop_event.set()
         self._notify_all()
-        if self._reader_thread and self._reader_thread.is_alive():
-            self._reader_thread.join(timeout=2.0)
-        if self._ser:
+        ser = self._ser
+        if ser is not None:
+            cancel_read = getattr(ser, "cancel_read", None)
+            if callable(cancel_read):
+                try:
+                    cancel_read()
+                except Exception:
+                    pass
             try:
-                self._ser.close()
+                ser.close()
             except Exception:
                 pass
             self._ser = None
+        thread = self._reader_thread
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=2.0)
+        if thread is not None and thread.is_alive():
+            logger.warn("串口读线程在 close 超时后仍未退出")
         logger.debug("串口已关闭")
 
     # ---------- 常驻读线程 ----------
@@ -205,7 +222,7 @@ class SerialConsole:
 
     # ---------- 底层发送 ----------
 
-    def _write_safe(self, text: str):
+    def _write_safe(self, text: str, honor_cancellation: bool = True):
         """统一安全发送：把给定文本（含换行）分片写入串口，片间延时。
 
         命令 + echo 哨兵（同步）或长命令（如 rtmp_video_start <url>）可能达几十字节，
@@ -224,6 +241,7 @@ class SerialConsole:
         logger.log_serial("TX>", text.rstrip("\n"))
         data = text.encode("utf-8")
         for i in range(0, len(data), _WRITE_CHUNK_BYTES):
+            self._check_cancelled(honor_cancellation)
             chunk = data[i:i + _WRITE_CHUNK_BYTES]
             with self._lock:
                 self._ser.write(chunk)
@@ -245,7 +263,8 @@ class SerialConsole:
     def _gen_sentinel(self) -> str:
         return f"{_SENTINEL_PREFIX}{secrets.token_hex(4)}__"
 
-    def _wait_pattern(self, pattern: str, timeout: float, start_snapshot: str) -> tuple:
+    def _wait_pattern(self, pattern: str, timeout: float, start_snapshot: str,
+                      honor_cancellation: bool = True) -> tuple:
         """等待 pattern 出现在"start_snapshot 之后的新输出"中。
 
         哨兵 pattern 会出现在两处：(1) 命令回显行 ``cmd; echo <TOKEN>``，
@@ -258,6 +277,7 @@ class SerialConsole:
         # 匹配行首的哨兵（前面是换行或字符串开头），不匹配回显行里的 "; echo TOKEN"
         pat = re.compile(r"(?:^|\n)" + re.escape(pattern))
         while True:
+            self._check_cancelled(honor_cancellation)
             full = self._buffer_text()
             new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
             m = pat.search(new)
@@ -270,13 +290,15 @@ class SerialConsole:
             with self._cond:
                 remaining = deadline - time.monotonic()
                 if remaining > 0:
-                    self._cond.wait(timeout=remaining)
+                    self._cond.wait(timeout=min(remaining, 0.1))
 
-    def _wait_regex(self, regex: str, timeout: float, start_snapshot: str) -> tuple:
+    def _wait_regex(self, regex: str, timeout: float, start_snapshot: str,
+                    honor_cancellation: bool = True) -> tuple:
         """等待正则 regex 匹配新输出，返回 (是否匹配, match对象, 新输出)。"""
         deadline = time.monotonic() + timeout
         pat = re.compile(regex)
         while True:
+            self._check_cancelled(honor_cancellation)
             full = self._buffer_text()
             new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
             m = pat.search(ansi.strip(new))
@@ -287,12 +309,13 @@ class SerialConsole:
             with self._cond:
                 remaining = deadline - time.monotonic()
                 if remaining > 0:
-                    self._cond.wait(timeout=remaining)
+                    self._cond.wait(timeout=min(remaining, 0.1))
 
     # ---------- 命令执行 ----------
 
     def exec_sync(self, cmd: str, expect=None, timeout: float = 10.0,
-                  error_on_no_sentinel: bool = True) -> Response:
+                  error_on_no_sentinel: bool = True,
+                  honor_cancellation: bool = True) -> Response:
         """执行同步命令：发 ``cmd\necho <TOKEN>``，等哨兵出现定界。
 
         哨兵在此处的含义仅表示「前一条同步 Shell 命令已经返回」，不表示任何异步业务
@@ -315,11 +338,11 @@ class SerialConsole:
         # echo 必须带引号（固件 echo "string" 用法）。
         # 用 _write_safe 分片写入（命令+哨兵可能达几十字节，避免板子串口接收缓冲溢出）
         try:
-            self._write_safe(f'{cmd}\necho "{sentinel}"\n')
+            self._write_safe(f'{cmd}\necho "{sentinel}"\n', honor_cancellation)
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
-        ok, new = self._wait_pattern(sentinel, timeout, snapshot)
+        ok, new = self._wait_pattern(sentinel, timeout, snapshot, honor_cancellation)
         elapsed = timer.elapsed_ms()
 
         # 响应 = 哨兵前的新输出，去掉回显的命令本身和哨兵行
@@ -341,7 +364,8 @@ class SerialConsole:
         return res
 
     def exec_async(self, cmd: str, expect: str, send_timeout: float = 5.0,
-                   result_timeout: float = 30.0) -> Response:
+                   result_timeout: float = 30.0,
+                   honor_cancellation: bool = True) -> Response:
         """执行异步命令（如 wifi join / dfs_capture_start / rtmp_video_start）。
 
         异步命令 Shell 返回后业务仍在后台继续，哨兵只能表示「命令已返回」、不能表示
@@ -358,12 +382,12 @@ class SerialConsole:
         snapshot = self._buffer_text()
         # 只发命令、不发哨兵。用 _write_safe 分片写入，避免长命令溢出丢字节。
         try:
-            self._write_safe(f'{cmd}\n')
+            self._write_safe(f'{cmd}\n', honor_cancellation)
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
         # 直接在 result_timeout 内等期望正则（命令执行期间持续读流）
-        matched, m, new = self._wait_regex(expect, result_timeout, snapshot)
+        matched, m, new = self._wait_regex(expect, result_timeout, snapshot, honor_cancellation)
         elapsed = timer.elapsed_ms()
         res = Response(raw=new, clean=ansi.strip(new), elapsed_ms=elapsed)
         if matched:
@@ -407,7 +431,7 @@ class SerialConsole:
 
     # ---------- 启动就绪 ----------
 
-    def wait_for_ready(self, timeout: float = None) -> bool:
+    def wait_for_ready(self, timeout: float = None, honor_cancellation: bool = True) -> bool:
         """等待 EVB 启动就绪（FW start ok 或 msh 提示符）。
 
         若串口打开时已在缓冲中看到就绪标志，立即返回。
@@ -424,8 +448,9 @@ class SerialConsole:
             logger.info("EVB 已就绪")
             return True
         while time.monotonic() < deadline:
+            self._check_cancelled(honor_cancellation)
             snapshot = self._buffer_text()
-            matched, _, _ = self._wait_regex(_READY_RE.pattern, 1.0, snapshot)
+            matched, _, _ = self._wait_regex(_READY_RE.pattern, 1.0, snapshot, honor_cancellation)
             if matched:
                 logger.info("EVB 已就绪")
                 return True
@@ -452,6 +477,8 @@ class SerialConsole:
                 return False
             logger.debug("串口自检通过")
             return True
+        except OperationCancelled:
+            raise
         except Exception as e:
             logger.error(f"串口自检异常: {e}")
             return False
@@ -459,14 +486,16 @@ class SerialConsole:
 
 # ---------- 自动探测 ----------
 
-def _list_candidate_ports() -> list:
-    """枚举当前用户可访问的 /dev/ttyUSB* 和 /dev/ttyACM*。"""
-    ports = sorted(set(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")))
-    accessible = []
-    for p in ports:
-        if os.access(p, os.R_OK | os.W_OK):
-            accessible.append(p)
-    return accessible
+def _list_candidate_ports(port_provider=None) -> list:
+    """Enumerate Linux tty devices and Windows COM ports through one provider."""
+    if port_provider is None:
+        from ..platform.serial_ports import PySerialPortProvider
+        port_provider = PySerialPortProvider()
+    try:
+        return list(port_provider.candidate_names())
+    except Exception as exc:
+        logger.error(f"串口枚举失败: {exc}")
+        return []
 
 
 def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> bool:
@@ -507,7 +536,10 @@ def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> b
 def detect_port(baudrate: int = 2000000,
                 baud_candidates=None,
                 interactive: bool = True,
-                detect_timeout: float = 2.0):
+                detect_timeout: float = 2.0,
+                cancellation_token=None,
+                port_provider=None,
+                interaction_provider=None):
     """自动探测 EVB 串口。
 
     遍历候选端口 × 候选波特率，用指纹匹配。默认波特率优先，探不到则回退候选列表。
@@ -517,6 +549,7 @@ def detect_port(baudrate: int = 2000000,
         baud_candidates: 回退候选波特率列表；None 用默认 [2000000,250000,115200,921600]。
         interactive: 多个匹配时是否交互让用户选。
         detect_timeout: 每个组合的探测超时。
+        interaction_provider: 多候选时的人机选择接口；缺省时确定性选择第一项。
 
     Returns:
         (port, baudrate) 元组；未探测到返回 (None, None)。
@@ -527,16 +560,20 @@ def detect_port(baudrate: int = 2000000,
     # 优先尝试默认波特率，再去重其余候选
     ordered = [baudrate] + [b for b in candidates if b != baudrate]
 
-    ports = _list_candidate_ports()
+    ports = _list_candidate_ports(port_provider)
     if not ports:
-        logger.error("未发现任何可访问的串口设备 (/dev/ttyUSB* /dev/ttyACM*)")
-        logger.error("请检查: 1) EVB 已上电并连接  2) 当前用户在 dialout 组  3) USB-串口驱动已加载")
+        logger.error("未发现可用串口设备（Linux ttyUSB/ttyACM 或 Windows COM）")
+        logger.error("请检查 EVB 供电/USB 连接、串口驱动、端口占用和当前用户权限")
         return None, None
 
     logger.info(f"开始自动探测 EVB 串口，候选端口 {ports}，候选波特率 {ordered}")
     matches = []
     for port in ports:
+        if cancellation_token is not None:
+            cancellation_token.raise_if_cancelled()
         for baud in ordered:
+            if cancellation_token is not None:
+                cancellation_token.raise_if_cancelled()
             logger.debug(f"探测 {port} @ {baud} ...")
             if _probe_port_baud(port, baud, detect_timeout):
                 logger.info(f"  命中 EVB 指纹: {port} @ {baud}")
@@ -550,16 +587,13 @@ def detect_port(baudrate: int = 2000000,
         port, baud = matches[0]
         logger.info(f"探测到 EVB: {port} @ {baud}")
         return port, baud
-    # 多个匹配：交互选择
+    # 多个匹配：Core 不直接读取 stdin；选择权交给表现层 InteractionProvider。
     logger.info("探测到多个候选 EVB 串口:")
-    for i, (p, b) in enumerate(matches):
-        print(f"  [{i}] {p} @ {b}")
+    for index, (candidate_port, candidate_baud) in enumerate(matches):
+        logger.info(f"  [{index}] {candidate_port} @ {candidate_baud}")
     if not interactive:
         return matches[0]
-    while True:
-        try:
-            sel = input(f"请选择 [0-{len(matches)-1}] (默认0): ").strip()
-            sel = int(sel) if sel else 0
-            return matches[sel]
-        except (ValueError, IndexError):
-            print("输入无效，请重试")
+    if interaction_provider is None:
+        logger.warn("未提供 InteractionProvider，确定性选择第一个 EVB 串口候选")
+        return matches[0]
+    return interaction_provider.choose("请选择 EVB 串口", matches, default_index=0)

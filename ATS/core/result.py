@@ -1,3 +1,4 @@
+
 """测试结果数据结构。
 
 定义 ``Response``（单条命令的响应）、``TestResult``（单个测试用例的结果）等，
@@ -5,7 +6,8 @@
 """
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import Optional
+from typing import List, Optional
+from .artifacts import Artifact
 
 
 @dataclass
@@ -37,10 +39,12 @@ PASSED = "PASS"
 FAILED = "FAIL"
 SKIPPED = "SKIP"
 ERROR = "ERROR"
+CANCELLED = "CANCELLED"
 
 
 @dataclass
 class TestResult:
+    __test__ = False
     """单个测试用例（或单个子项，如某一拍照模式）的执行结果。
 
     一个模块可产生多条 TestResult（如 PhotoModule 每个模式一条），
@@ -55,6 +59,7 @@ class TestResult:
     timestamp: str = ""              # 时间戳字符串（由 reporter 填）
     scenario: str = ""               # 所属场景名（scenario 层新增，默认空）
     cycle: int = 0                   # 所属 cycle 序号（loop 第几轮，默认 0）
+    artifacts: List[Artifact] = field(default_factory=list)
 
     @property
     def passed(self) -> bool:

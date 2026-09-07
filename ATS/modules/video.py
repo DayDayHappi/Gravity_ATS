@@ -1,3 +1,4 @@
+
 """录像模块：1080p 录 N 秒 + FTP 验证文件大小。
 
 实测文件结构：
@@ -17,6 +18,8 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
+from ..core.artifacts import Artifact
+from ..core.cancellation import OperationCancelled, token_from
 
 _VIDEO_DIR = "/emmc/VIDEO"
 
@@ -68,30 +71,47 @@ class VideoModule(TestModule):
         #    （摄像头资源退化）但编码实际在跑（f_index 持续增长），只等 Record Start 会误判失败。
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
         rec_start = time.monotonic()
-        r = console.exec_async("dfs_video_start",
-                               expect=r"Record Start|f_index\s*=",
-                               result_timeout=25.0)
+        try:
+            r = console.exec_async(
+                "dfs_video_start",
+                expect=r"Record Start|f_index\s*=",
+                result_timeout=25.0,
+            )
+        except OperationCancelled:
+            logger.warn("录像启动期间收到 STOP，补发 dfs_video_stop（best-effort）...")
+            self._stop_best_effort(console)
+            raise
         if not r.success:
             # 失败清理：尽力停掉可能已半启动的录像，避免 stream_on 半初始化态泄漏给下一个
             # rtmp task（否则 ffprobe Input/output error 连锁 FAIL/SKIP）。best-effort，不判结果。
             logger.warn("开始录像失败，补发 dfs_video_stop 清理状态（best-effort）...")
-            try:
-                console.exec_async("dfs_video_stop",
-                                   expect=r"Save Video|Please start|recording completed",
-                                   result_timeout=8.0)
-            except Exception as e:
-                logger.warn(f"清理 dfs_video_stop 异常(可忽略): {e}")
+            self._stop_best_effort(console)
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
 
-        time.sleep(duration)
+        token = token_from(ctx)
+        try:
+            if token is None:
+                time.sleep(duration)
+            elif token.wait(duration):
+                token.raise_if_cancelled()
+        except OperationCancelled:
+            logger.warn("录像收到 STOP，补发 dfs_video_stop（best-effort）...")
+            self._stop_best_effort(console)
+            raise
 
         # 4. 停止录像（exec_async 等串口主判据：Video recording completed successfully.，
         #    录像全流程走完的最终完成标志。不能用 Save Video Successful：它出现更早
         #    （实测约早 2s），此时录像收尾（编码 finalize/落盘）未完成、路径还可能被
         #    串口分块截断，提前发下一条命令会造成错位 + 校验对象错误）
-        r = console.exec_async("dfs_video_stop",
-                               expect=r"Video recording completed successfully.",
-                               result_timeout=25.0)
+        try:
+            r = console.exec_async(
+                "dfs_video_stop",
+                expect=r"Video recording completed successfully.",
+                result_timeout=25.0,
+            )
+        except OperationCancelled:
+            self._stop_best_effort(console)
+            raise
         rec_elapsed = time.monotonic() - rec_start
         if not r.success:
             logger.info(f"拍摄结束（失败），耗时 {rec_elapsed:.1f}s")
@@ -129,7 +149,8 @@ class VideoModule(TestModule):
         local = os.path.join(tmp_dir, fname)
         logger.info(f"FTP 开始下载视频: {video_path} ({sz//1024}KB) -> {local}")
         dl_start = time.monotonic()
-        if ftp2.download(video_path, local, timeout=20, retries=6):
+        download_complete = ftp2.download(video_path, local, timeout=20, retries=6)
+        if download_complete:
             dl_elapsed = time.monotonic() - dl_start
             logger.info(f"FTP 下载完成，耗时 {dl_elapsed:.1f}s")
             msg = f"{msg_base}，{sz//1024}KB | 已下载到 {local}"
@@ -138,7 +159,31 @@ class VideoModule(TestModule):
             logger.info(f"FTP 下载未完成，耗时 {dl_elapsed:.1f}s")
             local_sz = os.path.getsize(local) if os.path.exists(local) else 0
             msg = f"{msg_base}，{sz//1024}KB | 下载不完整({local_sz//1024}KB/{sz//1024}KB)"
-        return self._mk("PASS", msg, video_path, timer)
+        result = self._mk("PASS", msg, video_path, timer)
+        if os.path.isfile(local):
+            result.artifacts.append(Artifact(
+                kind="video",
+                path=os.path.abspath(local),
+                label=fname,
+                metadata={
+                    "remote_path": video_path,
+                    "expected_size": sz,
+                    "download_complete": bool(download_complete),
+                },
+            ))
+        return result
+
+    @staticmethod
+    def _stop_best_effort(console):
+        try:
+            console.exec_async(
+                "dfs_video_stop",
+                expect=r"Save Video|Please start|recording completed",
+                result_timeout=3.0,
+                honor_cancellation=False,
+            )
+        except Exception as exc:
+            logger.warn(f"取消/失败录像清理异常(可忽略): {exc}")
 
     def _list_video_dirs(self, ftp):
         try:
