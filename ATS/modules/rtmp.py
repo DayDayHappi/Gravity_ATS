@@ -5,7 +5,7 @@
          创建 RtmpReceiver（ffprobe）
 - run: 检查 nginx-rtmp 就绪 -> ``rtmp_video_start <url>`` (exec_async，不依赖哨兵) ->
        等推流上线 -> ffprobe 实时探测流（★ 主判据） ->
-       RTMPMonitor 持续检测 heartbeat（[RTMP] f_index，超时则 FAIL）-> ``rtmp_video_stop``
+       RTMPMonitor 持续检测 heartbeat（f_index，超时则 FAIL）-> ``rtmp_video_stop``
 - teardown: 移除 monitor listener（兜底）
 
 画面观察（ffplay）已由 ADR-010 抽离到 ``drivers/preview_manager.py``，属 Scenario 生命
@@ -17,7 +17,7 @@
 "service go wrong" 崩溃循环刷屏，会打乱 exec_sync 的哨兵定界导致必败。
 exec_async 不依赖哨兵，真正成败判据交给 PC 端 ffprobe 是否探测到流。
 
-持续运行检测：用板端 ``[RTMP] f_index`` 日志作 heartbeat（代表编码+发送仍在进行），
+持续运行检测：用板端 ``f_index`` 日志作 heartbeat（代表编码+发送仍在进行），
 由独立的 RTMPMonitor 订阅串口原始数据、周期性检查超时，捕捉"推流中途异常停止"
 （如 ImuThread 崩溃导致画面卡住），避免干等剩余时长误判 PASS。
 
@@ -114,7 +114,7 @@ class RtmpModule(TestModule):
         info = self._receiver.probe(url, attempts=5, interval=3.0)
 
         # 6. 探测到流后，保持推流 stream_duration 秒，同时用 RTMPMonitor 持续检测
-        #    heartbeat（[RTMP] f_index）。仅探测成功才保持推流，失败则尽快 stop。
+        #    heartbeat（f_index）。仅探测成功才保持推流，失败则尽快 stop。
         #    超时无 heartbeat（板端推流异常停止）则提前 FAIL，不再干等剩余时长。
         monitor = None
         heartbeat_timeout = float(self.config.get("heartbeat_timeout", 30.0))
@@ -137,7 +137,7 @@ class RtmpModule(TestModule):
                     waited += check_step
                     if monitor.check_timeout():
                         logger.error(
-                            f"RTMP heartbeat 超时（>{heartbeat_timeout:.0f}s 无 [RTMP] f_index），"
+                            f"RTMP heartbeat 超时（>{heartbeat_timeout:.0f}s 无 f_index），"
                             f"推流异常停止，提前结束等待"
                         )
                         break

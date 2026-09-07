@@ -5,10 +5,11 @@
 - **输入**：串口原始数据（通过 ``SerialConsole.add_listener`` 订阅，串口层只转发原始文本）
 - **输出**：RTMP 状态事件（ALIVE / TIMEOUT），不判 PASS/FAIL、不写文件、不碰串口
 
-heartbeat 依据：板端推流期间的 ``[RTMP] f_index = N, f_len = M`` 日志，代表「编码完成 +
-发送流程运行」，即 RTMP 线程仍在工作。实测正常推流该日志约每 2~4s 出现一次；若超过
-``heartbeat_timeout``（默认 30s）无新 f_index，判定 RTMP 异常停止（如 ImuThread 崩溃导致
-画面卡住）。
+heartbeat 依据：板端推流期间的 ``f_index = N`` 日志，代表「编码完成 + 发送流程运行」，
+即 RTMP 线程仍在工作。固件日志格式历史：8 月为 ``[RTMP] f_index = N, f_len = M``，
+9 月变为 ``I/App Rtmp: f_index = N``（见 known_issue）。实测正常推流该日志约每 2~4s
+出现一次；若超过 ``heartbeat_timeout``（默认 30s）无新 f_index，判定 RTMP 异常停止
+（如 ImuThread 崩溃导致画面卡住）。
 
 设计原则：本模块只管「检测」，最终 PASS/FAIL 由 rtmp 模块结合 ffprobe 主判据决定。
 """
@@ -16,8 +17,15 @@ import re
 import time
 
 # heartbeat 日志正则：板端 RTMP 发送侧的帧索引（代表编码+发送仍在进行）。
-# 实测格式 "[RTMP] f_index = 0, f_len = 39"，f_len 可缺失，行前可能有 ANSI 残留。
-_HEARTBEAT_RE = re.compile(r"\[RTMP\]\s+f_index\s*=")
+#
+# 用裸匹配而非锚定前缀：固件日志格式已从 8 月的 "[RTMP] f_index = N" 变为 9 月的
+# "I/App Rtmp: f_index = N"（f_len 可缺失，行前可能有 ANSI 残留），且前缀会被串口
+# 分块截断（实测 p: f_index / Rtmp: f_index / 裸 f_index），锚定前缀必失配。
+#
+# 裸匹配安全前提（窗口隔离）：本 monitor 仅在 rtmp 推流保持窗口内监听，该窗口内串口
+# 仅有 Rtmp 一种 f_index（scenario 串行时序保证：photo -> video -> rtmp，video 的 Dfs
+# 心跳在 dfs_video_stop 后已停），故无前缀也不会误匹配其它模块的 f_index。
+_HEARTBEAT_RE = re.compile(r"f_index\s*=\s*\d+")
 
 # 状态常量
 ALIVE = "ALIVE"
@@ -81,7 +89,7 @@ class RTMPMonitor:
             return False
         if (time.monotonic() - self._last_frame_time) > self.timeout:
             self._status = TIMEOUT
-            self._reason = f"RTMP heartbeat timeout（>{self.timeout:.0f}s 无 [RTMP] f_index）"
+            self._reason = f"RTMP heartbeat timeout（>{self.timeout:.0f}s 无 f_index）"
             return True
         return False
 

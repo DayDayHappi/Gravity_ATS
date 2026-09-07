@@ -29,6 +29,9 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-07 | [20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md](20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md) | RTMP heartbeat 正则锚定 `[RTMP]` → 裸 `f_index\s*=\s*\d+`（固件日志格式 `[RTMP] f_index` → `I/App Rtmp: f_index` 变更，monitor 失配 60s 误判 TIMEOUT）；窗口隔离前提钉死；同步修正 rtmp.py/rtmp.yaml/video.py 过时 `[RTMP]` 注释 |
+| 2026-09-07 | [20260907_1853_video模块默认分辨率改为3k.md](20260907_1853_video模块默认分辨率改为3k.md) | video 模块默认分辨率 `video_resolution` 1080p → 3k（纯配置改 modules/video.yaml，video.py fallback 不动；3k 档经真机日志核实合法） |
+| 2026-09-07 | [20260907_1848_video录像前恢复cam_set.md](20260907_1848_video录像前恢复cam_set.md) | video 录像前恢复 cam_set：删除 `if False:` 跳过逻辑 + TODO-TEMP-DISABLE-CAM_SET 注释，cam_set video 还原顶格（仅挑 testvideo 分支 dcf19ff 的恢复 cam_set 段） |
 | 2026-09-02 | [20260902_1339_新增H265视频完整性检测模块.md](20260902_1339_新增H265视频完整性检测模块.md) | 新增 H265 视频完整性检测：drivers/h265_validator.py（FFmpeg 三阶段诊断+错误分类+POC gap 判定）+ modules/video_integrity.py（文件选择+manifest 去重+聚合 TestResult，模块内 deep-merge）+ 配置与 standalone 场景 |
 | 2026-08-31 | [20260831_1032_日志目录按场景日期运行时间戳分层.md](20260831_1032_日志目录按场景日期运行时间戳分层.md) | 日志目录按「场景/日期/run_ts」三级分层：所有场景日志统一 logs/<场景>/<日期>/（去掉中间冗余 logs 层），报告也按天分（normal->reports/<日期>/、非 normal->logs/<场景>/report/<日期>/），problem 记录不按天打散到 logs/<场景>/problem/ |
 | 2026-08-28 | [20260828_0233_stress_traverse注释去具体时长次数.md](20260828_0233_stress_traverse注释去具体时长次数.md) | stress_traverse_photo_mode.yaml 注释去具体时长/次数（video 3min/rtmp 10min/20 次 → 自行按需配置；repeat 行内注释去掉「50 次」），纯注释 |

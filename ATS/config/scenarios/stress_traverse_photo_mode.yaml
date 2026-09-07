@@ -24,9 +24,9 @@ scenario:
         # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
         photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
     - module: video
-      duration: 20
+      duration: 66
     - module: rtmp
-      duration: 20
+      duration: 66
   cleanup:
     - stop_stream
     - preview_stop

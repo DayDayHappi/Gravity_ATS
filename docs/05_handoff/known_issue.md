@@ -11,6 +11,7 @@
 | 关键帧(IDR)稀疏 | 1080p 编码慢 + FTP 刷屏抢 CPU | 探测超时放宽（-rw_timeout 15s），别用 640×480 经验值套大分辨率 | 待固件优化 |
 | eMMC 文件系统大量照片写入后失效 + 固件「假成功」标志 | stress_traverse 压测约第 44 张起 `Image_*.jpg write failed errno=0`（open 成功 write 失败）→ `write open failed errno=-2`（ENOENT，目录建不出，累计 1353 条，不可恢复）；jpg 未落盘但固件仍打印 `Save Photo Successful`/`Capture completed successfully.`，脚本主判据误判 PASS | 转固件工程师定位（疑似 eMMC 目录/inode 超限、写缓冲泄漏、文件系统损坏）；脚本侧「未列出 jpg 辅助验证」应视为需警惕信号而非完全忽略 | 待固件修复 |
 | `Record Start` 偶发漏打（摄像头资源退化） | 连续压测后期 `dfs_video_start` 后无 `Gravity_XR Record Start`，但 `f_index` 持续增长（编码在跑） | `f_index` 才是编码真实心跳（每 90 帧一次，第一次 `f_index=0` 第二次 `=90`），video 启动判据应加 `f_index` 而非只看 `Record Start`；详见 next_step.md 紧急待办 | 待脚本侧修复（Code Agent） |
+| RTMP heartbeat 日志格式变更 | 固件推流心跳由 `[RTMP] f_index = N`（8 月日志）变为 `I/App Rtmp: f_index = N`（9 月日志），`RTMPMonitor` 正则 `\[RTMP\]\s+f_index` 失配 → 推流正常也在 60s 后误判 TIMEOUT、提前 `rtmp_video_stop` 判 FAIL（实测 20260907 连续 3 轮，串口 `I/App Rtmp: f_index` 共 88 条、`[RTMP] f_index` 0 条） | 放宽 monitor 心跳正则为裸 `f_index` 匹配（rtmp 推流窗口内串口仅有 Rtmp 一种 f_index；前缀会被串口分块截断故不宜锚定，见 20260907 日志 `Rtmp: f_index`/`p: f_index` 截断样例） | 待脚本侧修复（Code Agent） |
 
 排查先 grep serial.log 的 `RV_Backtrace` / `ImuThread` / `discontinuous frame` / `interp not finish in sof` / `write failed errno` / `write open failed`。
 
