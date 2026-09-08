@@ -8,7 +8,7 @@
 heartbeat 依据：板端推流期间的 ``f_index = N`` 日志，代表「编码完成 + 发送流程运行」，
 即 RTMP 线程仍在工作。固件日志格式历史：8 月为 ``[RTMP] f_index = N, f_len = M``，
 9 月变为 ``I/App Rtmp: f_index = N``（见 known_issue）。实测正常推流该日志约每 2~4s
-出现一次；若超过 ``heartbeat_timeout``（默认 30s）无新 f_index，判定 RTMP 异常停止
+出现一次；若超过 ``heartbeat_timeout``（默认 40s）无新 f_index，判定 RTMP 异常停止
 （如 ImuThread 崩溃导致画面卡住）。
 
 设计原则：本模块只管「检测」，最终 PASS/FAIL 由 rtmp 模块结合 ffprobe 主判据决定。
@@ -37,7 +37,7 @@ class RTMPMonitor:
 
     用法：:
 
-        monitor = RTMPMonitor(timeout=30.0)
+        monitor = RTMPMonitor(timeout=40.0)
         monitor.start()                       # 记录起点，并视为已有一次心跳
         console.add_listener(monitor.update)  # 订阅串口原始数据
         ...
@@ -47,7 +47,9 @@ class RTMPMonitor:
         monitor.stop()
     """
 
-    def __init__(self, timeout: float = 30.0):
+    # timeout 默认值仅当调用方未显式传入时生效（rtmp.py 会传 yaml 的 heartbeat_timeout）；
+    # 权威值见 config/modules/rtmp.yaml（会经常调整）。
+    def __init__(self, timeout: float = 40.0):
         self.timeout = float(timeout)
         self._started = False
         self._start_time = 0.0        # monotonic

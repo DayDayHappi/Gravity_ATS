@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-08 | [20260908_1608_RTMP心跳超时阈值默认值对齐30to40.md](20260908_1608_RTMP心跳超时阈值默认值对齐30to40.md) | RTMP heartbeat_timeout 三处默认值对齐 30→40（rtmp.py L120 fallback + rtmp_monitor.py docstring/示例/__init__），yaml 权威值 40 不动，纯参数默认值对齐 |
 | 2026-09-07 | [20260907_2039_stress_traverse接入H265完整性检测.md](20260907_2039_stress_traverse接入H265完整性检测.md) | stress_traverse_photo_mode 场景 video 与 rtmp 之间插入 video_integrity task（override source=current_run/selection=latest_unchecked/empty_input_policy=skip），形成录像→检测闭环 |
 | 2026-09-07 | [20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md](20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md) | RTMP heartbeat 正则锚定 `[RTMP]` → 裸 `f_index\s*=\s*\d+`（固件日志格式 `[RTMP] f_index` → `I/App Rtmp: f_index` 变更，monitor 失配 60s 误判 TIMEOUT）；窗口隔离前提钉死；同步修正 rtmp.py/rtmp.yaml/video.py 过时 `[RTMP]` 注释 |
 | 2026-09-07 | [20260907_1853_video模块默认分辨率改为3k.md](20260907_1853_video模块默认分辨率改为3k.md) | video 模块默认分辨率 `video_resolution` 1080p → 3k（纯配置改 modules/video.yaml，video.py fallback 不动；3k 档经真机日志核实合法） |

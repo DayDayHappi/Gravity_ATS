@@ -117,7 +117,8 @@ class RtmpModule(TestModule):
         #    heartbeat（f_index）。仅探测成功才保持推流，失败则尽快 stop。
         #    超时无 heartbeat（板端推流异常停止）则提前 FAIL，不再干等剩余时长。
         monitor = None
-        heartbeat_timeout = float(self.config.get("heartbeat_timeout", 30.0))
+        # 此默认值仅当 yaml 未配置 heartbeat_timeout 时生效；权威值见 config/modules/rtmp.yaml（会经常调整）
+        heartbeat_timeout = float(self.config.get("heartbeat_timeout", 40.0))
         if info.get("ok") and duration > 0:
             monitor = RTMPMonitor(timeout=heartbeat_timeout)
             monitor.start()
