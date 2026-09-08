@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-08 | [20260908_1847_video_integrity新增all_unchecked_selection.md](20260908_1847_video_integrity新增all_unchecked_selection.md) | video_integrity 新增 selection 值 `all_unchecked`（过滤已检 + 取全部，与 latest_unchecked 对称；现有 latest/all/latest_unchecked 行为不变），解决 video repeat 多文件「全检 + 跨 loop 不重复检」 |
 | 2026-09-08 | [20260908_1608_RTMP心跳超时阈值默认值对齐30to40.md](20260908_1608_RTMP心跳超时阈值默认值对齐30to40.md) | RTMP heartbeat_timeout 三处默认值对齐 30→40（rtmp.py L120 fallback + rtmp_monitor.py docstring/示例/__init__），yaml 权威值 40 不动，纯参数默认值对齐 |
 | 2026-09-07 | [20260907_2039_stress_traverse接入H265完整性检测.md](20260907_2039_stress_traverse接入H265完整性检测.md) | stress_traverse_photo_mode 场景 video 与 rtmp 之间插入 video_integrity task（override source=current_run/selection=latest_unchecked/empty_input_policy=skip），形成录像→检测闭环 |
 | 2026-09-07 | [20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md](20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md) | RTMP heartbeat 正则锚定 `[RTMP]` → 裸 `f_index\s*=\s*\d+`（固件日志格式 `[RTMP] f_index` → `I/App Rtmp: f_index` 变更，monitor 失配 60s 误判 TIMEOUT）；窗口隔离前提钉死；同步修正 rtmp.py/rtmp.yaml/video.py 过时 `[RTMP]` 注释 |

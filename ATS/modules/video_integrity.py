@@ -3,7 +3,7 @@
 职责边界（需求文档 §3/§4/§12）：
 - 选择本次待检测的 H.265 文件（本地目录约定，不 import video.py）；
 - 逐个调用 ``H265Validator``（driver），聚合出**单个** aggregate ``TestResult``；
-- 维护 ``video_integrity/manifest.json`` 去重（``latest_unchecked``）；
+- 维护 ``video_integrity/manifest.json`` 去重（``latest_unchecked`` / ``all_unchecked``）；
 - 写运行日志到 ``run.log`` / ``video_integrity/summary.log``，**绝不写 serial.log**。
 
 与 ``VideoModule`` 通过「本地文件目录约定」解耦：录像落在
@@ -112,8 +112,9 @@ class VideoIntegrityModule(TestModule):
         if selection == "explicit":
             return self._explicit_files(input_cfg, directory, matches), None
 
-        # 去重（latest_unchecked）前置过滤：本次 run 已检测过的剔除（§6）
-        if selection == "latest_unchecked":
+        # 去重前置过滤：本次 run 已检测过的剔除（§6）。
+        # latest_unchecked / all_unchecked 都要去重；latest / all 不去重（保持原语义）。
+        if selection in ("latest_unchecked", "all_unchecked"):
             checked = self._load_manifest()
             matches = [m for m in matches if not self._is_checked(m, checked)]
 
@@ -122,7 +123,7 @@ class VideoIntegrityModule(TestModule):
 
         if selection in ("latest", "latest_unchecked"):
             return [max(matches, key=os.path.getmtime)], None
-        # all
+        # all / all_unchecked：取全部（all_unchecked 已在上方过滤去重）
         return sorted(matches, key=os.path.getmtime), None
 
     def _explicit_files(self, input_cfg, base_dir, matches):
@@ -191,7 +192,7 @@ class VideoIntegrityModule(TestModule):
                    for c in checked)
 
     def _record_checked(self, files, input_cfg):
-        if input_cfg.get("selection") != "latest_unchecked":
+        if input_cfg.get("selection") not in ("latest_unchecked", "all_unchecked"):
             return
         checked = self._load_manifest()
         existing_paths = {(c.get("path"), c.get("size"), c.get("mtime_ns")) for c in checked}

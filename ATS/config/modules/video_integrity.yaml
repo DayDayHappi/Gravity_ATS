@@ -9,7 +9,7 @@ input:
   patterns:
     - "*.h265"
     - "*.hevc"
-  selection: "latest_unchecked"  # all | latest | latest_unchecked | explicit
+  selection: "latest_unchecked"  # all | latest | latest_unchecked | all_unchecked | explicit
   explicit_files: []             # selection=explicit 时使用
   recursive: false               # 是否递归扫描子目录
   empty_input_policy: "fail"     # fail | skip
