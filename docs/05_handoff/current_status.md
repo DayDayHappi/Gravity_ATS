@@ -8,6 +8,8 @@
 
 20260831 改动（commit `0a43ac4`）：日志目录按「场景/日期/运行时间戳」三级分层（所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，去掉中间冗余 logs 层；报告也按天分；problem 记录归入 `logs/<场景>/problem/`），**待真机验证**。
 
+20260907/08 改动（commit `a9bf449` + `519e805`）：video 录像前恢复 `cam_set`（撤销 20260827 临时禁用）；RTMP heartbeat 正则放宽为裸 `f_index` 匹配（适配固件日志格式 `[RTMP] f_index` → `I/App Rtmp: f_index`，`heartbeat_timeout` 60→40）；stress_traverse_photo_mode 场景 video 与 rtmp 之间接入 `video_integrity`（录像→检测闭环），video/rtmp 时长调为 66s；WiFi 默认改 `sw_test_24g`，**均待真机验证**。
+
 ## Current Architecture
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
@@ -30,13 +32,27 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - video 判据修复：`Save Video Successful` → `Video recording completed successfully.` + 路径从 `r.clean` 累积缓冲扫描（与 photo 同类的对称 bug，离线验证通过，待真机）
 - 新增场景 `stress_traverse_photo_mode.yaml`（photo task 用 `override.photo_modes` 遍历全部拍照模式压测；`hdr` 模式名待真机核实 TODO-CONFIRM）
 - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=`，失败分支补发 `dfs_video_stop` 清理（固件偶发漏打 Record Start 但编码在跑，devlog `20260827_0721`）
-- video 录像前暂时取消 `cam_set`（`if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复，devlog `20260827_0739`）
+- video 录像前暂时取消 `cam_set`（`if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，20260907 已恢复，devlog `20260827_0739`）
 - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`，报告也按天分，problem 记录归入 `logs/<场景>/problem/`
+- video 录像前恢复 `cam_set`（撤销 `if False:` 跳过 + `TODO-TEMP-DISABLE-CAM_SET` 标记，devlog `20260907_1848`）
+- RTMP heartbeat 正则放宽为裸 `f_index` 匹配 + `heartbeat_timeout` 40s（适配固件日志格式变更，devlog `20260907_2007`）
+- stress_traverse_photo_mode 场景接入 `video_integrity`（video→检测闭环，devlog `20260907_2039`）
 
 ## Working On
 
-- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底 + 录像前取消 cam_set）+ 20260831 改动（日志目录三级分层）全部未跑真机。
-- **临时禁用待恢复**：`video.py` 录像前 `cam_set` 已用 `if False:` 跳过（`TODO-TEMP-DISABLE-CAM_SET`），真机验证后需按标记恢复。
+- **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层）+ 20260907/08 改动（cam_set 恢复 + RTMP heartbeat 裸 f_index + video_integrity 接线）全部未跑真机。
+
+## 固件行为快照（当前版本，未来可能变动）
+
+录像分辨率由 `cam_set video <档位>` 与是否发送该命令决定（ffprobe 实测落盘文件，2026-09-08）：
+
+| 触发方式 | 板端回显 w*h | 实际落盘分辨率 | 方向 |
+|---------|-------------|--------------|------|
+| 发送 `cam_set video 1080p` | `w(1920) * h(1080)` | **1920 × 1080** | 横屏 |
+| 不发送 `cam_set`，直接录像 | — | **1296 × 2304** | 竖屏（固件默认） |
+| 发送 `cam_set video 3k` | `w(2520) * h(1890)` | **2268 × 3024** | 竖屏（sensor 旋转后） |
+
+> 注：上表为**当前固件版本**的行为快照，历史 devlog `20260817_0203` 中「1080p = 1296×2304」「只支持 4k/1080p 两档」为过时/错误认知（见 known_issue.md）。固件升级后此表可能失效，需以真机实测为准。
 
 ## Known Issues
 

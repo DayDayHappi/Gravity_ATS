@@ -14,7 +14,7 @@
   - 新增场景 `stress_traverse_photo_mode.yaml`：photo task 用 `override.photo_modes` 遍历全部拍照模式（`auto/single/mfnr/hdr_0~3`），其余与 stress 一致；`hdr` 模式名待真机核实（TODO-CONFIRM，见场景文件注释）
 - 20260827 改动：
   - video 启动判据加 f_index 兜底：`Record Start` → `Record Start|f_index\s*=` + 失败分支补发 `dfs_video_stop` 清理（devlog `20260827_0721`）
-  - video 录像前暂时取消 `cam_set`（`if False:` 跳过，`TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复）
+  - ~~video 录像前暂时取消 `cam_set`（`if False:` 跳过，`TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复）~~ 已于 20260907 恢复（devlog `20260907_1848`）
 - 20260831 改动：
   - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`（去掉中间冗余 logs 层），报告也按天分（normal→`reports/<日期>/`、非 normal→`logs/<场景>/report/<日期>/`），problem 记录归入 `logs/<场景>/problem/<run_ts>.log`
 
@@ -25,7 +25,7 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 ```
 
 > **20260828 改动（commit `177976c`）**：
-> - `stress_traverse_photo_mode.yaml` 参数调为冒烟值：`loop.count 20→200`、`photo.repeat 50→1`、`video.duration 180→20`、`rtmp.duration 600→20`（落地 P0 的「先小 repeat 冒烟」）。
+> - `stress_traverse_photo_mode.yaml` 参数调为冒烟值：`loop.count 20→200`、`photo.repeat 50→1`、`video.duration 180→20`、`rtmp.duration 600→20`（落地 P0 的「先小 repeat 冒烟」）。**注**：后续 `a9bf449` 已将 video/rtmp duration 调为 66s。
 > - `system.yaml` WiFi 默认值改为 `ftp_test_2_4G`/`12345678`（历史候选 SW-test-2.4G/ftp_hw_2_4g/G-Demo 已注释）。
 > - 场景注释与参数脱钩**已完成**（commit `199ad95`）：头部与 `repeat` 行注释去掉写死的时长/次数，改为「自行按需配置」，纯注释不动参数。
 
@@ -35,7 +35,7 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 
 - **已实施**（devlog `20260902_1339`）：`ATS/modules/video_integrity.py` + `ATS/drivers/h265_validator.py` + `ATS/config/modules/video_integrity.yaml` + `ATS/config/scenarios/video_integrity.yaml`；`modules/__init__.py` 追加 import 触发 `@register`。核心验收点全部通过：不改 core、不碰 video.py、无新增 ctx 契约、模块内 deep-merge（§7）、argv list + timeout/kill 内存安全、单个 aggregate TestResult、manifest 去重（path+size+mtime_ns）、`.part` 过滤、Stage0 预检查。
 - **离线验证已通过**（Document Agent 复核）：`py_compile` OK；`--list-modules`/`--list-scenarios` 识别；`trace_headers`/`showinfo` 正则与真实样本输出实测匹配；good.h265 → PASS，损坏样本 → FAIL（MISSING_REFERENCE）。
-- **待决策**：normal/stress **未接线**（Code Agent 只交付 standalone 场景，`normal.yaml`/`stress.yaml` 未插入 `- module: video_integrity`）。原因：normal/stress 本身仍在「待真机验证」批次，插入未验证 task 有风险。需拍板：现在接线 vs 基础链路真机通过后再接线。
+- **待决策**：normal/stress **未接线**（Code Agent 只交付 standalone 场景，`normal.yaml`/`stress.yaml` 未插入 `- module: video_integrity`）。~~原因：normal/stress 本身仍在「待真机验证」批次，插入未验证 task 有风险。需拍板：现在接线 vs 基础链路真机通过后再接线。~~ **已拍板**：20260907 先在 `stress_traverse_photo_mode.yaml` 接入（video→video_integrity→rtmp，devlog `20260907_2039`），normal/stress 暂不接。
 - **待真机**：Case B/C（normal/stress 录像后检测）未真机验证。
 - **次要遗留（NON-BLOCKING）**：`_detect_missing_poc` 未用 `expected_gop_size` 校验实际 GOP 长度（`fixed_gop` confidence 未验证 GOP=30）；`_merge` 对 base 缺失的 deep-merge 段会静默丢弃（现状无害）；`NO_MATCHING_VIDEO` 已定义但从未产出。
 
