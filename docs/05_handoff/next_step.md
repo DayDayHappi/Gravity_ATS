@@ -38,6 +38,7 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - **待决策**：normal/stress **未接线**（Code Agent 只交付 standalone 场景，`normal.yaml`/`stress.yaml` 未插入 `- module: video_integrity`）。~~原因：normal/stress 本身仍在「待真机验证」批次，插入未验证 task 有风险。需拍板：现在接线 vs 基础链路真机通过后再接线。~~ **已拍板**：20260907 先在 `stress_traverse_photo_mode.yaml` 接入（video→video_integrity→rtmp，devlog `20260907_2039`），normal/stress 暂不接。
 - **待真机**：Case B/C（normal/stress 录像后检测）未真机验证。
 - **次要遗留（NON-BLOCKING）**：`_detect_missing_poc` 未用 `expected_gop_size` 校验实际 GOP 长度（`fixed_gop` confidence 未验证 GOP=30）；`_merge` 对 base 缺失的 deep-merge 段会静默丢弃（现状无害）；`NO_MATCHING_VIDEO` 已定义但从未产出。
+- **已新增（devlog `20260908_1847`）**：selection 值 `all_unchecked`（过滤已检 + 取全部，与 latest_unchecked 对称），解决 video task `repeat` 录多个文件时的「全检 + 跨 loop 不重复检」；现有 latest/all/latest_unchecked 行为不变。
 
 ## 🟡 P1 — 新增场景 stress_traverse_photo_mode_seq（待实施）
 
