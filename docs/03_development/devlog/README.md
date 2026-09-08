@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-07 | [20260907_2039_stress_traverse接入H265完整性检测.md](20260907_2039_stress_traverse接入H265完整性检测.md) | stress_traverse_photo_mode 场景 video 与 rtmp 之间插入 video_integrity task（override source=current_run/selection=latest_unchecked/empty_input_policy=skip），形成录像→检测闭环 |
 | 2026-09-07 | [20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md](20260907_2007_RTMP心跳正则放宽为裸f_index匹配.md) | RTMP heartbeat 正则锚定 `[RTMP]` → 裸 `f_index\s*=\s*\d+`（固件日志格式 `[RTMP] f_index` → `I/App Rtmp: f_index` 变更，monitor 失配 60s 误判 TIMEOUT）；窗口隔离前提钉死；同步修正 rtmp.py/rtmp.yaml/video.py 过时 `[RTMP]` 注释 |
 | 2026-09-07 | [20260907_1853_video模块默认分辨率改为3k.md](20260907_1853_video模块默认分辨率改为3k.md) | video 模块默认分辨率 `video_resolution` 1080p → 3k（纯配置改 modules/video.yaml，video.py fallback 不动；3k 档经真机日志核实合法） |
 | 2026-09-07 | [20260907_1848_video录像前恢复cam_set.md](20260907_1848_video录像前恢复cam_set.md) | video 录像前恢复 cam_set：删除 `if False:` 跳过逻辑 + TODO-TEMP-DISABLE-CAM_SET 注释，cam_set video 还原顶格（仅挑 testvideo 分支 dcf19ff 的恢复 cam_set 段） |

@@ -25,6 +25,12 @@ scenario:
         photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
     - module: video
       duration: 66
+    - module: video_integrity
+      override:
+        input:
+          source: "current_run"          # 扫本次 run 的 videos/ 目录（与 video.py tmp_dir 对齐）
+          selection: "latest_unchecked"  # 每轮只检最新未检文件（manifest 去重，防 200 轮重复检）
+          empty_input_policy: "skip"     # 录像失败/下载缺失时不判 FAIL，跳过而非双重惩罚
     - module: rtmp
       duration: 66
   cleanup:
