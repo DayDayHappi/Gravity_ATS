@@ -33,7 +33,7 @@ def _result_to_dict(r):
         "name": r.name, "module": r.module, "status": r.status,
         "elapsed_ms": r.elapsed_ms, "message": r.message,
         "detail": r.detail, "timestamp": r.timestamp,
-        "scenario": r.scenario, "cycle": r.cycle,
+        "scenario": r.scenario, "cycle": r.cycle, "rep": r.rep,
     }
 
 
@@ -131,10 +131,11 @@ th{background:#eee}.st-PASS{color:#2e7d32;font-weight:bold}
   <div class="card"><div class="num">{{pass_rate}}%</div><div class="lbl">通过率</div></div>
   <div class="card"><div class="num">{{elapsed}}s</div><div class="lbl">总耗时</div></div>
 </div>
-<table><tr><th>用例</th><th>模块</th><th>状态</th><th>耗时</th><th>信息</th><th>详情</th></tr>
+<table><tr><th>用例</th><th>模块</th><th>轮次/次数</th><th>状态</th><th>耗时</th><th>信息</th><th>详情</th></tr>
 {% for r in results %}
 <tr>
   <td>{{r.name}}</td><td>{{r.module}}</td>
+  <td>C{{r.cycle}}/R{{r.rep}}</td>
   <td class="st-{{r.status}}">{{r.status}}</td>
   <td>{{r.elapsed_ms}}ms</td><td>{{r.message}}</td>
   <td><pre>{{r.detail}}</pre></td>
@@ -159,7 +160,7 @@ def write_html(results: list, out_dir: str) -> str:
     except ImportError:
         # 无 jinja2：退化为基础 HTML 表格
         rows = "".join(
-            f"<tr><td>{r.name}</td><td>{r.module}</td><td>{r.status}</td>"
+            f"<tr><td>{r.name}</td><td>{r.module}</td><td>C{r.cycle}/R{r.rep}</td><td>{r.status}</td>"
             f"<td>{r.elapsed_ms}ms</td><td>{r.message}</td><td><pre>{r.detail}</pre></td></tr>"
             for r in results
         )

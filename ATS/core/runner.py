@@ -120,7 +120,7 @@ class TestRunner:
                 logger.error(f"[{label}] setup 异常: {e}")
                 self._record(TestResult(
                     name=name, module=name, status=ERROR,
-                    message=f"setup 异常: {e}"), cycle)
+                    message=f"setup 异常: {e}"), cycle, rep_index)
                 self.module_status[name] = ERROR
                 return
 
@@ -146,7 +146,7 @@ class TestRunner:
             except Exception as e:
                 logger.warn(f"[{label}] teardown 异常: {e}")
 
-            self._record_results(name, result, last_err, cycle)
+            self._record_results(name, result, last_err, cycle, rep_index)
             if isinstance(result, list):
                 st = PASSED if any(r.status in (PASSED, SKIPPED) for r in result) else FAILED
             elif result is not None:
@@ -159,24 +159,26 @@ class TestRunner:
             status = self.module_status.get(name, "?")
             logger.step(f"<<< 模块 [{label}] 结束，耗时 {elapsed:.1f}s（结果 {status}）")
 
-    def _record_results(self, name, result, last_err, cycle):
+    def _record_results(self, name, result, last_err, cycle, rep_index):
         """把模块返回的结果（单条或多条）记录进 self.results 并打印。"""
         if result is None:
             self._record(TestResult(name=name, module=name, status=FAILED,
-                                    message="模块未返回结果"), cycle)
+                                    message="模块未返回结果"), cycle, rep_index)
             return
         if isinstance(result, list):
             for r in result:
-                self._record(r, cycle)
+                self._record(r, cycle, rep_index)
         else:
-            self._record(result, cycle)
+            self._record(result, cycle, rep_index)
 
-    def _record(self, r: TestResult, cycle: int = 0):
+    def _record(self, r: TestResult, cycle: int = 0, rep_index: int = -1):
         r.timestamp = _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if not r.scenario:
             r.scenario = self.scenario.name
         if not r.cycle:
             r.cycle = cycle
+        if rep_index >= 0 and not r.rep:
+            r.rep = rep_index + 1   # 1-based repeat 序号
         self.results.append(r)
         logger.result_line(r.status, r.name, r.elapsed_ms, r.message)
 

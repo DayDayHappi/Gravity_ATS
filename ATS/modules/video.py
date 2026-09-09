@@ -17,6 +17,7 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
+from .tt_error_monitor import TTErrorMonitor
 
 _VIDEO_DIR = "/emmc/VIDEO"
 
@@ -28,7 +29,14 @@ class VideoModule(TestModule):
     depends = []
     duration_key = "video_duration"   # scenario 里 task.duration 覆盖此参数
 
+    def __init__(self, config):
+        super().__init__(config)
+        self._console = None           # 录像窗口内用于摘除 listener（run() 时赋值）
+        self._tt_monitor = None        # TT ERROR 检测器
+        self._tt_monitor_cb = None     # TT ERROR listener 回调（用于 teardown 兜底移除）
+
     def run(self, ctx, console, params=None):
+        self._console = console
         self.config = self._merge(params)
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
@@ -57,6 +65,11 @@ class VideoModule(TestModule):
         r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
         if not r.success:
             return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
+
+        # TT ERROR 检测（录像窗口）：命中不判 FAIL，仅在结果 detail 标注（cycle/rep 由 runner 填）。
+        self._tt_monitor = TTErrorMonitor()
+        self._tt_monitor_cb = self._tt_monitor.update
+        console.add_listener(self._tt_monitor_cb)
 
         # 3. 开始录像。录像命令输出海量日志会打乱哨兵，用 exec_async 等正则。
         #    启动成功判据：Record Start（正常路径）或 f_index（录像编码心跳）。rtmp_monitor
@@ -155,5 +168,37 @@ class VideoModule(TestModule):
         return None
 
     def _mk(self, status, msg, detail, timer):
+        # 所有返回路径统一走这里：先摘除 TT ERROR listener（保证不残留到下一个模块/rep），
+        # 再追加命中信息到 detail（命中不改变 status）。挂 listener 之前的分支 cb 为 None，安全空操作。
+        cb = getattr(self, "_tt_monitor_cb", None)
+        if cb is not None:
+            try:
+                self._console.remove_listener(cb)
+            except Exception:
+                pass
+            self._tt_monitor_cb = None
+        detail = self._attach_tt_hits(detail)
         return TestResult(name="video", module="video", status=status,
                           message=msg, detail=detail, elapsed_ms=timer.elapsed_ms())
+
+    def _attach_tt_hits(self, detail):
+        """把 TT ERROR 命中信息追加到 detail（命中不改变 status）。"""
+        mon = self._tt_monitor
+        hits = mon.get_hits() if mon else []
+        if not hits:
+            return detail
+        block = "\n".join(
+            [f"TT ERROR 命中 {len(hits)} 次："]
+            + [f"第{i}次: {h}" for i, h in enumerate(hits, 1)]
+        )
+        return (detail + "\n" + block) if detail else block
+
+    def teardown(self, ctx, console):
+        # 兜底移除 TT ERROR listener（正常路径已在 _mk 移除；异常路径在此兜底）。
+        if self._tt_monitor_cb is not None:
+            try:
+                console.remove_listener(self._tt_monitor_cb)
+            except Exception:
+                pass
+            self._tt_monitor_cb = None
+        self._tt_monitor = None

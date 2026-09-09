@@ -55,6 +55,7 @@ class TestResult:
     timestamp: str = ""              # 时间戳字符串（由 reporter 填）
     scenario: str = ""               # 所属场景名（scenario 层新增，默认空）
     cycle: int = 0                   # 所属 cycle 序号（loop 第几轮，默认 0）
+    rep: int = 0                     # 所属 repeat 序号（1-based，无 repeat 为 1；默认 0 表示未填）
 
     @property
     def passed(self) -> bool:

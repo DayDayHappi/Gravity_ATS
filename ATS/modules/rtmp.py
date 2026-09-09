@@ -33,6 +33,7 @@ from ..drivers.preview_manager import _detect_pc_ip
 from ..drivers.rtmp_receiver import RtmpReceiver
 from ..drivers.rtmp_server import RtmpServer, RtmpServerError
 from .rtmp_monitor import RTMPMonitor, TIMEOUT
+from .tt_error_monitor import TTErrorMonitor
 
 
 @register("rtmp")
@@ -48,6 +49,8 @@ class RtmpModule(TestModule):
         self._server = None
         self._monitor = None           # RTMP 持续 heartbeat 检测器
         self._monitor_cb = None        # 已注册到 console 的 listener 回调（用于 teardown 兜底移除）
+        self._tt_monitor = None        # TT ERROR 检测器
+        self._tt_monitor_cb = None     # TT ERROR listener 回调（用于 teardown 兜底移除）
 
     def setup(self, ctx, console):
         evb_ip = getattr(ctx, "evb_ip", None)
@@ -91,6 +94,11 @@ class RtmpModule(TestModule):
         duration = int(self.config.get("stream_duration", 600))
 
         logger.step(f"  RTMP 推流测试: {url} / {duration}s")
+
+        # TT ERROR 检测（推流窗口）：命中不判 FAIL，仅在结果 detail 标注（cycle/rep 由 runner 填）。
+        self._tt_monitor = TTErrorMonitor()
+        self._tt_monitor_cb = self._tt_monitor.update
+        console.add_listener(self._tt_monitor_cb)
 
         # 3. EVB 开始推流（先于探测启动）。
         # 用 exec_async：只发命令、不发哨兵，直接等业务状态字符串（DUT 侧开始推流）。
@@ -159,6 +167,11 @@ class RtmpModule(TestModule):
             result_timeout=8.0,
         )
 
+        # TT ERROR listener 摘除（推流窗口结束）；teardown 仍兜底一次。
+        if self._tt_monitor_cb is not None:
+            console.remove_listener(self._tt_monitor_cb)
+            self._tt_monitor_cb = None
+
         # 8. 判据：ffprobe 探测到流（主判据）+ RTMP 持续 heartbeat 无超时
         if not info.get("ok"):
             res = self._fail(f"推流验证失败: {info.get('reason', '未知')}",
@@ -179,6 +192,7 @@ class RtmpModule(TestModule):
             res = TestResult(name="rtmp", module="rtmp", status="PASS",
                              message=msg, detail=detail)
         res.elapsed_ms = timer.elapsed_ms()
+        res.detail = self._attach_tt_hits(res.detail)
         return res
 
     @staticmethod
@@ -195,6 +209,18 @@ class RtmpModule(TestModule):
             f"Frame Count: {st['frame_count']}",
         ])
 
+    def _attach_tt_hits(self, detail):
+        """把 TT ERROR 命中信息追加到 detail（命中不改变 status）。"""
+        mon = self._tt_monitor
+        hits = mon.get_hits() if mon else []
+        if not hits:
+            return detail
+        block = "\n".join(
+            [f"TT ERROR 命中 {len(hits)} 次："]
+            + [f"第{i}次: {h}" for i, h in enumerate(hits, 1)]
+        )
+        return (detail + "\n" + block) if detail else block
+
     def teardown(self, ctx, console):
         # 兜底移除 monitor listener（正常路径已在 run() 的 finally 移除；异常路径在此兜底）。
         if self._monitor_cb is not None:
@@ -206,6 +232,14 @@ class RtmpModule(TestModule):
         if self._monitor is not None:
             self._monitor.stop()
             self._monitor = None
+        # 兜底移除 TT ERROR listener
+        if self._tt_monitor_cb is not None:
+            try:
+                console.remove_listener(self._tt_monitor_cb)
+            except Exception:
+                pass
+            self._tt_monitor_cb = None
+        self._tt_monitor = None
         # receiver 无常驻进程，但保留 stop 调用统一
         if self._receiver:
             self._receiver.stop()
