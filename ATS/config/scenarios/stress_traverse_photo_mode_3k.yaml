@@ -27,7 +27,7 @@ scenario:
     - module: video
       duration: 66
       override:
-        video_resolution: "3k"          # 唯一新增：3k 录像（覆写模块默认 1080p）
+        video_resolution: "3k_2"          # 唯一新增：3k 录像（覆写模块默认 1080p）
     - module: video_integrity
       override:
         input:

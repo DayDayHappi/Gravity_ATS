@@ -1,23 +1,20 @@
-"""录像模块：1080p 录 N 秒 + FTP 验证文件大小。
+"""单次录像：显式选择完整 size 命令，再录像与 FTP 辅助验证。
 
-实测文件结构：
-  /emmc/VIDEO/<时间戳目录>/Video_<序号>_0.h265   (主视频)
-                        /Imu_<序号>.bin          (附加IMU数据，可选)
-
-流程：
-1. 记录 /emmc/VIDEO 旧时间戳目录集合
-2. ``cam_set video 1080p``
-3. ``dfs_video_start`` -> sleep(录像时长) -> ``dfs_video_stop``
-4. 轮询 FTP 等新时间戳目录（给编码落盘时间）
-5. 列新目录找 .h265 文件，下载验证大小 > 阈值
+协议定义：ATS/drivers/video_commands.py（命令、判据、实测 size 映射）。
+测试编排：Scenario 的多个 video task + repeat/duration；模块不做 size 循环。
+保留最终完成标志、完整路径扫描、f_index 启动兜底和 TT ERROR 标注。
+下载文件仍放在本次日志 videos/ 下，使用组合与板端时间戳目录区分。
 """
+import math
 import os
+import re
 import time
 
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
 from .tt_error_monitor import TTErrorMonitor
+from ..drivers import video_commands as commands
 
 _VIDEO_DIR = "/emmc/VIDEO"
 
@@ -34,85 +31,100 @@ class VideoModule(TestModule):
         self._console = None           # 录像窗口内用于摘除 listener（run() 时赋值）
         self._tt_monitor = None        # TT ERROR 检测器
         self._tt_monitor_cb = None     # TT ERROR listener 回调（用于 teardown 兜底移除）
+        self._profile = None
+        self._duration = None
+        self._recording_active = False
 
     def run(self, ctx, console, params=None):
         self._console = console
-        self.config = self._merge(params)
+        self._profile = None
+        self._duration = None
+        self._recording_active = False
+        self._tt_monitor = None
+        try:
+            return self._run_once(ctx, console, params)
+        finally:
+            # 连续切 size 不能把半启动录像和 listener 泄漏给下一次；也覆盖 Ctrl+C。
+            try:
+                if self._recording_active:
+                    self._stop_after_error(console)
+            finally:
+                self._detach_tt_listener()
+
+    def _run_once(self, ctx, console, params=None):
+        # 不把运行时覆盖写回默认配置，实例复用/重试不会继承上一个 size。
+        cfg = self._merge(params)
+        timer = Timer().start()
+        try:
+            self._profile = commands.resolve_video_profile(
+                cfg.get("video_resolution", commands.DEFAULT_VIDEO_PROFILE))
+            value = cfg.get("video_duration", 5)
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(value) or value <= 0):
+                raise ValueError("video_duration 必须是大于 0 的有限数字（秒）")
+            duration = float(value)
+            self._duration = duration
+            min_kb = int(cfg.get("video_min_size_kb", 100))
+        except (ValueError, TypeError, OverflowError) as exc:
+            return self._mk("ERROR", f"录像配置错误：{exc}", "未下发录像命令", timer)
+        profile = self._profile
+        resolution = profile.key
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
-            return self._skip("FTP 客户端不可用，跳过录像")
+            return self._mk("SKIP", "FTP 客户端不可用，跳过录像", "", timer)
 
         # 确保 FTP 可用（固件 FTP 在重负载后会崩溃）
         from .ftp import ensure_ftp
         ftp = ensure_ftp(ctx, console)
         if ftp is None:
-            return self._fail("FTP 不可用且恢复失败，跳过录像")
+            return self._mk("FAIL", "FTP 不可用且恢复失败，跳过录像", "", timer)
 
-        timer = Timer().start()
-        resolution = self.config.get("video_resolution", "1080p")
-        duration = int(self.config.get("video_duration", 5))
-        cap_timeout = float(self.config.get("video_capture_timeout", 15.0))
-        min_kb = int(self.config.get("video_min_size_kb", 100))
         tmp_dir = os.path.join(logger.log_dir() or "logs", "videos")
         os.makedirs(tmp_dir, exist_ok=True)
 
-        logger.step(f"  录像测试: {resolution} / {duration}s")
+        logger.step(f"  录像测试: {resolution} / {duration:g}s / "
+                    f"预期 {profile.width}x{profile.height} {profile.orientation}")
+        logger.info(f"录像 size 设置命令: {profile.command}")
 
         # 1. 旧目录
         before = set(self._list_video_dirs(ftp))
 
         # 2. 设置分辨率
-        r = console.exec_sync(f"cam_set video {resolution}", timeout=10.0)
-        if not r.success:
-            return self._mk("FAIL", f"设置分辨率 {resolution} 失败", r.clean, timer)
+        r = console.exec_sync(profile.command, timeout=commands.VIDEO_SET_TIMEOUT)
+        if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
+            return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
 
         # TT ERROR 检测（录像窗口）：命中不判 FAIL，仅在结果 detail 标注（cycle/rep 由 runner 填）。
         self._tt_monitor = TTErrorMonitor()
         self._tt_monitor_cb = self._tt_monitor.update
         console.add_listener(self._tt_monitor_cb)
 
-        # 3. 开始录像。录像命令输出海量日志会打乱哨兵，用 exec_async 等正则。
-        #    启动成功判据：Record Start（正常路径）或 f_index（录像编码心跳）。rtmp_monitor
-        #    同样用裸 f_index，但两者靠串行时序窗口隔离（video 的 Dfs 心跳在 dfs_video_stop
-        #    后已停，rtmp 窗口内仅有 Rtmp 一种 f_index）。连续压测下固件可能漏打 Record Start
-        #    （摄像头资源退化）但编码实际在跑（f_index 持续增长），只等 Record Start 会误判失败。
+        # 3. 开始录像。启动成功判据保持 Record Start 或编码心跳 f_index。
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
         rec_start = time.monotonic()
-        r = console.exec_async("dfs_video_start",
-                               expect=r"Record Start|f_index\s*=",
-                               result_timeout=25.0)
+        self._recording_active = True  # 发起后即使超时，也可能已半启动。
+        r = console.exec_async(commands.VIDEO_START_COMMAND,
+                               expect=commands.VIDEO_START_EXPECT,
+                               result_timeout=commands.VIDEO_START_TIMEOUT)
         if not r.success:
-            # 失败清理：尽力停掉可能已半启动的录像，避免 stream_on 半初始化态泄漏给下一个
-            # rtmp task（否则 ffprobe Input/output error 连锁 FAIL/SKIP）。best-effort，不判结果。
-            logger.warn("开始录像失败，补发 dfs_video_stop 清理状态（best-effort）...")
-            try:
-                console.exec_async("dfs_video_stop",
-                                   expect=r"Save Video|Please start|recording completed",
-                                   result_timeout=8.0)
-            except Exception as e:
-                logger.warn(f"清理 dfs_video_stop 异常(可忽略): {e}")
+            self._stop_after_error(console)
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
 
         time.sleep(duration)
 
-        # 4. 停止录像（exec_async 等串口主判据：Video recording completed successfully.，
-        #    录像全流程走完的最终完成标志。不能用 Save Video Successful：它出现更早
-        #    （实测约早 2s），此时录像收尾（编码 finalize/落盘）未完成、路径还可能被
-        #    串口分块截断，提前发下一条命令会造成错位 + 校验对象错误）
-        r = console.exec_async("dfs_video_stop",
-                               expect=r"Video recording completed successfully.",
-                               result_timeout=25.0)
+        # 4. 等录像全流程的最终完成标志，不把 Save Video Successful 当成完成。
+        r = console.exec_async(commands.VIDEO_STOP_COMMAND,
+                               expect=commands.VIDEO_STOP_EXPECT,
+                               result_timeout=commands.VIDEO_STOP_TIMEOUT)
+        if r.success:
+            self._recording_active = False
         rec_elapsed = time.monotonic() - rec_start
         if not r.success:
             logger.info(f"拍摄结束（失败），耗时 {rec_elapsed:.1f}s")
             return self._mk("FAIL", "停止录像失败", r.clean[-300:], timer)
         logger.info(f"拍摄结束，耗时 {rec_elapsed:.1f}s")
 
-        # 5. 录像已成功落盘（串口确认）。FTP 校验文件大小作辅助。
-        #    路径不能依赖 Save Video Successful 行的捕获组——板端打印路径本身会分块
-        #    截断（实测 "Save Video Successful: /emmc/VI"）；等完成标志后整条路径已在
-        #    r.clean 累积缓冲中拼接完整，按 /emmc/VIDEO/<dir>/Video_<n>_0.h265 扫描才可靠。
-        import re
+        # 5. 完成后从累积缓冲扫描完整视频路径，FTP 校验维持辅助性质。
         m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
         video_path = m2.group(0) if m2 else ""
         msg_base = "录像成功"
@@ -124,7 +136,6 @@ class VideoModule(TestModule):
         if ftp2 is None or not video_path:
             return self._mk("PASS", f"{msg_base}（未校验大小）", r.clean[-200:], timer)
 
-        # size 可能因 FTP 不稳失败，重试一次
         sz = ftp2.size(video_path)
         if sz < 0:
             time.sleep(1.5)
@@ -136,7 +147,10 @@ class VideoModule(TestModule):
 
         # 下载录像到本地（断点续传，FTP 卡死后自动从断点继续）
         fname = video_path.rsplit("/", 1)[-1]
-        local = os.path.join(tmp_dir, fname)
+        # 同名 Video_1_0.h265 可出现在不同板端目录；不能误当作已下载而续传旧 size。
+        remote_dir = video_path.rsplit("/", 2)[-2]
+        safe_dir = re.sub(r"[^A-Za-z0-9_.-]", "_", remote_dir)
+        local = os.path.join(tmp_dir, f"{profile.key}_{safe_dir}_{fname}")
         logger.info(f"FTP 开始下载视频: {video_path} ({sz//1024}KB) -> {local}")
         dl_start = time.monotonic()
         if ftp2.download(video_path, local, timeout=20, retries=6):
@@ -168,8 +182,25 @@ class VideoModule(TestModule):
         return None
 
     def _mk(self, status, msg, detail, timer):
-        # 所有返回路径统一走这里：先摘除 TT ERROR listener（保证不残留到下一个模块/rep），
-        # 再追加命中信息到 detail（命中不改变 status）。挂 listener 之前的分支 cb 为 None，安全空操作。
+        self._detach_tt_listener()
+        detail = self._attach_tt_hits(detail or "")
+        profile = getattr(self, "_profile", None)
+        name = "video"
+        if profile is not None:
+            name = f"video[{profile.key}]"
+            metadata = (
+                f"录像组合: {profile.key}\n"
+                f"设置命令: {profile.command}\n"
+                f"预期 size: {profile.width}x{profile.height} ({profile.orientation})\n"
+                "尺寸来源: 用户手测映射；不是本次视频实测值"
+            )
+            if self._duration is not None:
+                metadata += f"\n配置录像时长: {self._duration:g}s"
+            detail = metadata + ("\n" + detail if detail else "")
+        return TestResult(name=name, module="video", status=status,
+                          message=msg, detail=detail, elapsed_ms=timer.elapsed_ms())
+
+    def _detach_tt_listener(self):
         cb = getattr(self, "_tt_monitor_cb", None)
         if cb is not None:
             try:
@@ -177,9 +208,18 @@ class VideoModule(TestModule):
             except Exception:
                 pass
             self._tt_monitor_cb = None
-        detail = self._attach_tt_hits(detail)
-        return TestResult(name="video", module="video", status=status,
-                          message=msg, detail=detail, elapsed_ms=timer.elapsed_ms())
+
+    def _stop_after_error(self, console):
+        """尽力收尾，不覆盖原失败结果；不把清理成功当作本次录像成功。"""
+        logger.warn(f"录像异常，补发 {commands.VIDEO_STOP_COMMAND} 清理状态（best-effort）...")
+        try:
+            console.exec_async(commands.VIDEO_STOP_COMMAND,
+                               expect=commands.VIDEO_CLEANUP_EXPECT,
+                               result_timeout=commands.VIDEO_CLEANUP_TIMEOUT)
+        except Exception as exc:
+            logger.warn(f"清理录像状态异常(可忽略): {exc}")
+        finally:
+            self._recording_active = False
 
     def _attach_tt_hits(self, detail):
         """把 TT ERROR 命中信息追加到 detail（命中不改变 status）。"""
@@ -194,11 +234,5 @@ class VideoModule(TestModule):
         return (detail + "\n" + block) if detail else block
 
     def teardown(self, ctx, console):
-        # 兜底移除 TT ERROR listener（正常路径已在 _mk 移除；异常路径在此兜底）。
-        if self._tt_monitor_cb is not None:
-            try:
-                console.remove_listener(self._tt_monitor_cb)
-            except Exception:
-                pass
-            self._tt_monitor_cb = None
+        self._detach_tt_listener()
         self._tt_monitor = None

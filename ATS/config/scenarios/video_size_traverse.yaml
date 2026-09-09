@@ -1,0 +1,101 @@
+# 录像 size 遍历：独立测试用户手测的 11 个完整命令组合，不按像素尺寸去重。
+# 每个 task 的 repeat / duration 可独立修改，顺序就是执行顺序。
+# duration = 收到录像启动标志后保持的秒数，不含启动、停止、FTP 下载耗时。
+# 一轮默认各录 1 次、每次 10 秒；均为示例策略，可自行修改。
+# loop.count = 整套 11 项重复的轮数；某组合计划次数 = loop.count * 该项 repeat。
+# 不测试某项：删除/注释整个 task。不要用 repeat: 0（现有 Runner 会按 1 次处理）。
+# 480p_1 已知报错刷屏，不列入 tasks，命令解析器也会拒绝该组合。
+# 完整串口命令不在此重复定义，统一维护 ATS/drivers/video_commands.py。
+# 保留现有每次录像后的 FTP 辅助下载；本场景不自动做 H265 检测、RTMP 或格式化。
+scenario:
+  name: video_size_traverse
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: true
+    count: 1
+  tasks:
+    # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "sd1080p_0"
+
+    # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "sd1080p_1"
+
+    # sd1080p_2: 预期 2016x1034 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "sd1080p_2"
+
+    # hd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "hd1080p_1"
+
+    # hd1080p_2: 预期 1296x2304 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "hd1080p_2"
+
+    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "3k_2"
+
+    # 720p_0: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "720p_0"
+
+    # 720p_1: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "720p_1"
+
+    # 720p_2: 预期 1600x900 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "720p_2"
+
+    # 480p_0: 预期 640x480 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "480p_0"
+
+    # 480p_2: 预期 800x600 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 10
+      override:
+        video_resolution: "480p_2"
+
+  cleanup:
+    - close_serial
