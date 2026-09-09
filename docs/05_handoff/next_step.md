@@ -49,6 +49,14 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - **纯配置，不改源码**：每模式一个 photo task + 单元素 `override.photo_modes` + `repeat`。
 - `hdr_0~3` 模式名仍带 TODO-CONFIRM（与上个场景同源），真机一并核实。
 
+## 🟡 P1 — 新增场景 3k 录像压测（待实施）
+
+需求已整理：[req_stress_traverse_photo_mode_3k.md](../03_development/archive/req_stress_traverse_photo_mode_3k.md)。
+
+- 复制 `stress_traverse_photo_mode.yaml` 为 `stress_traverse_photo_mode_3k.yaml`，唯一差异：video task 加一行 `override.video_resolution: "3k"`，其余逐字一致。
+- **纯配置，不改源码**，也不碰 `config/modules/video.yaml` 的全局默认（当前 `"1080p"`，commit `519e805` 刚由 3k 改回）。
+- 3k 档位已核实合法（`cam_set video 3k` → 落盘 2268×3024 竖屏，见 current_status.md 固件行为快照）。
+
 ## 🟡 P2 — ADR-010 PreviewManager 待真机验收
 
 设计已定（[ADR-010](../02_design/decision_record/ADR-010-PreviewManager单例播放器.md)），源码已实施（devlog `20260825_0111_PreviewManager单例播放器实施.md`），**待真机验收**：
