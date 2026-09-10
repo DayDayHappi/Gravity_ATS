@@ -6,7 +6,7 @@
 # 不测试某项：删除/注释整个 task。不要用 repeat: 0（现有 Runner 会按 1 次处理）。
 # 480p_1 已知报错刷屏，不列入 tasks，命令解析器也会拒绝该组合。
 # 完整串口命令不在此重复定义，统一维护 ATS/drivers/video_commands.py。
-# 保留现有每次录像后的 FTP 辅助下载；本场景不自动做 H265 检测、RTMP 或格式化。
+# 保留每次录像后的 FTP 辅助下载；录像完成后统一做 H265 检测，末尾接 photo 遍历 + RTMP 推流。
 scenario:
   name: video_size_traverse
   preview:
@@ -18,18 +18,19 @@ scenario:
     - ftp_ready
   loop:
     enable: true
-    count: 1
+    count: 10
   tasks:
+  
     # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
-      repeat: 1
+      repeat: 10
       duration: 10
       override:
         video_resolution: "sd1080p_0"
 
     # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
-      repeat: 1
+      repeat: 10
       duration: 10
       override:
         video_resolution: "sd1080p_1"
@@ -97,5 +98,24 @@ scenario:
       override:
         video_resolution: "480p_2"
 
+    # 录像完成后统一做 H265 完整性检测：检本轮全部未检文件，跨 loop 靠 manifest 去重不重复检。
+    # 不能用 latest_unchecked（只检最新 1 个，会漏掉 sd1080p_0/1 的 repeat:10 其余 9 个）。
+    - module: video_integrity
+      override:
+        input:
+          source: "current_run"
+          selection: "all_unchecked"   # 检本轮全部未检文件；跨 loop 靠 manifest 去重不重复检
+          empty_input_policy: "skip"   # 某 size 录像失败/未下载时不判 FAIL，跳过而非双重惩罚
+    - module: photo
+      repeat: 1            # Runner 每轮 repeat 都完整遍历一次 photo_modes
+      override:
+        # TODO-CONFIRM：7 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
+        # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
+        # "cam_set photo hdr <0-3>"（hdr 带参数），与这里的 hdr_0~3 独立命名可能不一致，
+        # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
+        photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
+    - module: rtmp
+      duration: 66
   cleanup:
+    - stop_stream   # 兜底停止 RTMP 推流（用户新增 rtmp task；rtmp 模块异常中断路径靠此兜底，幂等）
     - close_serial
