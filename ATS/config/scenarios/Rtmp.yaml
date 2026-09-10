@@ -1,0 +1,17 @@
+scenario:
+  name: Rtmp
+  preview:
+    enabled: true
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+    - preview_start
+  tasks:
+
+    - module: rtmp
+  cleanup:
+    - stop_stream
+    - preview_stop
+    - close_serial
