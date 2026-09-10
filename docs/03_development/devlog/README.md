@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-09 | [20260909_录像size显式命令与遍历.md](20260909_录像size显式命令与遍历.md) | 新增 drivers/video_commands.py 完整命令表（11 种 size 组合 ID，含宽高/方向/禁用校验）+ video.py 改查表不拼命令 + 新增 video_size_traverse.yaml 场景 + 24 项离线回归通过，待真机 |
+| 2026-09-09 | [20260909_1940_video_size_traverse接入H265检测.md](20260909_1940_video_size_traverse接入H265检测.md) | video_size_traverse 场景 11 个 video 后插入 video_integrity（all_unchecked+skip，一轮 29 文件全检跨 loop 去重）+ 头注释修正 + cleanup 补 stop_stream 兜底 |
 | 2026-09-09 | [20260909_1457_新增场景3k录像压测.md](20260909_1457_新增场景3k录像压测.md) | 新增场景 stress_traverse_photo_mode_3k.yaml（复制 stress_traverse_photo_mode，唯一差异 video task override.video_resolution="3k"），纯配置不改源码，全局默认保持 1080p |
 | 2026-09-09 | [20260909_1437_TT_ERROR检测与rep字段报告.md](20260909_1437_TT_ERROR检测与rep字段报告.md) | video/rtmp 过程检测 TT ERROR（命中不判 FAIL，仅报告标注 cycle/rep 与第几次命中）；TestResult 新增 rep 字段 + runner 传递填充 + 新建 tt_error_monitor.py（严格匹配+跨 chunk 拼接）+ reporter JSON/HTML 加 rep/轮次次数列 |
 | 2026-09-08 | [20260908_1847_video_integrity新增all_unchecked_selection.md](20260908_1847_video_integrity新增all_unchecked_selection.md) | video_integrity 新增 selection 值 `all_unchecked`（过滤已检 + 取全部，与 latest_unchecked 对称；现有 latest/all/latest_unchecked 行为不变），解决 video repeat 多文件「全检 + 跨 loop 不重复检」 |

@@ -1,7 +1,7 @@
 # 需求文档：新增场景 3k 录像压测（复制 stress_traverse_photo_mode）
 
 > 提出方：Document Agent（按用户口述整理，交由 Code Agent 实施）
-> 状态：待实施
+> 状态：已实施（devlog `20260909_1457`，待真机）
 
 ## 1. 背景
 
@@ -114,3 +114,14 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode_3k --no-interactive-wi
   `video_min_size_kb` 阈值与 3k 落盘不符（如 3k 文件更大或 GOP 结构不同），
   **停下产出 `Document Agent Request`，不要自行调参**。
 - 按工程红线 1，新增配置文件后需在 `docs/03_development/devlog/` 新建记录并更新 README 索引。
+
+## 8. 后续迁移（2026-09-09，commit `d7cee21` 之后）
+
+`d7cee21`「增加 11 种录像 size 遍历」引入新命令体系：`video_resolution` 从裸档位
+（`"3k"`）改为完整组合 ID（`"3k_2"`，命令 `cam_set video 3k 2`），定义于
+`ATS/drivers/video_commands.py`。本场景的 video override 已随之从 `"3k"` 迁移为
+`"3k_2"`（见当前 `stress_traverse_photo_mode_3k.yaml` L30）。
+
+> 本文档 §2~§6 的 `video_resolution: "3k"` 写法为**实施当时的旧命令体系**，仅作历史
+> 留档；新体系下应为 `"3k_2"`。裸 `"3k"` 在新 `video.py` 中会被
+> `resolve_video_profile` 拒绝（ERROR），需显式用组合 ID。

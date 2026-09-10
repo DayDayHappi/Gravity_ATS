@@ -49,13 +49,17 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - **纯配置，不改源码**：每模式一个 photo task + 单元素 `override.photo_modes` + `repeat`。
 - `hdr_0~3` 模式名仍带 TODO-CONFIRM（与上个场景同源），真机一并核实。
 
-## 🟡 P1 — 新增场景 3k 录像压测（待实施）
+## 🟡 P1 — 新增场景 3k 录像压测（已实施·待真机）
 
-需求已整理：[req_stress_traverse_photo_mode_3k.md](../03_development/archive/req_stress_traverse_photo_mode_3k.md)。
+需求已整理：[req_stress_traverse_photo_mode_3k.md](../03_development/archive/req_stress_traverse_photo_mode_3k.md)。**已实施**（devlog `20260909_1457`）：复制 `stress_traverse_photo_mode.yaml` 为 `stress_traverse_photo_mode_3k.yaml`，video task 加 override 强制 3k 录像。**待真机验证**。
 
-- 复制 `stress_traverse_photo_mode.yaml` 为 `stress_traverse_photo_mode_3k.yaml`，唯一差异：video task 加一行 `override.video_resolution: "3k"`，其余逐字一致。
-- **纯配置，不改源码**，也不碰 `config/modules/video.yaml` 的全局默认（当前 `"1080p"`，commit `519e805` 刚由 3k 改回）。
-- 3k 档位已核实合法（`cam_set video 3k` → 落盘 2268×3024 竖屏，见 current_status.md 固件行为快照）。
+> 注：commit `d7cee21` 引入新命令体系后，该场景 video override 已从裸 `"3k"` 迁移为
+> `"3k_2"`（`cam_set video 3k 2`，见 `drivers/video_commands.py`）；裸 `"3k"` 会被新
+> `video.py` 拒绝（ERROR）。
+
+## 🟡 P1 — video_size_traverse 场景接入 H265 检测（已实施·待真机）
+
+需求已整理：[req_video_size_traverse_add_integrity.md](../03_development/archive/req_video_size_traverse_add_integrity.md)。**已实施**（devlog `20260909_1940`）：在 11 个 video task 之后（photo 之前）插入一个 `video_integrity` task，override `input.selection: "all_unchecked"` + `empty_input_policy: "skip"`；头注释矛盾已修正；cleanup 补 `stop_stream` 兜底。**待真机验证**。
 
 ## 🟡 P2 — ADR-010 PreviewManager 待真机验收
 
