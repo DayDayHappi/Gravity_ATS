@@ -12,6 +12,11 @@ RTMP_STOP_EXPECT = r"Push Stop|Stop requested"
 RTMP_START_TIMEOUT = 8.0
 RTMP_STOP_TIMEOUT = 8.0
 
+# 推流码率设置（可选，在 rtmp_video_start 之前发送；0/未配置则不发送）。
+# 命令模板 + format，与 RTMP_START_COMMAND 同范式；码率值不做合法性校验（固件自行拒绝）。
+RTMP_BITRATE_COMMAND = "cam_set live bitrate {bitrate}"
+RTMP_BITRATE_TIMEOUT = 10.0
+
 # heartbeat 日志正则：板端 RTMP 发送侧的帧索引（代表编码+发送仍在进行）。
 #
 # 用裸匹配而非锚定前缀：固件日志格式已从 8 月的 "[RTMP] f_index = N" 变为 9 月的

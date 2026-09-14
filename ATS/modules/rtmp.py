@@ -96,6 +96,18 @@ class RtmpModule(TestModule):
 
         logger.step(f"  RTMP 推流测试: {url} / {duration}s")
 
+        # 2.5 可选：推流码率设置（必须在 rtmp_video_start 之前，先设码率后推流）。
+        #     未配置 / 0 / 空 → 不发命令（纯增量，无回归）；失败直接 FAIL 不继续推流，
+        #     与 video 模块 cam_set 失败即 FAIL 对齐。
+        bitrate = self.config.get("bitrate", 0)
+        if bitrate:
+            r = console.exec_sync(
+                commands.RTMP_BITRATE_COMMAND.format(bitrate=bitrate),
+                timeout=commands.RTMP_BITRATE_TIMEOUT,
+            )
+            if not r.success:
+                return self._fail(f"设置推流码率失败: {bitrate}", r.clean)
+
         # TT ERROR 检测（推流窗口）：命中不判 FAIL，仅在结果 detail 标注（cycle/rep 由 runner 填）。
         self._tt_monitor = TTErrorMonitor()
         self._tt_monitor_cb = self._tt_monitor.update

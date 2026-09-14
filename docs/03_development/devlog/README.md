@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-14 | [20260914_1358_rtmp码率可选配置.md](20260914_1358_rtmp码率可选配置.md) | RTMP 新增可选推流码率设置：rtmp_commands.py 加 RTMP_BITRATE_COMMAND/RTMP_BITRATE_TIMEOUT，rtmp.py 在 rtmp_video_start 之前可选发送 cam_set live bitrate（失败即 FAIL），rtmp.yaml 加 bitrate: 0（0=不设置，task.override 可覆盖） |
 | 2026-09-14 | [20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md](20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md) | ADR-011 收尾：emmc_commands.py 补 EMMC_CD_ROOT_TIMEOUT=5.0，scenario_manager preclean 的 cd / 裸超时 5.0 提升为命名常量（值不变） |
 | 2026-09-14 | [20260914_1110_串口协议集中化ADR-011.md](20260914_1110_串口协议集中化ADR-011.md) | ADR-011 实施：photo/rtmp/ftp/wifi/emmc 协议字符串（命令/判据/超时/正则/路径）集中迁移到 drivers/<module>_commands.py 唯一来源，模块与 scenario_manager 改查表引用；纯移动不改语义；顺带修 emmc.py 缺失 logger 导入、EMMC_CD_ROOT_COMMAND 显式化 cd / |
 | 2026-09-09 | [20260909_录像size显式命令与遍历.md](20260909_录像size显式命令与遍历.md) | 新增 drivers/video_commands.py 完整命令表（11 种 size 组合 ID，含宽高/方向/禁用校验）+ video.py 改查表不拼命令 + 新增 video_size_traverse.yaml 场景 + 24 项离线回归通过，待真机 |
