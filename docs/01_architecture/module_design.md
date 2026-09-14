@@ -95,12 +95,12 @@
 ## rtmp
 
 - **Responsibility**：发起推流、保持、验证流到达、停止。**不负责画面展示**（ADR-010：ffplay 已剥离到 preview_manager）。
-- **Input**：pc_ip、stream_duration、heartbeat_timeout。
+- **Input**：pc_ip、stream_duration、heartbeat_timeout、bitrate（可选，0=不设置）。
 - **Output**：ffprobe 探到 h264+分辨率 且 heartbeat 无超时。
 - **Dependency**：逻辑依赖 WiFi 就绪，由 prepare.wifi_connect 保证；不依赖 FTP；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）；**不得启动 ffplay 或管理播放器进程**（ADR-010，属 preview_manager 职责）。
 - **运行依赖**：本模块判据依赖 `ffprobe` 可执行（属运行依赖，**仓库不随附** `tools/ffmpeg/`，需自行安装或拷贝，见 `05_handoff/build_environment.md`）。
-- **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。
+- **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。可选：start 之前若 `bitrate>0` 先发 `cam_set live bitrate`（协议在 `rtmp_commands.py`）。
 
 ## preview_manager（ADR-010）
 

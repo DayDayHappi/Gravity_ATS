@@ -49,3 +49,4 @@
 - **模块红线**：模块只实现一次测试动作 + 参数接口，循环/重复/时长由 Scenario/Runner 驱动。
 - **ftp_server 只发一次**；ftp 每次下载前重建连接。
 - **配置三层别放错**：环境→system.yaml，模块参数→modules/*.yaml，流程→scenarios/*.yaml。
+- **协议与判据分离（ADR-011）**：串口命令/判据/超时/正则/路径沉淀到 `ATS/drivers/<module>_commands.py` 唯一来源，业务只 import 引用；**新增检测项同样遵守**。

@@ -22,6 +22,22 @@
 
 - **PreviewManager**（ADR-010）是驱动层的观察能力，生命周期挂在 `prepare.preview_start`/`cleanup.preview_stop`（跨整个 Scenario，含 loop 多轮），不属任一 Task，不影响判据。
 
+## 1.5 协议与判据分离（ADR-011，稳定约定）
+
+> 与固件交互的「协议」（命令、判据、超时、正则、路径、枚举）与「业务逻辑」（怎么发、何时发、如何编排）**必须分离**。这是架构级稳定约定，**新增任何检测项/模块都必须遵守**。
+
+- **协议唯一来源**：每模块新增 `ATS/drivers/<module>_commands.py`，只存协议常量（命令/判据/超时/正则/路径/枚举），**不写 IO、不写编排、不 import console/ftp/ctx**。
+- **业务代码只 import 引用**：`modules/*.py` / `scenario_manager.py` 用 `commands.<CONST>` 引用，**不得内联协议字符串**。
+- **命名规范**：
+  - 命令 → `<ACTION>_COMMAND`（含 `{param}` 占位的用 `.format(...)` 拼，如 `RTMP_BITRATE_COMMAND = "cam_set live bitrate {bitrate}"`）
+  - 判据 → `<ACTION>_EXPECT`；错误正则 → `<ACTION>_ERROR`
+  - 超时 → `<ACTION>_TIMEOUT`（超时值也统一进 commands，**不得在业务侧写裸值**）
+  - 路径 → `_XXX_DIR`；枚举/映射 → 不可变 `MappingProxyType`
+- **可选能力**：可选项用「默认 0/空 → 不发送」的增量语义，业务侧 `if config.get(...)` 判断，不配置时行为与未加该能力前一致。
+- **判据逻辑不迁**：计算型判据（如 ffprobe 的 codec/分辨率解析、H265 三阶段诊断）属驱动逻辑，保留在 `drivers/<validator>.py`，**不迁**入 `*_commands.py`。
+
+详见 [ADR-011](../02_design/decision_record/ADR-011-串口协议集中化.md)。
+
 ## 2. 职责边界（架构约定，勿破坏）
 
 | 层 | 职责 | 不负责 |

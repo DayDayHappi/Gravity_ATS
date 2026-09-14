@@ -36,3 +36,4 @@ VX100 EVB 上位机自动化测试脚本工程。入口：`python3 -m ATS.main -
 3. **FTP 会话**：`ftp_server` 全程只发一次（重发触发固件崩溃）；每次下载前重建连接（服务端 3s 空闲断会话）。
 4. **配置三层别放错**：环境（串口/WiFi/pc.ip）→ `config/system.yaml`；模块参数 → `config/modules/*.yaml`；流程/循环 → `config/scenarios/*.yaml`。
 5. **哨兵 ≠ 业务完成**：异步命令的 expect 必须是真实业务字符串，不能是命令回显。
+6. **协议与判据分离（ADR-011）**：串口命令/判据/超时/正则/路径统一沉淀到 `ATS/drivers/<module>_commands.py`（唯一来源），业务代码只 import 引用、不得内联协议字符串。**新增检测项/模块同样遵守**，详见 `01_architecture/system_architecture.md`。
