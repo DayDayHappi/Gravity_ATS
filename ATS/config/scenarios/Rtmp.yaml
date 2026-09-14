@@ -6,7 +6,6 @@ scenario:
     - serial_init
     - wifi_connect
     - preclean
-    - ftp_ready
     - preview_start
   tasks:
 
