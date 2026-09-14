@@ -5,7 +5,9 @@
 配置 ``emmc.format: true`` 或 CLI ``--format`` 时才格式化+重挂载。
 """
 from .base import TestModule, register
+from ..core import logger
 from ..core.result import Timer
+from ..drivers import emmc_commands as commands
 
 
 @register("emmc")
@@ -21,15 +23,15 @@ class EmmcModule(TestModule):
 
         if do_format:
             logger.info("格式化 eMMC（mkfs）...")
-            r = console.exec_sync("mkfs -t elm sd", timeout=60.0)
+            r = console.exec_sync(commands.EMMC_FORMAT_COMMAND, timeout=commands.EMMC_FORMAT_TIMEOUT)
             if not r.success:
                 return self._fail("格式化失败", detail=r.clean)
-            r = console.exec_sync("mount sd /emmc elm", timeout=15.0)
+            r = console.exec_sync(commands.EMMC_MOUNT_COMMAND, timeout=commands.EMMC_MOUNT_TIMEOUT)
             if not r.success:
                 return self._fail("挂载失败", detail=r.clean)
 
         # 默认路径：cd /emmc 验证可进入（用绝对路径，避免上次运行残留当前目录导致 cd emmc 失败）
-        r = console.exec_sync("cd /emmc", timeout=10.0)
+        r = console.exec_sync(commands.EMMC_CD_COMMAND, timeout=commands.EMMC_CD_TIMEOUT)
         if not r.success:
             return self._fail("无法进入 /emmc 目录", detail=r.clean)
         res = self._pass("已进入 /emmc" + ("（已格式化）" if do_format else "（自动挂载）"))

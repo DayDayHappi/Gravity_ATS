@@ -17,6 +17,10 @@ from .scenario import (
     prepare_action, cleanup_action, PREPARE_ACTIONS, CLEANUP_ACTIONS,
 )
 from .serial_console import SerialConsole, detect_port, SerialError
+from ..drivers import rtmp_commands as rtmp_commands
+from ..drivers import wifi_commands as wifi_commands
+from ..drivers import video_commands as video_commands
+from ..drivers import emmc_commands as emmc_commands
 
 
 class ScenarioError(Exception):
@@ -80,9 +84,7 @@ def _action_wifi_connect(ctx, system_cfg):
         logger.warn("wifi_connect: 无 console，跳过")
         return
 
-    from ..modules.wifi import (
-        _SCAN_HEADER_RE, _SCAN_ROW_RE, _GOT_IP_RE, check_wifi_connected,
-    )
+    from ..modules.wifi import check_wifi_connected
 
     # 1. 状态检测：已联网则收敛，不再 join（掉电记忆 WiFi 场景）
     ip = check_wifi_connected(console)
@@ -116,10 +118,12 @@ def _action_wifi_connect(ctx, system_cfg):
         logger.info(f"使用默认 WiFi: {ssid}")
     else:
         logger.info("扫描 WiFi 网络...")
-        r = console.exec_sync("wifi scan", expect=_SCAN_HEADER_RE.pattern, timeout=15.0)
+        r = console.exec_sync(wifi_commands.WIFI_SCAN_COMMAND,
+                              expect=wifi_commands.WIFI_SCAN_HEADER_RE.pattern,
+                              timeout=wifi_commands.WIFI_SCAN_TIMEOUT)
         aps = []
         for ln in r.clean.splitlines():
-            m = _SCAN_ROW_RE.match(ln.strip())
+            m = wifi_commands.WIFI_SCAN_ROW_RE.match(ln.strip())
             if m:
                 aps.append((m.group(1), m.group(4)))
         if not aps:
@@ -142,8 +146,10 @@ def _action_wifi_connect(ctx, system_cfg):
     ctx.wifi_ssid = ssid
     ctx.wifi_password = pwd
     r = console.exec_async(
-        f"wifi join {ssid} {pwd}",
-        expect=_GOT_IP_RE, send_timeout=5.0, result_timeout=30.0,
+        wifi_commands.WIFI_JOIN_COMMAND.format(ssid=ssid, pwd=pwd),
+        expect=wifi_commands.WIFI_GOT_IP_RE,
+        send_timeout=wifi_commands.WIFI_JOIN_SEND_TIMEOUT,
+        result_timeout=wifi_commands.WIFI_JOIN_RESULT_TIMEOUT,
     )
     if r.success and r.matched:
         ctx.evb_ip = r.matched
@@ -163,10 +169,11 @@ def _action_preclean(ctx, system_cfg):
         return
     logger.info("预清理板子状态...")
     try:
-        console.exec_sync("cd /", timeout=5.0)
-        console.exec_async("dfs_video_stop",
-                           expect=r"Save Video|Please start|recording completed",
-                           result_timeout=8.0)
+        console.exec_sync(emmc_commands.EMMC_CD_ROOT_COMMAND,
+                          timeout=emmc_commands.EMMC_CD_ROOT_TIMEOUT)
+        console.exec_async(video_commands.VIDEO_STOP_COMMAND,
+                           expect=video_commands.VIDEO_CLEANUP_EXPECT,
+                           result_timeout=video_commands.VIDEO_CLEANUP_TIMEOUT)
     except Exception as e:
         logger.warn(f"预清理异常(可忽略): {e}")
 
@@ -251,9 +258,9 @@ def _action_stop_stream(ctx, system_cfg):
     if console is None:
         return
     try:
-        console.exec_async("rtmp_video_stop",
-                           expect=r"Push Stop|Stop requested",
-                           result_timeout=8.0)
+        console.exec_async(rtmp_commands.RTMP_STOP_COMMAND,
+                           expect=rtmp_commands.RTMP_STOP_EXPECT,
+                           result_timeout=rtmp_commands.RTMP_STOP_TIMEOUT)
     except Exception:
         pass
 

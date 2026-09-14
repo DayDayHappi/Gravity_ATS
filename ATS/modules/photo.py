@@ -20,11 +20,10 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
+from ..drivers import photo_commands as commands
 
-# JPEG magic number
+# JPEG magic number（文件格式校验，非固件协议，保留在业务侧）
 _JPEG_MAGIC = b"\xff\xd8\xff"
-# 实测拍照存盘目录（大写）
-_PIC_DIR = "/emmc/PIC"
 
 
 @register("photo")
@@ -64,7 +63,8 @@ class PhotoModule(TestModule):
         logger.step(f"  拍照测试: 模式 {mode}")
 
         # 1. 切模式
-        r = console.exec_sync(f"cam_set photo {mode}", timeout=10.0)
+        r = console.exec_sync(commands.PHOTO_SET_COMMAND.format(mode=mode),
+                              timeout=commands.PHOTO_SET_TIMEOUT)
         if not r.success:
             return self._mk(name, "FAIL", f"设置模式 {mode} 失败", r.clean, timer)
         if settle > 0:
@@ -77,9 +77,9 @@ class PhotoModule(TestModule):
         #   不能用 Save Photo Successful：它出现早，此时日志未打印完、路径还可能被
         #   串口分块截断（实测出现 "Save Photo Successful: /e" 的截断），提前发下一条
         #   命令会打断相机流程造成错位。
-        r = console.exec_async("dfs_capture_start",
-                               expect=r"Capture completed successfully.",
-                               result_timeout=30.0)
+        r = console.exec_async(commands.PHOTO_CAPTURE_COMMAND,
+                               expect=commands.PHOTO_CAPTURE_EXPECT,
+                               result_timeout=commands.PHOTO_CAPTURE_TIMEOUT)
         if not r.success:
             return self._mk(name, "FAIL", "拍照未完成保存", r.clean[-300:], timer)
 
@@ -88,7 +88,7 @@ class PhotoModule(TestModule):
         #    等 Capture completed successfully. 后整条路径已在 r.clean 中拼接完整，
         #    按 /emmc/PIC/<时间戳>/ 目录结构扫描才可靠。
         import re
-        m2 = re.search(rf"{re.escape(_PIC_DIR)}/[^\s/]+/", r.clean)
+        m2 = re.search(rf"{re.escape(commands._PIC_DIR)}/[^\s/]+/", r.clean)
         save_dir = m2.group(0).rstrip("/") if m2 else ""
         msg_base = f"拍照成功，保存到 {save_dir}"
 
@@ -124,7 +124,7 @@ class PhotoModule(TestModule):
         try:
             # list_dir 返回所有项；用 list_files_detail 区分文件/目录较繁琐，
             # 这里用 _list_entries 直接取目录项
-            entries = ftp._list_entries(_PIC_DIR)
+            entries = ftp._list_entries(commands._PIC_DIR)
             return [name for name, is_dir, _ in entries if is_dir]
         except Exception:
             return []

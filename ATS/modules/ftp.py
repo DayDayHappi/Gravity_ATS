@@ -24,6 +24,7 @@ from .base import TestModule, register
 from ..core import logger
 from ..core.result import Timer
 from ..drivers.ftp_client import FtpClient, FtpError
+from ..drivers import ftp_commands as commands
 
 
 def ensure_ftp(ctx, console, force=False):
@@ -97,9 +98,9 @@ def start_ftp(ctx, console, cfg=None):
     #    只是初始化完成，到 listen 还有约 3~4s 延迟；只等 init success 就 connect 会
     #    撞在未 listen 窗口，得 Connection refused（见 devBugLog 记录）。
     if not getattr(ctx, "ftp_server_started", False):
-        r = console.exec_async("ftp_server",
-                               expect=r"service launched success",
-                               result_timeout=15.0)
+        r = console.exec_async(commands.FTP_START_COMMAND,
+                               expect=commands.FTP_START_EXPECT,
+                               result_timeout=commands.FTP_START_TIMEOUT)
         if not r.success:
             logger.error(f"FTP 服务启动失败（未等到 service launched）: {r.clean[-200:]}")
             return None
@@ -134,7 +135,7 @@ class FtpModule(TestModule):
 
         # 验证列目录
         try:
-            items = client.list_dir("/emmc")
+            items = client.list_dir(commands._EMMC_DIR)
         except Exception as e:
             client.close()
             return self._fail(f"列 /emmc 失败: {e}", detail=str(e))

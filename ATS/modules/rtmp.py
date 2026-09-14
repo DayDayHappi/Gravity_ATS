@@ -32,6 +32,7 @@ from ..core.result import Timer, TestResult
 from ..drivers.preview_manager import _detect_pc_ip
 from ..drivers.rtmp_receiver import RtmpReceiver
 from ..drivers.rtmp_server import RtmpServer, RtmpServerError
+from ..drivers import rtmp_commands as commands
 from .rtmp_monitor import RTMPMonitor, TIMEOUT
 from .tt_error_monitor import TTErrorMonitor
 
@@ -108,9 +109,9 @@ class RtmpModule(TestModule):
         # 即便 exec_async 没匹配到也不立即 FAIL，留给 ffprobe 兜底。
         # 注：必须先推流后探测——ffprobe 连无流的源会立即 I/O error。
         console.exec_async(
-            f"rtmp_video_start {url}",
-            expect=r"publish ready|Push Start",
-            result_timeout=8.0,
+            commands.RTMP_START_COMMAND.format(url=url),
+            expect=commands.RTMP_START_EXPECT,
+            result_timeout=commands.RTMP_START_TIMEOUT,
         )
 
         # 4. 等推流上线（给 EVB 建连 + 首帧时间）
@@ -162,9 +163,9 @@ class RtmpModule(TestModule):
 
         # 7. 停止推流（exec_async 只发命令不发哨兵，等业务状态字符串）
         console.exec_async(
-            "rtmp_video_stop",
-            expect=r"Push Stop|Stop requested",
-            result_timeout=8.0,
+            commands.RTMP_STOP_COMMAND,
+            expect=commands.RTMP_STOP_EXPECT,
+            result_timeout=commands.RTMP_STOP_TIMEOUT,
         )
 
         # TT ERROR listener 摘除（推流窗口结束）；teardown 仍兜底一次。

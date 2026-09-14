@@ -15,23 +15,12 @@
 - wifi_scan / wifi_join：代码保留但退出 normal 默认流程（可复用于手动调试/未来场景）。
 - 连接收敛由 prepare.wifi_connect（状态收敛器）完成。
 """
-import re
 import time
 
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
-
-# 扫描结果表头（实测 wifi_scan_connect.txt）
-_SCAN_HEADER_RE = re.compile(r"SSID\s+MAC\s+security\s+rssi\s+chn\s+Mbps")
-# 扫描数据行：<ssid> <mac:17> <security> <rssi:int> <chn:int> <mbps:int>
-_SCAN_ROW_RE = re.compile(
-    r"^(\S+)\s+([0-9a-fA-F:]{17})\s+(\S+)\s+(-?\d+)\s+(\d+)\s+(\d+)"
-)
-# 连接成功 + IP 提取（实测: "Got IP address : 10.1.90.71"）
-_GOT_IP_RE = r"Got IP address\s*:\s*([0-9.]+)"
-# ifconfig 中 IP 提取：默认接口 w0 的 "ip address: x.x.x.x"（非 0.0.0.0 才算联网）
-_IFCONFIG_IP_RE = re.compile(r"ip address\s*:\s*(\d+\.\d+\.\d+\.\d+)")
+from ..drivers import wifi_commands as commands
 
 
 def check_wifi_connected(console):
@@ -40,11 +29,12 @@ def check_wifi_connected(console):
     Returns:
         IP 字符串（已联网）；None（未联网或检测失败）。
     """
-    r = console.exec_sync("ifconfig", timeout=8.0)
+    r = console.exec_sync(commands.WIFI_IFCONFIG_COMMAND,
+                          timeout=commands.WIFI_IFCONFIG_TIMEOUT)
     if not r.success:
         return None
     # 取所有 ip address，只要有任一非 0.0.0.0 即算已联网
-    for m in _IFCONFIG_IP_RE.finditer(r.clean):
+    for m in commands.WIFI_IFCONFIG_IP_RE.finditer(r.clean):
         ip = m.group(1)
         if ip != "0.0.0.0":
             return ip
@@ -85,13 +75,15 @@ class WifiScanModule(TestModule):
         if getattr(ctx, "skip_wifi", False):
             return self._skip(f"WiFi 已连接（IP={ctx.evb_ip}），跳过扫描测试")
         timer = Timer().start()
-        r = console.exec_sync("wifi scan", expect=_SCAN_HEADER_RE.pattern, timeout=15.0)
+        r = console.exec_sync(commands.WIFI_SCAN_COMMAND,
+                              expect=commands.WIFI_SCAN_HEADER_RE.pattern,
+                              timeout=commands.WIFI_SCAN_TIMEOUT)
         if not r.success:
             return self._fail("扫描失败或无结果", detail=r.clean)
         # 解析 AP 列表
         aps = []
         for ln in r.clean.splitlines():
-            m = _SCAN_ROW_RE.match(ln.strip())
+            m = commands.WIFI_SCAN_ROW_RE.match(ln.strip())
             if m:
                 aps.append({
                     "ssid": m.group(1), "mac": m.group(2),
@@ -131,8 +123,10 @@ class WifiJoinModule(TestModule):
             return self._fail("未配置 SSID")
         timer = Timer().start()
         r = console.exec_async(
-            f"wifi join {ssid} {pwd}",
-            expect=_GOT_IP_RE, send_timeout=5.0, result_timeout=30.0,
+            commands.WIFI_JOIN_COMMAND.format(ssid=ssid, pwd=pwd),
+            expect=commands.WIFI_GOT_IP_RE,
+            send_timeout=commands.WIFI_JOIN_SEND_TIMEOUT,
+            result_timeout=commands.WIFI_JOIN_RESULT_TIMEOUT,
         )
         if not r.success or not r.matched:
             return self._fail(f"连接失败或未获取 IP ({ssid})", detail=r.clean)

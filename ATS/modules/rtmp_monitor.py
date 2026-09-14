@@ -13,19 +13,9 @@ heartbeat 依据：板端推流期间的 ``f_index = N`` 日志，代表「编�
 
 设计原则：本模块只管「检测」，最终 PASS/FAIL 由 rtmp 模块结合 ffprobe 主判据决定。
 """
-import re
 import time
 
-# heartbeat 日志正则：板端 RTMP 发送侧的帧索引（代表编码+发送仍在进行）。
-#
-# 用裸匹配而非锚定前缀：固件日志格式已从 8 月的 "[RTMP] f_index = N" 变为 9 月的
-# "I/App Rtmp: f_index = N"（f_len 可缺失，行前可能有 ANSI 残留），且前缀会被串口
-# 分块截断（实测 p: f_index / Rtmp: f_index / 裸 f_index），锚定前缀必失配。
-#
-# 裸匹配安全前提（窗口隔离）：本 monitor 仅在 rtmp 推流保持窗口内监听，该窗口内串口
-# 仅有 Rtmp 一种 f_index（scenario 串行时序保证：photo -> video -> rtmp，video 的 Dfs
-# 心跳在 dfs_video_stop 后已停），故无前缀也不会误匹配其它模块的 f_index。
-_HEARTBEAT_RE = re.compile(r"f_index\s*=\s*\d+")
+from ..drivers import rtmp_commands as commands
 
 # 状态常量
 ALIVE = "ALIVE"
@@ -79,7 +69,7 @@ class RTMPMonitor:
         """
         if not self._started or not text:
             return
-        if _HEARTBEAT_RE.search(text):
+        if commands.RTMP_HEARTBEAT_RE.search(text):
             now = time.monotonic()
             self._last_frame_time = now
             self._last_frame_clock = time.strftime("%H:%M:%S")
