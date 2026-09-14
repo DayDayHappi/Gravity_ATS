@@ -61,6 +61,16 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 
 需求已整理：[req_video_size_traverse_add_integrity.md](../03_development/archive/req_video_size_traverse_add_integrity.md)。**已实施**（devlog `20260909_1940`）：在 11 个 video task 之后（photo 之前）插入一个 `video_integrity` task，override `input.selection: "all_unchecked"` + `empty_input_policy: "skip"`；头注释矛盾已修正；cleanup 补 `stop_stream` 兜底。**待真机验证**。
 
+## 🟡 P1 — 串口协议集中化（ADR-011，已实施·待真机）
+
+设计已定：[ADR-011](../02_design/decision_record/ADR-011-串口协议集中化.md)，Status=Accepted。
+
+- 每模块串口命令/判据/超时/正则/路径统一沉淀到 `drivers/<module>_commands.py`（唯一来源），业务代码只 import 引用。
+- **video 已完成**（`video_commands.py`，参照物）；photo/rtmp/ftp/wifi/emmc 五模块已迁移（5 个新文件）。
+- **纯搬移不改值**：命令/判据逐字一致，发现可疑只加 `TODO-CONFIRM`，不在本次改协议语义。
+- 边界：`*_commands.py` 只存协议常量，不写 IO/编排、不 import console/ftp/ctx；判据逻辑（ffprobe codec 判据、H265 三阶段诊断）不迁。
+- **收尾已完成**（devlog `20260914_1321`）：`emmc_commands.py` 补 `EMMC_CD_ROOT_TIMEOUT = 5.0`，`scenario_manager.py` preclean 的 `cd /` 裸超时提升为命名常量（值不变），无残留裸超时。
+
 ## 🟡 P2 — ADR-010 PreviewManager 待真机验收
 
 设计已定（[ADR-010](../02_design/decision_record/ADR-010-PreviewManager单例播放器.md)），源码已实施（devlog `20260825_0111_PreviewManager单例播放器实施.md`），**待真机验收**：

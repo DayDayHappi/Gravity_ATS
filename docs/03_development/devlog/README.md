@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-14 | [20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md](20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md) | ADR-011 收尾：emmc_commands.py 补 EMMC_CD_ROOT_TIMEOUT=5.0，scenario_manager preclean 的 cd / 裸超时 5.0 提升为命名常量（值不变） |
+| 2026-09-14 | [20260914_1110_串口协议集中化ADR-011.md](20260914_1110_串口协议集中化ADR-011.md) | ADR-011 实施：photo/rtmp/ftp/wifi/emmc 协议字符串（命令/判据/超时/正则/路径）集中迁移到 drivers/<module>_commands.py 唯一来源，模块与 scenario_manager 改查表引用；纯移动不改语义；顺带修 emmc.py 缺失 logger 导入、EMMC_CD_ROOT_COMMAND 显式化 cd / |
 | 2026-09-09 | [20260909_录像size显式命令与遍历.md](20260909_录像size显式命令与遍历.md) | 新增 drivers/video_commands.py 完整命令表（11 种 size 组合 ID，含宽高/方向/禁用校验）+ video.py 改查表不拼命令 + 新增 video_size_traverse.yaml 场景 + 24 项离线回归通过，待真机 |
 | 2026-09-09 | [20260909_1940_video_size_traverse接入H265检测.md](20260909_1940_video_size_traverse接入H265检测.md) | video_size_traverse 场景 11 个 video 后插入 video_integrity（all_unchecked+skip，一轮 29 文件全检跨 loop 去重）+ 头注释修正 + cleanup 补 stop_stream 兜底 |
 | 2026-09-09 | [20260909_1457_新增场景3k录像压测.md](20260909_1457_新增场景3k录像压测.md) | 新增场景 stress_traverse_photo_mode_3k.yaml（复制 stress_traverse_photo_mode，唯一差异 video task override.video_resolution="3k"），纯配置不改源码，全局默认保持 1080p |
