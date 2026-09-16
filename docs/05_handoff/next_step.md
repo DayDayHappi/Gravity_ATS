@@ -71,6 +71,16 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - 边界：`*_commands.py` 只存协议常量，不写 IO/编排、不 import console/ftp/ctx；判据逻辑（ffprobe codec 判据、H265 三阶段诊断）不迁。
 - **收尾已完成**（devlog `20260914_1321`）：`emmc_commands.py` 补 `EMMC_CD_ROOT_TIMEOUT = 5.0`，`scenario_manager.py` preclean 的 `cd /` 裸超时提升为命名常量（值不变），无残留裸超时。
 
+## 🟡 P1 — 下载行为可配置 + 无网络场景（已实施·待真机）
+
+需求已整理：[新增需求_下载行为可配置与无网络场景.md](../03_development/archive/新增需求_下载行为可配置与无网络场景.md)（Document Agent，2026-09-16）。**已实施**（devlog `20260916_0000`）。
+
+- 已实施：photo/video 新增 `ftp_download` 开关（默认 true）；false 走纯拍摄/纯录像分支（不碰 FTP）；
+  新增 `no_network.yaml`（prepare 去 wifi/ftp/preview，photo/video override `ftp_download: false`，
+  去 rtmp/video_integrity）。
+- **待真机**：无网络场景需真机确认 photo 存盘打印正则；有网络分支（默认 true）未跑真机回归。
+- ~~`no_network.yaml` cleanup 冗余 `stop_stream`~~ 已修复（devlog `20260916_0001`，cleanup 只留 `close_serial`）。
+
 ## 🟡 P2 — ADR-010 PreviewManager 待真机验收
 
 设计已定（[ADR-010](../02_design/decision_record/ADR-010-PreviewManager单例播放器.md)），源码已实施（devlog `20260825_0111_PreviewManager单例播放器实施.md`），**待真机验收**：

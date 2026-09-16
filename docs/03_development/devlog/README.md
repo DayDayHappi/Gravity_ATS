@@ -29,6 +29,8 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-16 | [20260916_0001_无网络场景cleanup移除冗余stop_stream.md](20260916_0001_无网络场景cleanup移除冗余stop_stream.md) | no_network.yaml cleanup 移除冗余 stop_stream（场景不推流却发 rtmp_video_stop 空等约 8s），只留 close_serial |
+| 2026-09-16 | [20260916_0000_下载行为可配置与无网络场景.md](20260916_0000_下载行为可配置与无网络场景.md) | photo/video 新增 `ftp_download` 开关（默认 true）；false 时走纯拍摄/纯录像分支（不碰 FTP）；新增无网络场景 no_network.yaml（prepare 去 wifi/ftp/preview，photo/video override ftp_download=false，去 rtmp/video_integrity） |
 | 2026-09-14 | [20260914_1358_rtmp码率可选配置.md](20260914_1358_rtmp码率可选配置.md) | RTMP 新增可选推流码率设置：rtmp_commands.py 加 RTMP_BITRATE_COMMAND/RTMP_BITRATE_TIMEOUT，rtmp.py 在 rtmp_video_start 之前可选发送 cam_set live bitrate（失败即 FAIL），rtmp.yaml 加 bitrate: 0（0=不设置，task.override 可覆盖） |
 | 2026-09-14 | [20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md](20260914_1321_ADR011_emmc_CD_ROOT_timeout收尾.md) | ADR-011 收尾：emmc_commands.py 补 EMMC_CD_ROOT_TIMEOUT=5.0，scenario_manager preclean 的 cd / 裸超时 5.0 提升为命名常量（值不变） |
 | 2026-09-14 | [20260914_1110_串口协议集中化ADR-011.md](20260914_1110_串口协议集中化ADR-011.md) | ADR-011 实施：photo/rtmp/ftp/wifi/emmc 协议字符串（命令/判据/超时/正则/路径）集中迁移到 drivers/<module>_commands.py 唯一来源，模块与 scenario_manager 改查表引用；纯移动不改语义；顺带修 emmc.py 缺失 logger 导入、EMMC_CD_ROOT_COMMAND 显式化 cd / |

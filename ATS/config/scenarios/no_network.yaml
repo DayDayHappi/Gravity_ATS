@@ -1,0 +1,21 @@
+# 无网络场景：不连 WiFi、不启动 FTP、不推流，仅验证拍照/录像纯拍摄链路（不下载）。
+# 与 normal.yaml 对应：photo/video 均 override ftp_download=false，走纯拍摄分支。
+# prepare 只 serial_init + preclean（去掉 wifi_connect/ftp_ready/preview_start）；
+# tasks 去掉 rtmp/video_integrity（都依赖网络/下载）。
+scenario:
+  name: no_network
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - preclean
+  tasks:
+    - module: emmc
+    - module: photo
+      override:
+        ftp_download: false
+    - module: video
+      override:
+        ftp_download: false
+  cleanup:
+    - close_serial

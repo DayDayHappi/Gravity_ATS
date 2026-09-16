@@ -13,6 +13,9 @@
 
 某模式失败只标记该模式 FAIL，继续下一个模式，不影响后续录像/推流。
 返回多条 TestResult（每模式一条）。
+
+``ftp_download: false`` 时走纯拍摄分支（不碰 FTP）：等 ``Capture completed successfully.``
+即 PASS，仅扫描 /emmc/PIC/<ts>/ 作落盘证据展示，不做 JPEG 头/大小校验。
 """
 import os
 import time
@@ -34,30 +37,38 @@ class PhotoModule(TestModule):
 
     def run(self, ctx, console, params=None):
         self.config = self._merge(params)
-        ftp = getattr(ctx, "ftp_client", None)
-        if ftp is None:
-            return self._skip("FTP 客户端不可用，跳过拍照")
-
-        # 确保 FTP 可用（固件 FTP 在重负载后会崩溃，这里检查并恢复）
-        from .ftp import ensure_ftp
-        ftp = ensure_ftp(ctx, console)
-        if ftp is None:
-            return self._fail("FTP 不可用且恢复失败，跳过拍照")
+        ftp_download = bool(self.config.get("ftp_download", True))
 
         modes = self.config.get("photo_modes", ["auto"])
         settle = float(self.config.get("photo_settle_delay", 1.0))
         cap_timeout = float(self.config.get("photo_capture_timeout", 10.0))
         min_kb = int(self.config.get("photo_min_size_kb", 10))
-        tmp_dir = os.path.join(logger.log_dir() or "logs", "photos")
-        os.makedirs(tmp_dir, exist_ok=True)
+
+        ftp = None
+        tmp_dir = None
+        if ftp_download:
+            ftp = getattr(ctx, "ftp_client", None)
+            if ftp is None:
+                return self._skip("FTP 客户端不可用，跳过拍照")
+
+            # 确保 FTP 可用（固件 FTP 在重负载后会崩溃，这里检查并恢复）
+            from .ftp import ensure_ftp
+            ftp = ensure_ftp(ctx, console)
+            if ftp is None:
+                return self._fail("FTP 不可用且恢复失败，跳过拍照")
+
+            tmp_dir = os.path.join(logger.log_dir() or "logs", "photos")
+            os.makedirs(tmp_dir, exist_ok=True)
 
         results = []
         for mode in modes:
             results.append(self._test_one(ctx, console, ftp, mode,
-                                          settle, cap_timeout, min_kb, tmp_dir))
+                                          settle, cap_timeout, min_kb, tmp_dir,
+                                          ftp_download))
         return results
 
-    def _test_one(self, ctx, console, ftp, mode, settle, cap_timeout, min_kb, tmp_dir):
+    def _test_one(self, ctx, console, ftp, mode, settle, cap_timeout, min_kb, tmp_dir,
+                  ftp_download=True):
         name = f"photo[{mode}]"
         timer = Timer().start()
         logger.step(f"  拍照测试: 模式 {mode}")
@@ -92,7 +103,13 @@ class PhotoModule(TestModule):
         save_dir = m2.group(0).rstrip("/") if m2 else ""
         msg_base = f"拍照成功，保存到 {save_dir}"
 
-        # 4. FTP 下载验证（辅助；FTP 在拍照后大概率崩，强制重连）
+        # 4. 无下载分支（ftp_download=false）：Capture completed successfully. 即 PASS，
+        #    不做 JPEG 头/大小校验；存盘路径仅作落盘证据展示。
+        if not ftp_download:
+            msg = f"拍照成功，保存到 {save_dir}" if save_dir else "拍照成功（未扫到存盘路径）"
+            return self._mk(name, "PASS", msg, r.clean[-200:], timer)
+
+        # 5. FTP 下载验证（辅助；FTP 在拍照后大概率崩，强制重连）
         from .ftp import ensure_ftp
         ftp2 = ensure_ftp(ctx, console, force=True)
         if ftp2 is None or not save_dir:

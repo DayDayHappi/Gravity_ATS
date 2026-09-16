@@ -4,6 +4,10 @@
 测试编排：Scenario 的多个 video task + repeat/duration；模块不做 size 循环。
 保留最终完成标志、完整路径扫描、f_index 启动兜底和 TT ERROR 标注。
 下载文件仍放在本次日志 videos/ 下，使用组合与板端时间戳目录区分。
+
+``ftp_download: false`` 时走纯录像分支（不碰 FTP）：等 ``Video recording completed
+successfully.`` 即 PASS，仅扫描 /emmc/VIDEO 路径作证据展示，不 size/不下载；
+TT ERROR 检测保留（命中只标 detail，不判 FAIL）。
 """
 import math
 import os
@@ -69,6 +73,11 @@ class VideoModule(TestModule):
             return self._mk("ERROR", f"录像配置错误：{exc}", "未下发录像命令", timer)
         profile = self._profile
         resolution = profile.key
+
+        ftp_download = bool(cfg.get("ftp_download", True))
+        if not ftp_download:
+            return self._run_no_ftp(ctx, console, profile, resolution, duration, timer)
+
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
             return self._mk("SKIP", "FTP 客户端不可用，跳过录像", "", timer)
@@ -162,6 +171,56 @@ class VideoModule(TestModule):
             logger.info(f"FTP 下载未完成，耗时 {dl_elapsed:.1f}s")
             local_sz = os.path.getsize(local) if os.path.exists(local) else 0
             msg = f"{msg_base}，{sz//1024}KB | 下载不完整({local_sz//1024}KB/{sz//1024}KB)"
+        return self._mk("PASS", msg, video_path, timer)
+
+    def _run_no_ftp(self, ctx, console, profile, resolution, duration, timer):
+        """纯录像分支（ftp_download=false）：只拍不下载，完全不碰 FTP。
+
+        判据与有下载分支一致：Record Start|f_index 启动 + Video recording
+        completed successfully. 完成；TT ERROR 检测保留（命中只标 detail，不判 FAIL）。
+        """
+        logger.step(f"  录像测试(无下载): {resolution} / {duration:g}s / "
+                    f"预期 {profile.width}x{profile.height} {profile.orientation}")
+        logger.info(f"录像 size 设置命令: {profile.command}")
+
+        # 1. 设置分辨率
+        r = console.exec_sync(profile.command, timeout=commands.VIDEO_SET_TIMEOUT)
+        if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
+            return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
+
+        # TT ERROR 检测（录像窗口）：命中不判 FAIL，仅 detail 标注。
+        self._tt_monitor = TTErrorMonitor()
+        self._tt_monitor_cb = self._tt_monitor.update
+        console.add_listener(self._tt_monitor_cb)
+
+        # 2. 开始录像
+        logger.info(f"拍摄开始（{resolution} / {duration}s）...")
+        self._recording_active = True
+        r = console.exec_async(commands.VIDEO_START_COMMAND,
+                               expect=commands.VIDEO_START_EXPECT,
+                               result_timeout=commands.VIDEO_START_TIMEOUT)
+        if not r.success:
+            self._stop_after_error(console)
+            return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
+
+        time.sleep(duration)
+
+        # 3. 等录像全流程最终完成标志
+        r = console.exec_async(commands.VIDEO_STOP_COMMAND,
+                               expect=commands.VIDEO_STOP_EXPECT,
+                               result_timeout=commands.VIDEO_STOP_TIMEOUT)
+        if r.success:
+            self._recording_active = False
+        if not r.success:
+            return self._mk("FAIL", "停止录像失败", r.clean[-300:], timer)
+        logger.info("拍摄结束（无下载，不校验大小）")
+
+        # 4. 从累积缓冲扫描完整视频路径（仅作证据展示，不下载/不校验大小）
+        m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
+        video_path = m2.group(0) if m2 else ""
+        msg = "录像成功"
+        if video_path:
+            msg += f"，文件 {video_path}"
         return self._mk("PASS", msg, video_path, timer)
 
     def _list_video_dirs(self, ftp):

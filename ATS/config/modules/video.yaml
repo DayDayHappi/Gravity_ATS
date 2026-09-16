@@ -1,4 +1,5 @@
 # 录像模块参数
+ftp_download: true         # true=录完 FTP 下载校验大小；false=纯录像不下载（无网络场景 override）
 video_resolution: "sd1080p_0"
 video_duration: 180        # 录像时长(秒)；scenario 里 task.duration 可覆盖
 video_min_size_kb: 100
