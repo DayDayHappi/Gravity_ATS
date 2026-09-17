@@ -13,3 +13,5 @@
 | ADR-009 | depends 字段语义定位 | depends 只做 task 间 fail-fast，逻辑依赖移到 module_design 文档，清空死依赖 |
 | ADR-010 | PreviewManager 单例播放器 | ffplay 生命周期从 rtmp 模块剥离，归 Scenario 级 drivers/preview_manager.py，prepare/cleanup 挂载 |
 | ADR-011 | 串口协议集中化 | 每模块串口命令/判据/超时/正则/路径统一沉淀到 drivers/<module>_commands.py，业务代码只引用；已固化为架构稳定约定（新增检测项同样遵守），待真机 |
+| ADR-012 | utest 统一日志框架接入 | 新增独立 utest 模块+场景；唯一判据=testcase result 行（不扫 fail/error，避 qspi `1 lane fail!` 误判）；每 testcase 独立超时映射；FAILED 格式预留接口；零改动现有架构（已实施，真机发现待修复项） |
+| ADR-013 | 串口探测指纹按场景分派 | 探测/就绪指纹按场景选择键分派（default 旧指纹逐字不动；utest 追加认 `msh >` 无斜杠）；正则留 serial_console.py，yaml 只存选择键；旧固件零影响（已实施） |

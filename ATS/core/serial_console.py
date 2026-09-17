@@ -45,6 +45,25 @@ _FINGERPRINT_RE = re.compile("|".join(_EVB_FINGERPRINTS))
 # msh 就绪标志：提示符可能是 msh />(根目录) 或 msh /xxx>(子目录)
 _READY_RE = re.compile(r"FW\s+start\s+ok|msh\s+/[^>]*>|msh\s*/>")
 
+# 指纹/就绪按场景分派（ADR-013）：场景 YAML 只声明「用哪套指纹」的选择键（默认 default）。
+# 正则本体留在本文件（ADR-011 单一来源），yaml 不存正则，避免正则散落配置层。
+# - default：旧固件原三条指纹 / 原就绪正则，逐字不动（向后兼容，未声明场景零影响）。
+# - utest：追加认 ``msh >``（无斜杠；``msh\s+[^>]*>`` 同时匹配 msh >、msh />、msh /emmc>，
+#   是旧指纹超集，但只作为 utest 场景的追加项，default 场景不受影响）。
+_FINGERPRINT_SETS = {
+    "default": _EVB_FINGERPRINTS,
+    "utest": _EVB_FINGERPRINTS + [r"msh\s+[^>]*>"],
+}
+_READY_RE_SETS = {
+    "default": _READY_RE,
+    "utest": re.compile(r"FW\s+start\s+ok|msh\s+[^>]*>"),
+}
+# 各指纹集的预编译正则（探测循环内避免反复 compile）
+_FINGERPRINT_SET_RE = {
+    name: re.compile("|".join(patterns))
+    for name, patterns in _FINGERPRINT_SETS.items()
+}
+
 # 默认错误关键字（exec_sync 未提供 expect 时据此判定失败）
 _ERROR_RE = re.compile(
     r"\b(error|failed|fail|cannot|no such|not found|invalid|exception)\b",
@@ -78,7 +97,7 @@ class SerialConsole:
     """
 
     def __init__(self, port, baudrate=2000000, timeout=2.0,
-                 ready_timeout=60, sentinel_timeout=5.0):
+                 ready_timeout=60, sentinel_timeout=5.0, ready_set="default"):
         if serial is None:
             raise SerialError("缺少 pyserial 依赖，请先 pip install pyserial")
         self.port = port
@@ -86,6 +105,7 @@ class SerialConsole:
         self.timeout = timeout
         self.ready_timeout = ready_timeout
         self.sentinel_timeout = sentinel_timeout
+        self._ready_re = _READY_RE_SETS.get(ready_set, _READY_RE_SETS["default"])
 
         self._ser = None
         self._reader_thread = None
@@ -420,12 +440,12 @@ class SerialConsole:
             pass
         deadline = time.monotonic() + timeout
         # 先看已有缓冲
-        if _READY_RE.search(ansi.strip(self._buffer_text())):
+        if self._ready_re.search(ansi.strip(self._buffer_text())):
             logger.info("EVB 已就绪")
             return True
         while time.monotonic() < deadline:
             snapshot = self._buffer_text()
-            matched, _, _ = self._wait_regex(_READY_RE.pattern, 1.0, snapshot)
+            matched, _, _ = self._wait_regex(self._ready_re.pattern, 1.0, snapshot)
             if matched:
                 logger.info("EVB 已就绪")
                 return True
@@ -469,9 +489,17 @@ def _list_candidate_ports() -> list:
     return accessible
 
 
-def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> bool:
-    """用指定端口+波特率探测是否为 EVB：发 \\n 后读输出匹配指纹。"""
+def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0,
+                     fingerprint_set: str = "default") -> bool:
+    """用指定端口+波特率探测是否为 EVB：发 \\n 后读输出匹配指纹。
+
+    ``fingerprint_set`` 选择用哪套指纹（ADR-013），默认 ``default``（旧固件）。
+    """
     if serial is None:
+        return False
+    fingerprint_re = _FINGERPRINT_SET_RE.get(fingerprint_set)
+    if fingerprint_re is None:
+        logger.error(f"未知指纹集: {fingerprint_set}")
         return False
     try:
         s = serial.Serial(port, baudrate, timeout=detect_timeout, write_timeout=1.0)
@@ -494,7 +522,7 @@ def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> b
         if not data:
             return False
         text = data.decode("utf-8", errors="replace")
-        return bool(_FINGERPRINT_RE.search(ansi.strip(text)))
+        return bool(fingerprint_re.search(ansi.strip(text)))
     except Exception:
         return False
     finally:
@@ -507,7 +535,8 @@ def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> b
 def detect_port(baudrate: int = 2000000,
                 baud_candidates=None,
                 interactive: bool = True,
-                detect_timeout: float = 2.0):
+                detect_timeout: float = 2.0,
+                fingerprint_set: str = "default"):
     """自动探测 EVB 串口。
 
     遍历候选端口 × 候选波特率，用指纹匹配。默认波特率优先，探不到则回退候选列表。
@@ -517,6 +546,7 @@ def detect_port(baudrate: int = 2000000,
         baud_candidates: 回退候选波特率列表；None 用默认 [2000000,250000,115200,921600]。
         interactive: 多个匹配时是否交互让用户选。
         detect_timeout: 每个组合的探测超时。
+        fingerprint_set: 指纹集选择键（ADR-013），默认 ``default``（旧固件）。
 
     Returns:
         (port, baudrate) 元组；未探测到返回 (None, None)。
@@ -538,7 +568,7 @@ def detect_port(baudrate: int = 2000000,
     for port in ports:
         for baud in ordered:
             logger.debug(f"探测 {port} @ {baud} ...")
-            if _probe_port_baud(port, baud, detect_timeout):
+            if _probe_port_baud(port, baud, detect_timeout, fingerprint_set):
                 logger.info(f"  命中 EVB 指纹: {port} @ {baud}")
                 matches.append((port, baud))
                 break  # 该端口已命中，不再试其他波特率

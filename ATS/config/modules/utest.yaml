@@ -1,0 +1,3 @@
+# utest 模块参数（ADR-012）
+# testcase / timeout 由 scenario task 的 override 提供；本文件仅声明默认能力为空，
+# 协议（命令/判据/每项超时映射）唯一来源在 ATS/drivers/utest_commands.py。

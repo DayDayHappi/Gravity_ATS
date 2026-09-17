@@ -48,6 +48,7 @@ class Scenario:
     tasks: list = field(default_factory=list)
     cleanup: list = field(default_factory=list)
     loop: LoopConfig = field(default_factory=LoopConfig)
+    serial_fingerprint: str = "default"   # 串口探测/就绪指纹集选择键（ADR-013）
 
 
 # prepare/cleanup 动作注册表：动作名 -> 可调用对象

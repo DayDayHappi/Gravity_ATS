@@ -29,6 +29,9 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-17 | [20260917_0927_utest真机修复4点.md](20260917_0927_utest真机修复4点.md) | utest 真机修复：pvt_auto_test 超时 10→20（真机实测 10.2s）；哨兵超时后先用白名单 UTEST_RESULT_RE 重判 r.clean（修复「result 行已出现却误报未知」），抽 _mk_from_status 复用；场景去掉 qspi_test（9→8 项）；去掉「脚本超时」日志打印 |
+| 2026-09-16 | [20260916_1832_串口探测指纹按场景分派ADR-013.md](20260916_1832_串口探测指纹按场景分派ADR-013.md) | ADR-013 实施：串口探测/就绪指纹按场景分派（utest 固件 `msh >` 无斜杠适配）；serial_console 加 _FINGERPRINT_SETS/_READY_RE_SETS 映射 + detect_port(fingerprint_set=)/SerialConsole(ready_set=) 可选参数，Scenario 加 serial_fingerprint 字段，scenario_manager parse/run/serial_init 透传，utest.yaml 加 serial_fingerprint: utest；default 路径逐字不动零影响 |
+| 2026-09-16 | [20260916_1720_新增utest固件自检框架接入.md](20260916_1720_新增utest固件自检框架接入.md) | ADR-012 实施：新增 utest 独立模块与场景（9 项板级自检），唯一判据取 testcase 级 result 行，显式传 expect 避开 _ERROR_RE 误判 qspi "1 lane fail!"，每项独立超时由 scenario 驱动；新增 4 文件 + 1 接线，现有代码零改动 |
 | 2026-09-16 | [20260916_0001_无网络场景cleanup移除冗余stop_stream.md](20260916_0001_无网络场景cleanup移除冗余stop_stream.md) | no_network.yaml cleanup 移除冗余 stop_stream（场景不推流却发 rtmp_video_stop 空等约 8s），只留 close_serial |
 | 2026-09-16 | [20260916_0000_下载行为可配置与无网络场景.md](20260916_0000_下载行为可配置与无网络场景.md) | photo/video 新增 `ftp_download` 开关（默认 true）；false 时走纯拍摄/纯录像分支（不碰 FTP）；新增无网络场景 no_network.yaml（prepare 去 wifi/ftp/preview，photo/video override ftp_download=false，去 rtmp/video_integrity） |
 | 2026-09-14 | [20260914_1358_rtmp码率可选配置.md](20260914_1358_rtmp码率可选配置.md) | RTMP 新增可选推流码率设置：rtmp_commands.py 加 RTMP_BITRATE_COMMAND/RTMP_BITRATE_TIMEOUT，rtmp.py 在 rtmp_video_start 之前可选发送 cam_set live bitrate（失败即 FAIL），rtmp.yaml 加 bitrate: 0（0=不设置，task.override 可覆盖） |

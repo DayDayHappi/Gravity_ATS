@@ -20,6 +20,7 @@
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
 | preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
+| utest | 跑一个固件 utest testcase，取框架 result 行作判据 | `[  PASSED  ] [ result ] testcase (<name>)` | 独立 `utest` 场景（ADR-012），不作 normal task |
 
 ---
 
@@ -120,3 +121,13 @@
 - **Dependency**：串口层。
 - **Forbidden Dependency**：**串口层只转发原始数据、不加业务逻辑**；monitor 不控制推流。
 - **Lifecycle**：与 rtmp 推流同生命周期。
+
+## utest（ADR-012）
+
+- **Responsibility**：跑一个固件 utest testcase，取框架 result 行作判据（固件已汇总，脚本不扫 unit 级业务输出）。
+- **Input**：`testcase`（必填，来自 scenario task 的 `override.testcase`）+ 可选 `timeout` 覆盖。
+- **Output**：`[  PASSED  ] [ result   ] testcase (<name>)` 出现即 PASS；FAILED/ERROR 出现即 FAIL/ERROR；无 result 行即 FAIL。`r.matched` 取 result 行的 status 字段。
+- **Dependency**：仅串口（prepare 的 `serial_init`）；**不依赖 WiFi/FTP/preview**。utest 固件 msh 提示符为 `msh >`（无斜杠），串口探测依赖 ADR-013 的 `serial_fingerprint: utest` 场景声明。
+- **Forbidden Dependency**：**不扫 `fail`/`error` 关键字**（`qspi_test` 的 `1 lane fail!` 是合法中间态，必须显式传 result 行 expect 避开 serial_console 默认 `_ERROR_RE`）；**不写 for**（跑哪些 testcase 由 scenario 逐项声明）；**不并入 normal/stress/aging**（独立 `utest` 场景）。
+- **协议**：命令/判据/超时映射唯一来源在 `ATS/drivers/utest_commands.py`（`UTEST_RUN_COMMAND`、`UTEST_RESULT_RE`、`UTEST_TESTCASES` 超时表），业务只 import 引用（ADR-011）。
+- **Lifecycle**：一次动作 = `exec_sync(utest_run <name>)` 跑一个 testcase，9 项由 scenario 驱动。FAILED result 行确切格式暂无实测样本，状态枚举已预留接口，未知状态走 `_error` 兜底。

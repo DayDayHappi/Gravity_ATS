@@ -33,10 +33,14 @@ class ScenarioError(Exception):
 
 @prepare_action("serial_init")
 def _action_serial_init(ctx, system_cfg):
-    """串口探测 + 打开 + 就绪 + 自检，console 存入 ctx.console。"""
+    """串口探测 + 打开 + 就绪 + 自检，console 存入 ctx.console。
+
+    按 ctx.serial_fingerprint（ADR-013）选择指纹集/就绪正则；默认 default（旧固件）。
+    """
     ser_cfg = system_cfg.get("serial", {})
     port = ser_cfg.get("port", "auto")
     baudrate = ser_cfg.get("baudrate", 2000000)
+    fingerprint_set = getattr(ctx, "serial_fingerprint", "default")
 
     if port in ("auto", "", None):
         port, detected_baud = detect_port(
@@ -44,6 +48,7 @@ def _action_serial_init(ctx, system_cfg):
             baud_candidates=ser_cfg.get("baudrate_candidates"),
             interactive=True,
             detect_timeout=ser_cfg.get("detect_timeout", 2.0),
+            fingerprint_set=fingerprint_set,
         )
         if port is None:
             raise ScenarioError("无法确定 EVB 串口，测试中止")
@@ -54,6 +59,7 @@ def _action_serial_init(ctx, system_cfg):
         timeout=ser_cfg.get("timeout", 2.0),
         ready_timeout=ser_cfg.get("ready_timeout", 60),
         sentinel_timeout=ser_cfg.get("sentinel_timeout", 5.0),
+        ready_set=fingerprint_set,
     )
     try:
         console.open()
@@ -327,6 +333,7 @@ class ScenarioManager:
         ctx.system_config = self.system_cfg
         ctx.no_interactive_wifi = no_interactive_wifi
         ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
+        ctx.serial_fingerprint = scenario.serial_fingerprint   # ADR-013
         self.ctx = ctx
 
         results = []
@@ -384,6 +391,7 @@ class ScenarioManager:
             tasks=tasks,
             cleanup=list(sc.get("cleanup", [])),
             loop=loop,
+            serial_fingerprint=sc.get("serial_fingerprint", "default"),
         )
 
     def _apply_module_overrides(self, scenario: Scenario, module_overrides: dict):

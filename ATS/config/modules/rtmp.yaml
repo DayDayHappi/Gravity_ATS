@@ -2,7 +2,7 @@
 stream_url: "rtmp://{pc_ip}/live/cam"   # application=live, stream key=cam（对齐 nginx.conf）
 stream_duration: 1200                    # 推流持续时长(秒)；scenario 里 task.duration 可覆盖
 heartbeat_timeout: 40                  # 超该秒数无 f_index 判推流异常停止
-bitrate: 10000000                             # 推流码率(可选)，0=不设置；scenario 里 task.override.bitrate 可覆盖
+bitrate: 0                             # 推流码率(可选)，0=不设置；scenario 里 task.override.bitrate 可覆盖
 # 内置静态构建 ffmpeg 套件（相对 cwd 项目根目录）
 ffprobe_path: "tools/ffmpeg/ffprobe"   # 必需：ffprobe 实时探测 RTMP 流（主判据）
 ffmpeg_path: "tools/ffmpeg/ffmpeg"

@@ -11,3 +11,4 @@ from . import photo  # noqa: F401
 from . import video  # noqa: F401
 from . import rtmp  # noqa: F401
 from . import video_integrity  # noqa: F401
+from . import utest  # noqa: F401  (注册 utest，ADR-012)

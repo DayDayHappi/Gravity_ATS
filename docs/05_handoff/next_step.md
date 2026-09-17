@@ -40,6 +40,21 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - **次要遗留（NON-BLOCKING）**：`_detect_missing_poc` 未用 `expected_gop_size` 校验实际 GOP 长度（`fixed_gop` confidence 未验证 GOP=30）；`_merge` 对 base 缺失的 deep-merge 段会静默丢弃（现状无害）；`NO_MATCHING_VIDEO` 已定义但从未产出。
 - **已新增（devlog `20260908_1847`）**：selection 值 `all_unchecked`（过滤已检 + 取全部，与 latest_unchecked 对称），解决 video task `repeat` 录多个文件时的「全检 + 跨 loop 不重复检」；现有 latest/all/latest_unchecked 行为不变。
 
+## 🟡 P1 — utest 独立模块与场景（已实施·真机发现待修复项）
+
+设计已定：[ADR-012](../02_design/decision_record/ADR-012-utest统一日志框架接入.md) + [ADR-013](../02_design/decision_record/ADR-013-串口探测指纹按场景分派.md)。
+
+- **已实施**（Code Agent）：`drivers/utest_commands.py` + `modules/utest.py` + `config/modules/utest.yaml` + `config/scenarios/utest.yaml` + ADR-013 的 `serial_fingerprint` 透传。真机已跑通（utest 探测指纹 `msh >` 生效，9 项 testcase 均执行）。
+- **待修复（Code Agent，本次）**：
+  1. `pvt_auto_test` 脚本超时偏紧：`UTEST_TESTCASES` 里 10s，但实际 2 个 unit（`jx_pvt_auto_test` + `jx_pvt_dual_auto_test`）跑 10.2s → 哨兵超时。→ 超时调大（建议 20s，与 i2c 组对齐）。
+  2. `utest.py` 误报「状态未知」：`exec_sync` 哨兵超时会直接失败返回（不看 expect），即使 result 行已出现；utest.py 的 `any_m` 分支把已匹配到的**白名单状态 `PASSED`** 误报为「状态未知」。→ 修正判据：`exec_sync` 失败后先用 `UTEST_RESULT_RE`（白名单）对 `r.clean` 重判，命中则按 status 出结果（result 行已出现=业务已完成，哨兵超时只是跑得慢），命中不了才走「真未知状态/无 result 行」分支。
+  3. `utest.yaml` 去掉 `qspi_test` task（`UTEST_TESTCASES` 里的 qspi_test 映射可保留，未来想加回方便）。
+  4. `utest.py` L46 去掉 `（脚本超时 {timeout:g}s）` 日志打印。
+- 待真机补充：FAILED/ERROR/SKIPPED 的 result 行确切格式暂无样本（状态枚举已预留）。
+- `utest_list` 本期不做（仅预留常量）。
+
+> **配套（ADR-013）**：utest 固件 msh 提示符为 `msh >`（无斜杠），旧指纹 `msh\s*/>` 不匹配，按场景分派探测/就绪指纹。已实施：`utest.yaml` 的 `serial_fingerprint: utest` + `serial_console.py` 的 `_FINGERPRINT_SETS`/`_READY_RE_SETS` 映射 + `detect_port`/`SerialConsole` 可选参数 + `scenario.py` 的 `serial_fingerprint` 字段 + `scenario_manager.py` 透传。旧固件 default 路径逐字不动。
+
 ## 🟡 P1 — 新增场景 stress_traverse_photo_mode_seq（待实施）
 
 需求已整理：[新增场景需求_stress_traverse_photo_mode_seq.md](../03_development/archive/新增场景需求_stress_traverse_photo_mode_seq.md)。

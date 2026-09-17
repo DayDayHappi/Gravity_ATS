@@ -13,7 +13,7 @@
              │ Task 列表
 调度层    Runner（repeat / loop / 重试 / fail-fast）
              │ 逐个模块调用
-模块层    wifi / emmc / ftp / photo / video / rtmp（一次测试动作）
+模块层    wifi / emmc / ftp / photo / video / rtmp / utest（一次测试动作）
              │ 调用通信接口
 通信层    SerialConsole（串口） / FtpClient / RtmpReceiver / PreviewManager
              │
