@@ -16,6 +16,7 @@ nginx-rtmp 配置要求：``application live { live on; record off; }``，故推
 ``rtmp://<pc_ip>/live/cam`` 中 ``live`` 是 application 名、``cam`` 是 stream key。
 """
 import time
+import os
 import socket
 
 from ..core import logger
@@ -48,14 +49,15 @@ class RtmpServer:
         if not self._wait_port_ready(timeout):
             raise RtmpServerError(
                 f"nginx-rtmp 服务端未就绪: {self.port} 端口未监听。"
-                f"请手动启动 nginx-rtmp（systemctl start nginx 或 nginx 命令），"
-                f"并确认配置了 application live（监听 1935）。")
-        logger.info(f"nginx-rtmp 就绪，RTMP 监听 :{self.port}")
+                + ("请先在 Windows 启动已集成 RTMP 模块的 nginx.exe；"
+                   if os.name == "nt" else "请手动启动 nginx-rtmp（systemctl start nginx 或 nginx）；")
+                + "确认配置了 application live；普通 nginx 不等于带 RTMP 模块的构建。")
+        logger.info(f"本机 TCP :{self.port} 可连接（不代表已验证 nginx 模块；流由 ffprobe 后续验证）")
 
     def _wait_port_ready(self, timeout: float) -> bool:
         """轮询本机端口是否进入 LISTEN。"""
-        deadline = time.time() + timeout
-        while time.time() < deadline:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
             if self._is_port_listening():
                 return True
             time.sleep(0.2)

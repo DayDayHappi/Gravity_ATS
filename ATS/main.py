@@ -12,7 +12,7 @@
   3. 检查 PC 端依赖 (pyserial, ffprobe)
   4. 交给 ScenarioManager 编排：prepare -> tasks(loop) -> cleanup
   5. 生成 JSON/JUnit/HTML 报告
-  6. 返回退出码: 0 全过 / 1 有失败 / 2 环境配置错
+  6. 返回退出码: 0 全过 / 1 有失败 / 2 环境配置错 / 130 用户中断
 """
 import os
 import sys
@@ -51,34 +51,76 @@ def parse_args(argv=None):
     p.add_argument("--dry-run", action="store_true", help="仅校验配置和依赖，不执行")
     p.add_argument("--terminal", action="store_true",
                    help="交互式串口终端(类Xcom)：手动发命令、实时看板子返回，用于调试")
+    p.add_argument("--list-ports", action="store_true", help="只枚举主机串口，不打开或探测")
+    p.add_argument("--no-preview", action="store_true", help="本次关闭 ffplay 观察，不关闭 RTMP 自动判据")
+    p.add_argument("--no-problem-prompt", action="store_true", help="结束时不询问问题记录（用于批处理）")
+    p.add_argument("--input-dir", help="覆盖 video_integrity 的本地输入目录，选择全部匹配视频")
     p.add_argument("--raw", action="store_true",
                    help="串口终端模式下显示原始字节(不剥离ANSI颜色码)")
     return p.parse_args(argv)
 
 
 def check_dependencies(system_cfg, scenario, config_dir) -> bool:
-    """检查 PC 端依赖，返回是否有缺失。"""
+    """按本次实际任务检查依赖；本地 H265 场景不要求 pyserial/板端/网络。"""
+    from ATS.platform.tools import resolve_tool, ToolError
+    import importlib
+    importlib.import_module("ATS.modules")
+    from ATS.modules.base import get_module_cls
+
     missing = []
-    try:
-        import serial  # noqa: F401
-    except ImportError:
-        missing.append("pyserial (pip install pyserial)")
+    needs_serial = "serial_init" in scenario.prepare or any(
+        t.module != "video_integrity" for t in scenario.tasks)
+    if needs_serial:
+        try:
+            import serial  # noqa: F401
+        except ImportError:
+            missing.append("pyserial (python -m pip install -r ATS/requirements-cli.txt)")
 
-    # ffprobe 在场景含 rtmp 时必需（实时探测 RTMP 流）
-    if any(t.module == "rtmp" for t in scenario.tasks):
-        rtmp_cfg = load_module_config("rtmp", config_dir)
-        tool_missing = RtmpReceiver.check_tools(
-            rtmp_cfg.get("ffprobe_path", "ffprobe"),
-        )
-        for t in tool_missing:
-            missing.append(t)
-
+    checked = set()
+    for task in scenario.tasks:
+        cls = get_module_cls(task.module)
+        if cls is None:
+            missing.append(f"未注册模块: {task.module}")
+            continue
+        try:
+            cfg = cls(load_module_config(task.module, config_dir))._merge(task.override)
+        except (ConfigError, TypeError, ValueError) as exc:
+            missing.append(str(exc))
+            continue
+        tool_name = {"rtmp": "ffprobe", "video_integrity": "ffmpeg"}.get(task.module)
+        if tool_name:
+            preferred = cfg.get(tool_name + "_path")
+            key = (tool_name, str(preferred))
+            if key not in checked:
+                checked.add(key)
+                try:
+                    path = resolve_tool(tool_name, preferred)
+                    logger.info(f"工具校验通过: {tool_name} = {path}")
+                except ToolError as exc:
+                    missing.append(str(exc))
     if missing:
-        logger.error("缺少依赖:")
-        for m in missing:
-            logger.error(f"  - {m}")
+        logger.error("配置/依赖检查失败:")
+        for item in missing:
+            logger.error(f"  - {item}")
         return False
     return True
+
+
+def list_ports_cmd():
+    from ATS.platform.ports import list_ports
+    try:
+        ports = list_ports()
+    except (RuntimeError, OSError) as exc:
+        print(f"[错误] {exc}", file=sys.stderr)
+        return 2
+    print("主机串口（仅枚举，未打开设备）:")
+    for item in ports:
+        vid, pid = getattr(item, "vid", None), getattr(item, "pid", None)
+        usb = f" VID:PID={vid:04X}:{pid:04X}" if vid is not None and pid is not None else ""
+        print(f"  {item.device}: {getattr(item, 'description', '')}{usb}")
+    if not ports:
+        print("  未发现串口；请检查设备驱动与连接。")
+    return 0
 
 
 def list_modules_cmd():
@@ -164,10 +206,19 @@ def _record_test_problem(run_ts: str, problem_root: str) -> None:
         logger.error(f"写入 problem 记录失败: {e}")
 
 
-def main(argv=None) -> int:
+def _main(argv=None) -> int:
     args = parse_args(argv)
-    config_dir = args.config_dir or CONFIG_DIR
+    config_dir = os.path.abspath(args.config_dir or CONFIG_DIR)
+    # 保留系统控制台编码；重定向到旧代码页时用转义保底，不让报告流程因打印崩溃。
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(errors="backslashreplace")
+            except (OSError, ValueError):
+                pass
 
+    if args.list_ports:
+        return list_ports_cmd()
     if args.list_modules:
         list_modules_cmd()
         return 0
@@ -203,6 +254,10 @@ def main(argv=None) -> int:
     module_overrides = {}
     if args.format:
         module_overrides["emmc"] = {"format": True}
+    if args.input_dir:
+        module_overrides["video_integrity"] = {
+            "input": {"source": "directory", "directory": os.path.abspath(os.path.expanduser(args.input_dir)),
+                      "selection": "all"}}
 
     # 3. 初始化日志（按场景隔离目录）
     log_root, report_root, problem_root = _resolve_output_dirs(
@@ -215,6 +270,9 @@ def main(argv=None) -> int:
     manager = ScenarioManager(config_dir)
     try:
         scenario = manager.load(args.scenario)
+        if args.input_dir and not any(t.module == "video_integrity" for t in scenario.tasks):
+            raise ConfigError("--input-dir 只适用于包含 video_integrity 任务的场景")
+        manager._apply_module_overrides(scenario, module_overrides)
     except (ConfigError, ScenarioError) as e:
         logger.error(f"加载场景失败: {e}")
         logger.close()
@@ -245,38 +303,71 @@ def main(argv=None) -> int:
     # 6. 执行场景
     results = []
     env_error = False
+    interrupted = False
     try:
         results = manager.run(
             args.scenario,
             no_interactive_wifi=args.no_interactive_wifi,
             module_overrides=module_overrides,
             system_cfg=system_cfg,
+            no_preview=args.no_preview,
         )
+        interrupted = manager.interrupted
+    except KeyboardInterrupt:
+        interrupted = True
+        results = manager.results
+        if not results:
+            from ATS.core.result import TestResult
+            results.append(TestResult(name="interrupted", module="prepare", status="ERROR",
+                                      scenario=args.scenario, message="用户在准备阶段中断"))
+        logger.warn("测试中断，尝试生成已完成部分的报告")
     except ScenarioError as e:
         logger.error(f"测试中止: {e}")
+        results = manager.results
         env_error = True
     except Exception as e:
         logger.error(f"测试执行异常: {e}")
+        results = manager.results
         env_error = True
 
-    # 7. 生成报告
+    # 7. 即使中断也生成已完成结果；报告失败不阻止日志句柄关闭。
     out_dir = os.path.join(report_root, run_ts)
     rpt_cfg = system_cfg.get("report", {})
     from ATS.core.reporter import generate as gen_report
-    gen_report(results, out_dir,
-               junit=rpt_cfg.get("junit", True),
-               html=rpt_cfg.get("html", True))
+    try:
+        gen_report(results, out_dir,
+                   junit=rpt_cfg.get("junit", True), html=rpt_cfg.get("html", True))
+        if not args.no_problem_prompt and not interrupted:
+            _record_test_problem(run_ts, problem_root)
+    except KeyboardInterrupt:
+        interrupted = True
+        logger.warn("报告/交互阶段被中断")
+    except Exception as exc:
+        env_error = True
+        logger.error(f"报告生成失败: {exc}")
+    finally:
+        logger.close()
 
-    # 7.5 询问本次测试问题
-    _record_test_problem(run_ts, problem_root)
-
-    logger.close()
-
-    # 退出码：2 环境错 / 1 有失败 / 0 全过
+    if interrupted:
+        return 130
     if env_error:
         return 2
     has_fail = any(r.status in ("FAIL", "ERROR") for r in results)
     return 1 if has_fail else 0
+
+
+def main(argv=None) -> int:
+    """最外层资源边界；包括配置/依赖检查阶段的 Ctrl+C。"""
+    try:
+        return _main(argv)
+    except KeyboardInterrupt:
+        logger.warn("用户中断启动/检查阶段")
+        return 130
+    except Exception as exc:
+        logger.error(f"启动/环境异常: {exc}")
+        return 2
+    finally:
+        logger.close()
 
 
 if __name__ == "__main__":

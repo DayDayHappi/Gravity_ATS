@@ -55,6 +55,7 @@ def _action_serial_init(ctx, system_cfg):
         ready_timeout=ser_cfg.get("ready_timeout", 60),
         sentinel_timeout=ser_cfg.get("sentinel_timeout", 5.0),
     )
+    ctx.console = console  # 打开/就绪/自检被中断时，Context 仍能兜底释放。
     try:
         console.open()
     except SerialError as e:
@@ -214,8 +215,8 @@ def _action_preview_start(ctx, system_cfg):
     from ..drivers.rtmp_server import RtmpServer, RtmpServerError
     from .config import load_module_config
 
-    preview_cfg = load_module_config("preview")
-    rtmp_cfg = load_module_config("rtmp")
+    preview_cfg = load_module_config("preview", getattr(ctx, "config_dir", None))
+    rtmp_cfg = load_module_config("rtmp", getattr(ctx, "config_dir", None))
 
     # pc_ip 解析顺序：system.pc.ip -> auto 探测（复用 preview_manager._detect_pc_ip）
     evb_ip = getattr(ctx, "evb_ip", None)
@@ -258,11 +259,13 @@ def _action_stop_stream(ctx, system_cfg):
     if console is None:
         return
     try:
-        console.exec_async(rtmp_commands.RTMP_STOP_COMMAND,
-                           expect=rtmp_commands.RTMP_STOP_EXPECT,
-                           result_timeout=rtmp_commands.RTMP_STOP_TIMEOUT)
-    except Exception:
-        pass
+        response = console.exec_async(rtmp_commands.RTMP_STOP_COMMAND,
+                                      expect=rtmp_commands.RTMP_STOP_EXPECT,
+                                      result_timeout=rtmp_commands.RTMP_STOP_TIMEOUT)
+        if not response.success:
+            logger.warn("cleanup 停止推流未确认，请检查板端状态")
+    except Exception as exc:
+        logger.warn(f"cleanup 停止推流失败，板端状态未确认: {exc}")
 
 
 @cleanup_action("preview_stop")
@@ -300,6 +303,8 @@ class ScenarioManager:
         self.config_dir = config_dir or CONFIG_DIR
         self.system_cfg = None
         self.ctx = None
+        self.results = []
+        self.interrupted = False
         self.preview_cfg = {}   # scenario 层 preview 开关（ADR-010），load 时解析
 
     def load(self, name: str) -> Scenario:
@@ -309,7 +314,8 @@ class ScenarioManager:
         return self._parse_scenario(raw, name)
 
     def run(self, scenario_name: str, no_interactive_wifi: bool = False,
-            module_overrides: dict = None, system_cfg: dict = None) -> list:
+            module_overrides: dict = None, system_cfg: dict = None,
+            no_preview: bool = False) -> list:
         """执行一个场景：prepare → (loop: tasks) → cleanup，返回 TestResult 列表。
 
         Args:
@@ -325,11 +331,13 @@ class ScenarioManager:
 
         ctx = Context()
         ctx.system_config = self.system_cfg
+        ctx.config_dir = self.config_dir
         ctx.no_interactive_wifi = no_interactive_wifi
-        ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
+        ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False)) and not no_preview
         self.ctx = ctx
 
-        results = []
+        self.results = []
+        self.interrupted = False
         try:
             # prepare
             for action in scenario.prepare:
@@ -337,22 +345,33 @@ class ScenarioManager:
 
             # tasks（loop 由 runner 控制）
             from .runner import TestRunner
-            runner = TestRunner(self.system_cfg, ctx, scenario)
-            results = runner.run()
+            runner = TestRunner(self.system_cfg, ctx, scenario, config_dir=self.config_dir)
+            # 在 run 之前持有结果列表；后续配置/执行异常也不会丢失前面的结果。
+            self.results = runner.results
+            runner.run()
+        except KeyboardInterrupt:
+            ctx.interrupted = True
+            raise
         finally:
+            self.interrupted = bool(getattr(ctx, "interrupted", False))
             # cleanup 始终执行
             for action in scenario.cleanup:
                 try:
                     self._run_action(action, ctx, "cleanup")
+                except KeyboardInterrupt:
+                    self.interrupted = True
+                    logger.warn(f"cleanup 动作 {action} 被中断，继续释放其余资源")
                 except Exception as e:
                     logger.warn(f"cleanup 动作 {action} 异常: {e}")
             # 关闭 ctx 持有的资源（如 FTP 连接）
             try:
                 ctx.cleanup()
-            except Exception:
-                pass
+            except KeyboardInterrupt:
+                self.interrupted = True
+            except Exception as exc:
+                logger.warn(f"Context 资源释放异常: {exc}")
 
-        return results
+        return self.results
 
     # ---------- 内部 ----------
 
@@ -388,9 +407,17 @@ class ScenarioManager:
 
     def _apply_module_overrides(self, scenario: Scenario, module_overrides: dict):
         """把 CLI 模块覆盖合并进对应 task 的 override。"""
+        def merge(base, over):
+            out = dict(base)
+            for key, value in over.items():
+                if isinstance(out.get(key), dict) and isinstance(value, dict):
+                    out[key] = merge(out[key], value)
+                else:
+                    out[key] = value
+            return out
         for task in scenario.tasks:
             if task.module in module_overrides:
-                task.override = {**task.override, **module_overrides[task.module]}
+                task.override = merge(task.override, module_overrides[task.module])
 
     def _run_action(self, action: str, ctx: Context, kind: str):
         registry = PREPARE_ACTIONS if kind == "prepare" else CLEANUP_ACTIONS

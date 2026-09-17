@@ -103,17 +103,24 @@ class SerialConsole:
     # ---------- 生命周期 ----------
 
     def open(self):
-        """打开串口并启动读线程。"""
+        """打开串口并启动读线程；初始化失败也关闭已获得的句柄。"""
         try:
             self._ser = serial.Serial(
                 self.port, self.baudrate,
-                timeout=self.timeout,  # read 超时
-                write_timeout=self.timeout,
+                timeout=self.timeout, write_timeout=self.timeout,
             )
-        except Exception as e:
-            raise SerialError(f"打开串口 {self.port} 失败: {e}")
-        self._ser.reset_input_buffer()
-        self._ser.reset_output_buffer()
+            self._ser.reset_input_buffer()
+            self._ser.reset_output_buffer()
+        except BaseException as e:
+            if self._ser is not None:
+                try:
+                    self._ser.close()
+                except Exception:
+                    pass
+                self._ser = None
+            if not isinstance(e, Exception):
+                raise
+            raise SerialError(f"打开串口 {self.port} 失败: {e}") from e
         self._stop_event.clear()
         self._reader_thread = threading.Thread(
             target=self._reader_loop, name="serial-reader", daemon=True
@@ -125,6 +132,12 @@ class SerialConsole:
         """停止读线程并关闭串口。"""
         self._stop_event.set()
         self._notify_all()
+        # pyserial Windows/POSIX 后端支持时唤醒阻塞 read，避免等待整个 read timeout。
+        if self._ser is not None:
+            try:
+                self._ser.cancel_read()
+            except (AttributeError, OSError):
+                pass
         if self._reader_thread and self._reader_thread.is_alive():
             self._reader_thread.join(timeout=2.0)
         if self._ser:
@@ -460,13 +473,12 @@ class SerialConsole:
 # ---------- 自动探测 ----------
 
 def _list_candidate_ports() -> list:
-    """枚举当前用户可访问的 /dev/ttyUSB* 和 /dev/ttyACM*。"""
-    ports = sorted(set(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")))
-    accessible = []
-    for p in ports:
-        if os.access(p, os.R_OK | os.W_OK):
-            accessible.append(p)
-    return accessible
+    """跨平台枚举（Windows COM，Linux USB/ACM），指纹/波特率探测保持原样。"""
+    from ..platform.ports import candidate_ports
+    try:
+        return candidate_ports()
+    except RuntimeError as exc:
+        raise SerialError(str(exc)) from exc
 
 
 def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0) -> bool:
@@ -529,8 +541,11 @@ def detect_port(baudrate: int = 2000000,
 
     ports = _list_candidate_ports()
     if not ports:
-        logger.error("未发现任何可访问的串口设备 (/dev/ttyUSB* /dev/ttyACM*)")
-        logger.error("请检查: 1) EVB 已上电并连接  2) 当前用户在 dialout 组  3) USB-串口驱动已加载")
+        logger.error("未发现可用于自动探测的串口；可用 --list-ports 查看设备")
+        if os.name == "nt":
+            logger.error("请检查 EVB 接线、设备管理器 USB 串口驱动；关闭 Xcom 等占用程序；可指定 --port COM10")
+        else:
+            logger.error("请检查 EVB 接线、dialout 组权限、/dev/ttyUSB* 或 /dev/ttyACM* 设备")
         return None, None
 
     logger.info(f"开始自动探测 EVB 串口，候选端口 {ports}，候选波特率 {ordered}")

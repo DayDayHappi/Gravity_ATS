@@ -1,5 +1,10 @@
 # 当前状态（Current Status）
 
+> **2026-09-16增量状态**：Windows CLI平台适配已实施；不含UI/EXE。
+> 已完成Linux自动化及真实本地FFmpeg验证，Windows原生与Ubuntu EVB回归待验。
+> 见 [安装指南](windows_cli_使用指南.md) 和 [验收记录](../04_testing/windows_cli_acceptance.md)。
+> 以下旧状态段落保留历史上下文，不作为Windows已验收证据。
+
 ## Current Version
 
 分支 `new_arch`，Scenario 层重构完成（4 个提交）+ 20260824 改动（normal 移除重复 ftp task、修复 no-interactive-wifi 断链、WiFi 职责重划 ADR-008）+ 20260825/26 改动（ADR-010 PreviewManager、photo/video 判据修复、新增 stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据加 f_index 兜底 + 失败清理、录像前暂时取消 cam_set），**均尚未真机验证**。

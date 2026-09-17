@@ -1,0 +1,27 @@
+# Ubuntu / Windows 共用小规模冒烟，不修改正式 normal/stress 参数。
+# 本轮必须实际拿到视频，故 H265 无输入按 FAIL，而非 SKIP。
+scenario:
+  name: cli_smoke_capture
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  tasks:
+    - module: emmc
+    - module: photo
+      repeat: 1
+    - module: video
+      duration: 5
+      override:
+        video_resolution: sd1080p_0
+    - module: video_integrity
+      override:
+        input:
+          source: current_run
+          selection: all_unchecked
+          empty_input_policy: fail
+  cleanup:
+    - close_serial

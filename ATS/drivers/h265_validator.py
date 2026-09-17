@@ -26,11 +26,13 @@ import os
 import re
 import shutil
 import subprocess
-import threading
+import tempfile
 from dataclasses import dataclass, field
 from typing import Optional
 
 from ..core import logger
+from ..platform.tools import resolve_tool, ToolError
+from ..platform.processes import spawn, run_capture, terminate_process
 
 # ---------------------------------------------------------------------------
 # 错误分类（需求 §10 + §20.2 补充）
@@ -116,25 +118,22 @@ class H265Validator:
 
     @staticmethod
     def _resolve_ffmpeg(path: str) -> str:
-        if not path:
+        try:
+            resolved = resolve_tool("ffmpeg", path)
+            logger.info(f"H265 ffmpeg 使用: {resolved}")
+            return resolved
+        except ToolError as exc:
+            logger.warn(str(exc))
             return ""
-        if shutil.which(path) or os.path.isfile(path):
-            return path
-        sysp = shutil.which("ffmpeg")
-        if sysp:
-            return sysp
-        return path  # 保留原值，validate 时报 TOOL_NOT_FOUND
 
     def tool_available(self) -> bool:
-        return bool(self.ffmpeg) and (shutil.which(self.ffmpeg) or os.path.isfile(self.ffmpeg))
+        # resolve_tool 已执行 -version；这里不重复启动进程。
+        return bool(self.ffmpeg) and os.path.isfile(self.ffmpeg)
 
     def _trace_available(self) -> bool:
         if self._trace_supported is None:
             try:
-                out = subprocess.run(
-                    [self.ffmpeg, "-hide_banner", "-bsfs"],
-                    capture_output=True, text=True, timeout=30,
-                )
+                out = run_capture([self.ffmpeg, "-hide_banner", "-bsfs"], timeout=30)
                 self._trace_supported = "trace_headers" in (out.stdout or "")
             except Exception:
                 self._trace_supported = False
@@ -174,52 +173,39 @@ class H265Validator:
     # ------------------------------------------------------------------
 
     def _spawn(self, argv, timeout, log_path, collector=None):
-        """运行 FFmpeg，stderr 写文件 + 逐行回调。返回 ``(returncode, timed_out)``。
+        """stderr 直接落盘；回收进程后逐行解析，不积压 PIPE/读线程。
 
-        collector(line) 在独立读线程内被调用，用于按行解析（海量日志不载入内存）。
+        Timeout 和 KeyboardInterrupt 都通过 finally 终止并 wait；解析规则和
+        三阶段 argv 保持不变。无日志路径时使用自动删除的临时文件。
         """
-        os.makedirs(os.path.dirname(log_path), exist_ok=True) if log_path else None
-        fh = open(log_path, "w", encoding="utf-8", errors="replace") if log_path else None
+        if log_path:
+            os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+            output = open(log_path, "w+", encoding="utf-8", errors="replace")
+        else:
+            output = tempfile.TemporaryFile(mode="w+", encoding="utf-8", errors="replace")
         timed_out = False
-        try:
-            proc = subprocess.Popen(
-                argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
-                text=True, bufsize=1, errors="replace",
-            )
-
-            def _reader():
-                try:
-                    for line in proc.stderr:
-                        if fh:
-                            fh.write(line)
-                        if collector:
-                            try:
-                                collector(line)
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
-
-            t = threading.Thread(target=_reader, daemon=True)
-            t.start()
+        proc = None
+        with output:
             try:
-                rc = proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                timed_out = True
+                proc = spawn(argv, stdout=subprocess.DEVNULL, stderr=output)
                 try:
-                    proc.kill()
-                except Exception:
-                    pass
-                try:
-                    proc.wait(timeout=5)
-                except Exception:
-                    pass
-                rc = proc.returncode if proc.returncode is not None else -9
+                    rc = proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                    if not terminate_process(proc):
+                        raise RuntimeError("FFmpeg 超时后仍未退出")
+                    rc = proc.returncode if proc.returncode is not None else -9
             finally:
-                t.join(timeout=2)
-        finally:
-            if fh:
-                fh.close()
+                if proc is not None and not terminate_process(proc):
+                    logger.error(f"FFmpeg 子进程未能回收: pid={proc.pid}")
+            if collector is not None:
+                output.flush()
+                output.seek(0)
+                for line in output:
+                    try:
+                        collector(line)
+                    except Exception:
+                        pass  # 保留原诊断回调容错语义；不因单行解析失败打断全日志扫描。
         return rc, timed_out
 
     # ------------------------------------------------------------------

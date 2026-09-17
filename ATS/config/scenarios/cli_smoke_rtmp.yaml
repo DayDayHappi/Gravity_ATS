@@ -1,0 +1,20 @@
+# Ubuntu / Windows 共用 RTMP 冒烟：不启用 FTP，不自动启动 nginx。
+# 先配置/自检 PC RTMP 服务，再运行本场景；预览独立、可选。
+scenario:
+  name: cli_smoke_rtmp
+  preview:
+    enabled: true
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - preview_start
+  tasks:
+    - module: rtmp
+      duration: 15
+      override:
+        heartbeat_timeout: 10
+  cleanup:
+    - stop_stream
+    - preview_stop
+    - close_serial

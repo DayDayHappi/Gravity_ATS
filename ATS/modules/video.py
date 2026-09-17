@@ -213,9 +213,11 @@ class VideoModule(TestModule):
         """尽力收尾，不覆盖原失败结果；不把清理成功当作本次录像成功。"""
         logger.warn(f"录像异常，补发 {commands.VIDEO_STOP_COMMAND} 清理状态（best-effort）...")
         try:
-            console.exec_async(commands.VIDEO_STOP_COMMAND,
-                               expect=commands.VIDEO_CLEANUP_EXPECT,
-                               result_timeout=commands.VIDEO_CLEANUP_TIMEOUT)
+            response = console.exec_async(commands.VIDEO_STOP_COMMAND,
+                                          expect=commands.VIDEO_CLEANUP_EXPECT,
+                                          result_timeout=commands.VIDEO_CLEANUP_TIMEOUT)
+            if not response.success:
+                logger.warn("录像清理已尝试，但板端未确认停止；请检查连接和板端状态")
         except Exception as exc:
             logger.warn(f"清理录像状态异常(可忽略): {exc}")
         finally:

@@ -60,6 +60,7 @@ class FtpClient:
         # 若已存在旧连接（同一对象复用），先关闭避免泄漏旧 socket。
         self._safe_close()
         for attempt in range(1, self.retry + 1):
+            ftp = None
             try:
                 ftp = FTP()
                 ftp.connect(self.host, self.port, timeout=self.timeout)
@@ -72,10 +73,18 @@ class FtpClient:
                 self._ftp = ftp
                 logger.debug(f"FTP 已连接 {self.host}:{self.port} (尝试 {attempt})")
                 return
-            except Exception as e:
+            except BaseException as e:
+                # 登录成功前 ftp 尚未写入 self._ftp；失败/中断也必须关闭局部句柄。
+                if ftp is not None:
+                    try:
+                        ftp.close()
+                    except Exception:
+                        pass
+                self._safe_close()
+                if not isinstance(e, Exception):
+                    raise
                 last_err = e
                 logger.debug(f"FTP 连接失败(尝试 {attempt}/{self.retry}): {e}")
-                self._safe_close()
                 time.sleep(self.interval)
         raise FtpError(f"FTP 连接失败（重试 {self.retry} 次）: {last_err}")
 

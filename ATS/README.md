@@ -1,5 +1,10 @@
 # VX100 EVB 上位机自动化测试脚本
 
+> **2026-09-16 Windows CLI 增量版**：同一源码支持跨平台适配，不含Qt/UI。
+> 安装和运行请先读 [Windows命令行指南](../docs/05_handoff/windows_cli_使用指南.md)，
+> 验证边界见 [验收记录](../docs/04_testing/windows_cli_acceptance.md)。Windows/Ubuntu EVB真机回归仍待完成。
+> 下方原Ubuntu快速开始保留；中断退出码新增130；预览改为直接启动ffplay，不再另开终端模拟器。
+
 通过串口 + 网络与 VX100 EVB 板交互，自动执行功能测试（WiFi / eMMC / FTP / 拍照 / 录像 / RTMP），生成 JSON / JUnit / HTML 报告。
 
 - **被测系统**：RT-Thread msh shell（UART0），双核异构 RISC-V

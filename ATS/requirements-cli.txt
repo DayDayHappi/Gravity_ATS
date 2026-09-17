@@ -1,0 +1,4 @@
+# CLI only; intentionally does not include Qt, pytest-qt or PyInstaller.
+pyserial==3.5
+PyYAML==6.0.3
+Jinja2==3.1.6

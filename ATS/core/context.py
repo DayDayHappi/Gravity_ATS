@@ -53,11 +53,22 @@ class Context:
         return dict(self._data)
 
     def cleanup(self):
-        """清理上下文持有的资源（如 FTP 连接）。由 runner 在结束时调用。"""
-        ftp = self._data.get("ftp_client")
-        if ftp is not None:
-            try:
-                ftp.close()
-            except Exception:
-                pass
+        """兜底释放本次 Context 资源；即使 YAML 漏了 cleanup 动作也不泄漏。
+
+        Board stop 命令仍由 module/scenario 负责；这里不引入固件协议。
+        """
+        interrupted = False
+        for key, method in (("preview_manager", "stop"), ("ftp_client", "close"),
+                            ("console", "close")):
+            resource = self._data.get(key)
+            if resource is not None:
+                try:
+                    getattr(resource, method)()
+                except KeyboardInterrupt:
+                    interrupted = True
+                except Exception as exc:
+                    from . import logger
+                    logger.warn(f"清理 {key} 异常: {exc}")
         self._data.clear()
+        if interrupted:
+            raise KeyboardInterrupt  # 其它资源均已尝试释放，再把中断交给编排层。

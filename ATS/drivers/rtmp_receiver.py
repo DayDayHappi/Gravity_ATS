@@ -23,20 +23,17 @@ import shutil
 import subprocess
 
 from ..core import logger
+from ..platform.tools import resolve_tool, ToolError
+from ..platform.processes import run_capture
 
 
 def _find_ffprobe(preferred=None) -> str:
-    """查找 ffprobe 可执行文件。顺序：preferred -> PATH -> 常见绝对路径。"""
-    if preferred and (shutil.which(preferred) or os.path.isfile(preferred)):
-        return preferred
-    p = shutil.which("ffprobe")
-    if p:
-        return p
-    for cand in ("/usr/bin/ffprobe", "/usr/local/bin/ffprobe",
-                 os.path.expanduser("~/bin/ffprobe")):
-        if os.path.isfile(cand):
-            return cand
-    return ""
+    """统一工具定位：平台匹配、绝对路径和 -version 验证。"""
+    try:
+        return resolve_tool("ffprobe", preferred)
+    except ToolError as exc:
+        logger.debug(str(exc))
+        return ""
 
 
 class RtmpReceiverError(Exception):
@@ -52,7 +49,9 @@ class RtmpReceiver:
 
     def __init__(self, ffprobe_path="ffprobe"):
         # 自动解析实际路径（找不到则保留原值，check_tools 会报缺失）
-        self.ffprobe_path = _find_ffprobe(ffprobe_path if ffprobe_path != "ffprobe" else None) or ffprobe_path
+        self.ffprobe_path = _find_ffprobe(ffprobe_path)
+        if self.ffprobe_path:
+            logger.info(f"ffprobe 使用: {self.ffprobe_path}")
         self._last_result = None  # 最近一次 probe 的结果
 
     @staticmethod
@@ -64,7 +63,7 @@ class RtmpReceiver:
         missing = []
         if not _find_ffprobe(ffprobe_path if ffprobe_path != "ffprobe" else None):
             missing.append("ffprobe (必需，验证 RTMP 流)"
-                           " — apt install ffmpeg 或用内置 tools/ffmpeg/ffprobe")
+                           " — 请部署当前平台 FFmpeg 套件，见 windows_cli_使用指南.md")
         return missing
 
     def probe(self, url: str, timeout: float = 45.0,
@@ -111,9 +110,7 @@ class RtmpReceiver:
 
         for i in range(1, attempts + 1):
             try:
-                out = subprocess.run(
-                    cmd, capture_output=True, text=True, timeout=timeout,
-                )
+                out = run_capture(cmd, timeout=timeout)
                 result = self._parse_probe(out)
                 if result["ok"]:
                     self._last_result = result

@@ -46,6 +46,8 @@ class RtmpModule(TestModule):
 
     def __init__(self, config):
         super().__init__(config)
+        self._stream_active = False
+        self._stop_warning = ""
         self._receiver = None
         self._server = None
         self._monitor = None           # RTMP 持续 heartbeat 检测器
@@ -74,6 +76,18 @@ class RtmpModule(TestModule):
         self._server = RtmpServer(port=1935)
 
     def run(self, ctx, console, params=None):
+        """每次尝试都收尾，避免重试/中断把活跃推流和监听器留给下一项。"""
+        self._stop_warning = ""
+        try:
+            return self._run_once(ctx, console, params)
+        finally:
+            try:
+                if self._stream_active:
+                    self._stop_after_error(console)
+            finally:
+                self._detach_listeners(console)
+
+    def _run_once(self, ctx, console, params=None):
         self.config = self._merge(params)
         pc_ip = getattr(ctx, "pc_ip", "")
         if not pc_ip:
@@ -120,6 +134,7 @@ class RtmpModule(TestModule):
         # 的匹配结果仍不作为 RTMP 最终判据，最终判据是 PC 端 ffprobe 探测到流。
         # 即便 exec_async 没匹配到也不立即 FAIL，留给 ffprobe 兜底。
         # 注：必须先推流后探测——ffprobe 连无流的源会立即 I/O error。
+        self._stream_active = True  # 即使开始确认超时/中断，板端仍可能已经启动。
         console.exec_async(
             commands.RTMP_START_COMMAND.format(url=url),
             expect=commands.RTMP_START_EXPECT,
@@ -174,11 +189,15 @@ class RtmpModule(TestModule):
             logger.info("推流探测失败，跳过保持阶段，直接停止推流...")
 
         # 7. 停止推流（exec_async 只发命令不发哨兵，等业务状态字符串）
-        console.exec_async(
+        stop_result = console.exec_async(
             commands.RTMP_STOP_COMMAND,
             expect=commands.RTMP_STOP_EXPECT,
             result_timeout=commands.RTMP_STOP_TIMEOUT,
         )
+        self._stream_active = not stop_result.success
+        if not stop_result.success:
+            self._stop_warning = "停止推流未确认；需要检查板端状态（主测试判据仍为 ffprobe + heartbeat）"
+            logger.warn(self._stop_warning)
 
         # TT ERROR listener 摘除（推流窗口结束）；teardown 仍兜底一次。
         if self._tt_monitor_cb is not None:
@@ -206,6 +225,8 @@ class RtmpModule(TestModule):
                              message=msg, detail=detail)
         res.elapsed_ms = timer.elapsed_ms()
         res.detail = self._attach_tt_hits(res.detail)
+        if self._stop_warning:
+            res.detail = (res.detail + "\n" + self._stop_warning).strip()
         return res
 
     @staticmethod
@@ -234,7 +255,33 @@ class RtmpModule(TestModule):
         )
         return (detail + "\n" + block) if detail else block
 
+    def _stop_after_error(self, console):
+        try:
+            response = console.exec_async(commands.RTMP_STOP_COMMAND,
+                                           expect=commands.RTMP_STOP_EXPECT,
+                                           result_timeout=commands.RTMP_STOP_TIMEOUT)
+            if not response.success:
+                logger.warn("RTMP 清理已尝试，但板端未确认停止；请检查连接和板端状态")
+        except Exception as exc:
+            logger.warn(f"RTMP 清理失败，板端状态未确认: {exc}")
+        finally:
+            self._stream_active = False  # 已尝试清理，不表示板端确认成功。
+
+    def _detach_listeners(self, console):
+        for attr in ("_monitor_cb", "_tt_monitor_cb"):
+            callback = getattr(self, attr, None)
+            if callback is not None:
+                try:
+                    console.remove_listener(callback)
+                except Exception as exc:
+                    logger.warn(f"RTMP 移除监听器失败: {exc}")
+                setattr(self, attr, None)
+        if self._monitor is not None:
+            self._monitor.stop()
+
     def teardown(self, ctx, console):
+        if self._stream_active:
+            self._stop_after_error(console)
         # 兜底移除 monitor listener（正常路径已在 run() 的 finally 移除；异常路径在此兜底）。
         if self._monitor_cb is not None:
             try:

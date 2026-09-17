@@ -1,5 +1,7 @@
 # 文档导航（Docs README）
 
+Windows CLI 增量交付（2026-09-16）：[安装运行](05_handoff/windows_cli_使用指南.md) · [验收](04_testing/windows_cli_acceptance.md) · [ADR-012](02_design/decision_record/ADR-012-Windows命令行移植.md)。
+
 > 本文件是文档知识库的**唯一导航入口**。Code Agent 只需读本文件，再按任务类型决定读哪些文件，**不要全量扫描**。
 
 ## 项目是什么

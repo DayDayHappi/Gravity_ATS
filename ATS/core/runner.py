@@ -17,7 +17,7 @@ import datetime as _dt
 import time
 
 from . import logger
-from .config import load_module_config
+from .config import load_module_config, CONFIG_DIR
 from .result import TestResult, PASSED, FAILED, SKIPPED, ERROR
 
 
@@ -28,10 +28,11 @@ class RunnerError(Exception):
 class TestRunner:
     """按场景 Task 列表执行模块的编排器。"""
 
-    def __init__(self, system_cfg, ctx, scenario):
+    def __init__(self, system_cfg, ctx, scenario, config_dir=None):
         self.system_cfg = system_cfg
         self.ctx = ctx
         self.scenario = scenario
+        self.config_dir = config_dir or getattr(ctx, "config_dir", None) or CONFIG_DIR
         self.console = getattr(ctx, "console", None)
         self.results: list = []           # 所有 TestResult
         self.module_status: dict = {}     # module name -> PASS/FAIL/SKIP/ERROR（本 cycle）
@@ -67,7 +68,11 @@ class TestRunner:
                 if loop.count is None and loop.duration is None:
                     logger.info(f"loop 无限循环，cycle {cycle} 完成，继续...（Ctrl+C 中断）")
         except KeyboardInterrupt:
-            logger.warn("用户中断循环")
+            if not getattr(self.ctx, "interrupted", False):
+                self._record(TestResult(name="interrupted", module="runner", status=ERROR,
+                                        message="用户中断运行"), cycle)
+            self.ctx.interrupted = True
+            logger.warn("用户中断循环；保留已完成结果")
         return self.results
 
     def _run_tasks(self, cycle: int):
@@ -95,7 +100,7 @@ class TestRunner:
                 continue
 
             # 参数合并：module 默认 + task.override + task.duration(经 duration_key)
-            module_defaults = load_module_config(task.module)
+            module_defaults = load_module_config(task.module, self.config_dir)
             params = dict(task.override or {})
             dk = getattr(cls, "duration_key", None)
             if task.duration is not None and dk:
@@ -107,20 +112,22 @@ class TestRunner:
                                  cycle, rep, repeat_total)
 
     def _run_module(self, name, cls, config, params, cycle, rep_index, repeat_total):
-        """执行单次模块：实例化 -> setup -> run(带重试) -> teardown。"""
+        """实例化 → 合并参数 → setup → run(重试) → finally teardown。"""
         label = name if repeat_total <= 1 else f"{name}[{rep_index + 1}/{repeat_total}]"
         mod_start = time.monotonic()
         logger.step(f">>> 模块 [{label}] 开始执行 (cycle {cycle})")
+        module = None
         try:
             module = cls(config)
-
+            # setup 中创建 ffprobe 等资源时也必须看到有效覆盖项。
+            # 使用模块自己的合并规则（video_integrity 的嵌套参数仍由它处理）。
+            module.config = module._merge(params)
             try:
                 module.setup(self.ctx, self.console)
             except Exception as e:
                 logger.error(f"[{label}] setup 异常: {e}")
-                self._record(TestResult(
-                    name=name, module=name, status=ERROR,
-                    message=f"setup 异常: {e}"), cycle, rep_index)
+                self._record(TestResult(name=name, module=name, status=ERROR,
+                                        message=f"setup 异常: {e}"), cycle, rep_index)
                 self.module_status[name] = ERROR
                 return
 
@@ -141,20 +148,26 @@ class TestRunner:
                 if attempt < self.retry:
                     logger.info(f"[{label}] 失败，重试中...")
 
-            try:
-                module.teardown(self.ctx, self.console)
-            except Exception as e:
-                logger.warn(f"[{label}] teardown 异常: {e}")
-
             self._record_results(name, result, last_err, cycle, rep_index)
             if isinstance(result, list):
                 st = PASSED if any(r.status in (PASSED, SKIPPED) for r in result) else FAILED
-            elif result is not None:
-                st = result.status
             else:
-                st = FAILED
+                st = result.status if result is not None else FAILED
             self.module_status[name] = st
+        except KeyboardInterrupt:
+            self.ctx.interrupted = True
+            self.module_status[name] = ERROR
+            self._record(TestResult(name=name, module=name, status=ERROR,
+                                    message="用户中断本项；执行尽力清理，板端状态以清理日志为准",
+                                    elapsed_ms=int((time.monotonic() - mod_start) * 1000)),
+                         cycle, rep_index)
+            raise
         finally:
+            if module is not None:
+                try:
+                    module.teardown(self.ctx, self.console)
+                except Exception as e:
+                    logger.warn(f"[{label}] teardown 异常: {e}")
             elapsed = time.monotonic() - mod_start
             status = self.module_status.get(name, "?")
             logger.step(f"<<< 模块 [{label}] 结束，耗时 {elapsed:.1f}s（结果 {status}）")

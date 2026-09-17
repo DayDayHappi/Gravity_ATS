@@ -17,8 +17,7 @@
 import sys
 import os
 import threading
-import termios
-import tty
+from ..platform.console_input import KeyboardInput
 
 try:
     import serial
@@ -41,6 +40,18 @@ _EXIT_CMDS = {"exit", "quit", ":q"}
 
 
 def run_terminal(port, baudrate, strip_ansi=True):
+    """跨平台终端入口；非 TTY、初始化异常、中断均不遗留串口资源。"""
+    try:
+        with KeyboardInput() as keyboard:
+            return _run_session(port, baudrate, strip_ansi, keyboard)
+    except KeyboardInterrupt:
+        return 0
+    except OSError as exc:
+        print(f"[错误] {exc}", file=sys.stderr)
+        return 2
+
+
+def _run_session(port, baudrate, strip_ansi, keyboard):
     """运行交互式串口终端。
 
     Args:
@@ -55,19 +66,28 @@ def run_terminal(port, baudrate, strip_ansi=True):
         print("[错误] 缺少 pyserial 依赖，请先 pip install pyserial", file=sys.stderr)
         return 2
 
-    # 打开串口
+    # 打开和重置任一步失败都要关闭已获取的句柄。
+    ser = None
     try:
         ser = serial.Serial(port, baudrate, timeout=0.1, write_timeout=2.0)
-    except Exception as e:
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
+    except BaseException as e:
+        if ser is not None:
+            try:
+                ser.close()
+            except Exception:
+                pass
+        if not isinstance(e, Exception):
+            raise
         print(f"[错误] 打开串口 {port} 失败: {e}", file=sys.stderr)
         return 2
-    ser.reset_input_buffer()
-    ser.reset_output_buffer()
 
     # 共享状态
     state = {
         "strip_ansi": strip_ansi,  # Tab 切换
         "stop": False,
+        "error": False,
     }
     print_lock = threading.Lock()
 
@@ -101,7 +121,11 @@ def run_terminal(port, baudrate, strip_ansi=True):
         while not state["stop"]:
             try:
                 data = ser.read(4096)
-            except Exception:
+            except Exception as exc:
+                if not state["stop"]:
+                    state["error"] = True
+                    state["stop"] = True
+                    _print_status(f"[串口断开或读取失败] {exc}")
                 break
             if not data:
                 continue
@@ -111,10 +135,6 @@ def run_terminal(port, baudrate, strip_ansi=True):
             _print_rx(text)
 
     reader = threading.Thread(target=_reader_loop, name="terminal-reader", daemon=True)
-
-    # 保存终端原设置，进入 cbreak 模式（逐字符读 stdin，使 Tab 可捕获）
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
 
     print(f"\n{_YELLOW}════════ 交互式串口终端 ════════{_RESET}")
     print(f"  端口: {port}  波特率: {baudrate}")
@@ -126,13 +146,14 @@ def run_terminal(port, baudrate, strip_ansi=True):
 
     buf = ""
     try:
-        tty.setcbreak(fd)
         while not state["stop"]:
-            ch = sys.stdin.read(1)
+            ch = keyboard.read(timeout=0.1)
+            if ch is None:
+                continue
             if not ch:
                 break
             # Ctrl+C
-            if ch == "\x03":
+            if ch in ("\x03", "\x04"):
                 break
             # Tab: 切换 ANSI 剥离
             if ch == "\t":
@@ -180,10 +201,6 @@ def run_terminal(port, baudrate, strip_ansi=True):
     finally:
         state["stop"] = True
         try:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        except Exception:
-            pass
-        try:
             reader.join(timeout=1.0)
         except Exception:
             pass
@@ -192,7 +209,7 @@ def run_terminal(port, baudrate, strip_ansi=True):
         except Exception:
             pass
         print(f"\n{_YELLOW}已退出串口终端，串口已释放。{_RESET}")
-    return 0
+    return 1 if state["error"] else 0
 
 
 def run_from_args(args, config):
