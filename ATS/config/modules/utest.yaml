@@ -1,3 +1,5 @@
 # utest 模块参数（ADR-012）
-# testcase / timeout 由 scenario task 的 override 提供；本文件仅声明默认能力为空，
-# 协议（命令/判据/每项超时映射）唯一来源在 ATS/drivers/utest_commands.py。
+# testcase / timeout 由 scenario task 的 override 提供（timeout 单项覆盖）；
+# 协议（命令/判据/每项超时映射）唯一来源在 ATS/drivers/utest/（_common.py + *_commands.py）。
+# flash_xip_speed 的速率阈值：默认 0 = 不校验（D4），>0 时速率低于该值判 FAIL。
+min_speed_kbs: 0

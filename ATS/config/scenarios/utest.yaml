@@ -1,9 +1,11 @@
 # utest 场景：固件板级自检（ADR-012）。
 # 独立场景，不并入 normal/stress/aging：utest 与 WiFi/FTP/音视频链路无依赖，
 # prepare 只 serial_init + preclean（不连 WiFi、不启 FTP、不启动 preview）。
-# 8 项检测由 tasks 逐项声明 override.testcase，模块内不写 for。
-# 每项脚本超时默认取 ATS/drivers/utest_commands.py 的 UTEST_TESTCASES 表；
+# 8 项检测 = 8 个 utest_<case> 模块（D2：每 case 一模块），testcase 名内置模块，
+# 无需 override.testcase；模块内不写 for，场景逐项声明。
+# 每项脚本超时默认取 ATS/drivers/utest/_common.py 的 UTEST_TESTCASES 表；
 # 如需单项覆盖，加 override.timeout（秒）。
+# flash_xip_speed 的 min_speed_kbs 阈值默认 0（不校验），如需启用加 override.min_speed_kbs。
 scenario:
   name: utest
   serial_fingerprint: utest   # ADR-013：utest 固件 msh 提示符为 "msh >"（无斜杠），
@@ -14,29 +16,13 @@ scenario:
     - serial_init
     - preclean
   tasks:
-    - module: utest
-      override:
-        testcase: efuse_test
-    - module: utest
-      override:
-        testcase: filesystem
-    - module: utest
-      override:
-        testcase: i2c_test
-    - module: utest
-      override:
-        testcase: imu_test
-    - module: utest
-      override:
-        testcase: pvt_auto_test
-    - module: utest
-      override:
-        testcase: pvt_test
-    - module: utest
-      override:
-        testcase: flash_xip_speed
-    - module: utest
-      override:
-        testcase: flash_read
+    - module: utest_efuse
+    - module: utest_filesystem
+    - module: utest_i2c
+    - module: utest_imu
+    - module: utest_pvt_auto
+    - module: utest_pvt
+    - module: utest_flash_xip_speed
+    - module: utest_flash_read
   cleanup:
     - close_serial

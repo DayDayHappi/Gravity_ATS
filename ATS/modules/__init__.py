@@ -11,4 +11,4 @@ from . import photo  # noqa: F401
 from . import video  # noqa: F401
 from . import rtmp  # noqa: F401
 from . import video_integrity  # noqa: F401
-from . import utest  # noqa: F401  (注册 utest，ADR-012)
+from . import utest  # noqa: F401  (utest 为包：8 个 utest_<case> 模块，ADR-012/D2)

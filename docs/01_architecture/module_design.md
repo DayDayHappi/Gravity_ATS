@@ -20,7 +20,7 @@
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
 | preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
-| utest | 跑一个固件 utest testcase，取框架 result 行作判据 | `[  PASSED  ] [ result ] testcase (<name>)` | 独立 `utest` 场景（ADR-012），不作 normal task |
+| utest（模块组） | 跑一个固件 utest testcase，取框架 result 行 + per-case 业务关键串叠加判据 | result 行 PASSED + 业务串齐全 | 独立 `utest` 场景（ADR-012），8 个 `utest_<case>` task，不作 normal task |
 
 ---
 
@@ -122,12 +122,15 @@
 - **Forbidden Dependency**：**串口层只转发原始数据、不加业务逻辑**；monitor 不控制推流。
 - **Lifecycle**：与 rtmp 推流同生命周期。
 
-## utest（ADR-012）
+## utest（ADR-012，每 case 一模块）
 
-- **Responsibility**：跑一个固件 utest testcase，取框架 result 行作判据（固件已汇总，脚本不扫 unit 级业务输出）。
-- **Input**：`testcase`（必填，来自 scenario task 的 `override.testcase`）+ 可选 `timeout` 覆盖。
-- **Output**：`[  PASSED  ] [ result   ] testcase (<name>)` 出现即 PASS；FAILED/ERROR 出现即 FAIL/ERROR；无 result 行即 FAIL。`r.matched` 取 result 行的 status 字段。
+> 2026-09-17 演进：由「单模块 utest + `override.testcase` 分派」改为「每 case 一模块（8 个 `utest_<case>`）+ 叠加判据」，见 ADR-012 修订记录与需求稿 `新增需求_utest细粒度判据.md`。
+
+- **Responsibility**：跑一个固件 utest testcase，取框架 result 行（主判据）+ per-case 业务关键串（补充校验）作**叠加判据**（固件已汇总，脚本不扫 unit 级业务输出，但 result 行 PASSED 后仍校验业务串是否齐全）。
+- **Input**：testcase 名**内置模块**（无需 `override.testcase`）+ 可选 `timeout` 覆盖；`flash_xip_speed` 另有 `min_speed_kbs` 速率阈值（默认 0 不校验）。
+- **Output**：result 行 `FAILED/ERROR/SKIPPED` → FAIL/ERROR/SKIP（业务串不反向救回）；result 行 `PASSED` + 业务串齐全 → PASS，业务串缺失/不符 → FAIL（detail 列缺失串）；无 result 行 → FAIL。
 - **Dependency**：仅串口（prepare 的 `serial_init`）；**不依赖 WiFi/FTP/preview**。utest 固件 msh 提示符为 `msh >`（无斜杠），串口探测依赖 ADR-013 的 `serial_fingerprint: utest` 场景声明。
-- **Forbidden Dependency**：**不扫 `fail`/`error` 关键字**（`qspi_test` 的 `1 lane fail!` 是合法中间态，必须显式传 result 行 expect 避开 serial_console 默认 `_ERROR_RE`）；**不写 for**（跑哪些 testcase 由 scenario 逐项声明）；**不并入 normal/stress/aging**（独立 `utest` 场景）。
-- **协议**：命令/判据/超时映射唯一来源在 `ATS/drivers/utest_commands.py`（`UTEST_RUN_COMMAND`、`UTEST_RESULT_RE`、`UTEST_TESTCASES` 超时表），业务只 import 引用（ADR-011）。
-- **Lifecycle**：一次动作 = `exec_sync(utest_run <name>)` 跑一个 testcase，9 项由 scenario 驱动。FAILED result 行确切格式暂无实测样本，状态枚举已预留接口，未知状态走 `_error` 兜底。
+- **Forbidden Dependency**：**不扫 `fail`/`error` 关键字**（`qspi_test` 的 `1 lane fail!`、`filesystem` 的 `not a mountpoint!` 是合法中间态，必须显式传 result 行 expect 避开 serial_console 默认 `_ERROR_RE`）；**不写 for**（跑哪些 case 由 scenario 逐项声明）；**不并入 normal/stress/aging**（独立 `utest` 场景）。
+- **协议**：命令/判据/超时映射唯一来源在 `ATS/drivers/utest/`（`_common.py` 公共 + `<case>_commands.py` 每 case 的 TESTCASE/BUSINESS_RES），业务只 import 引用（ADR-011）。
+- **结构**：`modules/utest/base.py` 收敛叠加判据模板（`UtestCaseModule`），8 个子类（`utest_efuse`/`utest_filesystem`/`utest_i2c`/`utest_imu`/`utest_pvt_auto`/`utest_pvt`/`utest_flash_xip_speed`/`utest_flash_read`）只设 testcase + business_res 常量；`qspi_test` 本期不建模块（D6），超时映射保留。
+- **Lifecycle**：一次动作 = `exec_sync(utest_run <name>)` 跑一个 testcase，8 项由 scenario 驱动。FAILED/ERROR/SKIPPED 的 result 行确切格式暂无实测样本，状态枚举已预留接口，未知状态走 `_error` 兜底。

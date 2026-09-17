@@ -29,6 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-17 | [20260917_1824_utest细粒度判据实施.md](20260917_1824_utest细粒度判据实施.md) | utest 单文件→包迁移 + D1 叠加判据：drivers/utest_commands.py→drivers/utest/（_common + 8 per-case commands，业务关键串正则 D7 严格/宽松）、modules/utest.py→modules/utest/（base.py 叠加判据模板 + 8 case 模块 utest_*）、scenario tasks 改 8 个 utest_<case>、config._MODULE_FILE_MAP 补映射、utest.yaml 加 min_speed_kbs=0；mock 样本 8 case 全 PASS + 负向路径（业务串缺失/FAILED 不救回/无 result 行/阈值）全符合 D1 |
 | 2026-09-17 | [20260917_1659_video新增480p_1组合.md](20260917_1659_video新增480p_1组合.md) | video 新增 480p_1：video_commands.py 的 VIDEO_PROFILES 补 480p_1（cam_set video 480p 1，640×480 横屏 TODO-CONFIRM）+ 从 BLOCKED_VIDEO_PROFILES 移除（保留空常量防 NameError）；stress.yaml 480p_0/480p_2 之间插 480p_1 task；video_size_traverse.yaml 仅修正过时禁用注释（不加 480p_1）；video.py 零改动 |
 | 2026-09-17 | [20260917_1634_stress_photo模式独立repeat拆分.md](20260917_1634_stress_photo模式独立repeat拆分.md) | stress.yaml photo task 1→10 拆分（各单模式 + repeat:1，搭骨架支持每模式独立 repeat）；机制已核实 photo.py 遍历单元素列表 + Runner 按 repeat 驱动 + override 整体替换，纯配置零源码改动；其余 task/prepare/loop/cleanup 未动，非 photo task 13 个不变 |
 | 2026-09-17 | [20260917_1620_photo单拍新增3个分辨率变体.md](20260917_1620_photo单拍新增3个分辨率变体.md) | photo 单拍新增 single 1080p/720p/480p 3 个分辨率变体：photo_commands.py 的 PHOTO_MODES 枚举 +3 条，stress.yaml photo task override.photo_modes 7→10 项；命令模板 str.format 天然支持含空格模式名，photo.py 零改动；已核实 report 消费方对含空格 name 无副作用，待真机核实固件是否接受三 token 写法 |
