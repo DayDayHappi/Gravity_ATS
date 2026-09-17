@@ -55,6 +55,14 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 
 > **配套（ADR-013）**：utest 固件 msh 提示符为 `msh >`（无斜杠），旧指纹 `msh\s*/>` 不匹配，按场景分派探测/就绪指纹。已实施：`utest.yaml` 的 `serial_fingerprint: utest` + `serial_console.py` 的 `_FINGERPRINT_SETS`/`_READY_RE_SETS` 映射 + `detect_port`/`SerialConsole` 可选参数 + `scenario.py` 的 `serial_fingerprint` 字段 + `scenario_manager.py` 透传。旧固件 default 路径逐字不动。
 
+## 🟡 P1 — utest 细粒度判据（调查已存档·待决策恢复）
+
+需求调查已存档：[新增需求_utest细粒度判据.md](../03_development/archive/新增需求_utest细粒度判据.md)（Document Agent，2026-09-17）。
+
+- 已完成：逐 case 从 `res/utestlog.txt` 提取关键业务字符串（9 项），并给出目录结构草案。
+- **阻塞（待人工拍板）**：D1 细查与 result 行「叠加/替代」（推荐叠加）；D2 模块注册「单模块内部分派/每 case 一模块」（推荐单模块）；D3 目录命名；flash_xip_speed 是否设速率阈值；flash_read 无业务输出是否纳入；qspi_test 是否恢复。
+- **恢复条件**：人工确认上述决策点后，再交 Code Agent 实施（可能需修订 ADR-012）。
+
 ## 🟡 P1 — 新增场景 stress_traverse_photo_mode_seq（待实施）
 
 需求已整理：[新增场景需求_stress_traverse_photo_mode_seq.md](../03_development/archive/新增场景需求_stress_traverse_photo_mode_seq.md)。
