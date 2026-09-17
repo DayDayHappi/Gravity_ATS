@@ -7,10 +7,14 @@ from typing import Mapping
 
 # 合法拍照模式名（唯一来源文档）。业务从 config/modules/photo.yaml 的 photo_modes
 # 读取模式名后，用 PHOTO_SET_COMMAND.format(mode=...) 拼命令（不在此处校验 mode 合法性）。
-# TODO-CONFIRM：hdr_0~3 是否为固件合法模式名待真机核实（与场景文件注释同源）。
+# TODO-CONFIRM：hdr_0~3 是否为固件合法模式名待真机核实（与场景文件注释同源）；
+# single 1080p/720p/480p 三个含空格模式名同样需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
 PHOTO_MODES: Mapping[str, str] = MappingProxyType({
     "auto": "cam_set photo auto",
     "single": "cam_set photo single",
+    "single 1080p": "cam_set photo single 1080p",
+    "single 720p": "cam_set photo single 720p",
+    "single 480p": "cam_set photo single 480p",
     "mfnr": "cam_set photo mfnr",
     "hdr_0": "cam_set photo hdr_0",
     "hdr_1": "cam_set photo hdr_1",

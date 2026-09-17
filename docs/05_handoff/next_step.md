@@ -17,6 +17,10 @@
   - ~~video 录像前暂时取消 `cam_set`（`if False:` 跳过，`TODO-TEMP-DISABLE-CAM_SET` 标记，后续恢复）~~ 已于 20260907 恢复（devlog `20260907_1848`）
 - 20260831 改动：
   - 日志目录按「场景/日期/运行时间戳」三级分层（devlog `20260831_1032`）：所有场景日志统一 `logs/<场景>/<日期>/<run_ts>/`（去掉中间冗余 logs 层），报告也按天分（normal→`reports/<日期>/`、非 normal→`logs/<场景>/report/<日期>/`），problem 记录归入 `logs/<场景>/problem/<run_ts>.log`
+- 20260917 改动：
+  - photo 单拍新增 3 个分辨率变体（devlog `20260917_1620`）：`photo_commands.py` 的 `PHOTO_MODES` 枚举 +3 条含空格模式名（`single 1080p/720p/480p`），`stress.yaml` photo task `override.photo_modes` 7→10 项；命令模板 `str.format` 天然支持含空格模式名，`photo.py` 零改动；已核实 report 消费方对含空格 `name`（`photo[single 1080p]`）无解析副作用。**待真机核实**：固件是否接受 `cam_set photo single <res>` 三 token 写法（TODO-CONFIRM，与 `hdr_0~3` 同类疑问）
+  - `stress.yaml` photo task 1→10 拆分（devlog `20260917_1634`）：各单模式 + `repeat:1`，搭骨架支持每模式独立 repeat（后续调某模式只改对应 task 的 repeat）；纯配置零源码改动，repeat=1 时与拆分前行为等价。**待真机**
+  - video 新增 480p_1 组合（devlog `20260917_1659`）：`video_commands.py` 补 profile（640×480 横屏，TODO-CONFIRM）+ 解除禁用（保留空常量防 NameError），`stress.yaml` 插 480p_1 task，`video_size_traverse.yaml` 仅改注释，`video.py` 零改动。**待真机 ffprobe 校准预期宽高**；另用户手改 stress.yaml 全部 video task 为 `repeat:1` + `duration:20`（原 sd1080p_0/1 repeat=10、duration=10），随本次留痕
 
 ```bash
 python3 -m ATS.main --scenario normal --no-interactive-wifi            # 先通正常链路

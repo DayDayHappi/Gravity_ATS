@@ -32,13 +32,14 @@ VIDEO_PROFILES: Mapping[str, VideoProfile] = MappingProxyType({
     "720p_1": VideoProfile("720p_1", "cam_set video 720p 1", 1280, 720, "横屏"),
     "720p_2": VideoProfile("720p_2", "cam_set video 720p 2", 1600, 900, "横屏"),
     "480p_0": VideoProfile("480p_0", "cam_set video 480p 0", 640, 480, "横屏"),
+    "480p_1": VideoProfile("480p_1", "cam_set video 480p 1", 640, 480, "横屏"),  # 固件已修复，重新纳入；预期值 TODO-CONFIRM 待真机 ffprobe 校准
     "480p_2": VideoProfile("480p_2", "cam_set video 480p 2", 800, 600, "横屏"),
 })
 
 # 默认策略明确采用需求表第一项；不声称它等同旧固件的模糊 "1080p" 默认。
 DEFAULT_VIDEO_PROFILE = "sd1080p_0"
 BLOCKED_VIDEO_PROFILES: Mapping[str, str] = MappingProxyType({
-    "480p_1": "用户手测报错刷屏，本轮明确不测试",
+    # 历史禁用项 480p_1（报错刷屏）已于 2026-09-17 解除：固件已修复，重新纳入 VIDEO_PROFILES。
 })
 
 VIDEO_START_COMMAND = "dfs_video_start"

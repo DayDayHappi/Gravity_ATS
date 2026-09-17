@@ -29,6 +29,9 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
+| 2026-09-17 | [20260917_1659_video新增480p_1组合.md](20260917_1659_video新增480p_1组合.md) | video 新增 480p_1：video_commands.py 的 VIDEO_PROFILES 补 480p_1（cam_set video 480p 1，640×480 横屏 TODO-CONFIRM）+ 从 BLOCKED_VIDEO_PROFILES 移除（保留空常量防 NameError）；stress.yaml 480p_0/480p_2 之间插 480p_1 task；video_size_traverse.yaml 仅修正过时禁用注释（不加 480p_1）；video.py 零改动 |
+| 2026-09-17 | [20260917_1634_stress_photo模式独立repeat拆分.md](20260917_1634_stress_photo模式独立repeat拆分.md) | stress.yaml photo task 1→10 拆分（各单模式 + repeat:1，搭骨架支持每模式独立 repeat）；机制已核实 photo.py 遍历单元素列表 + Runner 按 repeat 驱动 + override 整体替换，纯配置零源码改动；其余 task/prepare/loop/cleanup 未动，非 photo task 13 个不变 |
+| 2026-09-17 | [20260917_1620_photo单拍新增3个分辨率变体.md](20260917_1620_photo单拍新增3个分辨率变体.md) | photo 单拍新增 single 1080p/720p/480p 3 个分辨率变体：photo_commands.py 的 PHOTO_MODES 枚举 +3 条，stress.yaml photo task override.photo_modes 7→10 项；命令模板 str.format 天然支持含空格模式名，photo.py 零改动；已核实 report 消费方对含空格 name 无副作用，待真机核实固件是否接受三 token 写法 |
 | 2026-09-17 | [20260917_0927_utest真机修复4点.md](20260917_0927_utest真机修复4点.md) | utest 真机修复：pvt_auto_test 超时 10→20（真机实测 10.2s）；哨兵超时后先用白名单 UTEST_RESULT_RE 重判 r.clean（修复「result 行已出现却误报未知」），抽 _mk_from_status 复用；场景去掉 qspi_test（9→8 项）；去掉「脚本超时」日志打印 |
 | 2026-09-16 | [20260916_1832_串口探测指纹按场景分派ADR-013.md](20260916_1832_串口探测指纹按场景分派ADR-013.md) | ADR-013 实施：串口探测/就绪指纹按场景分派（utest 固件 `msh >` 无斜杠适配）；serial_console 加 _FINGERPRINT_SETS/_READY_RE_SETS 映射 + detect_port(fingerprint_set=)/SerialConsole(ready_set=) 可选参数，Scenario 加 serial_fingerprint 字段，scenario_manager parse/run/serial_init 透传，utest.yaml 加 serial_fingerprint: utest；default 路径逐字不动零影响 |
 | 2026-09-16 | [20260916_1720_新增utest固件自检框架接入.md](20260916_1720_新增utest固件自检框架接入.md) | ADR-012 实施：新增 utest 独立模块与场景（9 项板级自检），唯一判据取 testcase 级 result 行，显式传 expect 避开 _ERROR_RE 误判 qspi "1 lane fail!"，每项独立超时由 scenario 驱动；新增 4 文件 + 1 接线，现有代码零改动 |

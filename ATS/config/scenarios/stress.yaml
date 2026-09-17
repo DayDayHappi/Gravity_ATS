@@ -13,88 +13,134 @@ scenario:
     enable: true
     count: 20
   tasks:
+    # photo 按模式拆成 10 个 task，每个模式单元素 photo_modes + 独立 repeat，
+    # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 10 模式等价）。
+    # TODO-CONFIRM：10 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
+    # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
+    # "cam_set photo hdr <0-3>"（hdr 带参数），与这里的 hdr_0~3 独立命名可能不一致，
+    # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
+    # single 1080p/720p/480p 三个含空格模式名同样需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
     - module: photo
-      repeat: 1            # Runner 每轮 repeat 都完整遍历一次 photo_modes
+      repeat: 1
       override:
-        # TODO-CONFIRM：7 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
-        # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
-        # "cam_set photo hdr <0-3>"（hdr 带参数），与这里的 hdr_0~3 独立命名可能不一致，
-        # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
-        photo_modes: [auto, single, mfnr, hdr_0, hdr_1, hdr_2, hdr_3]
+        photo_modes: [auto]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 1080p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 720p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 480p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [mfnr]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_0]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_1]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_2]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_3]
     # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
-      repeat: 10
-      duration: 10
+      repeat: 1
+      duration: 20
       override:
         video_resolution: "sd1080p_0"
 
     # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
-      repeat: 10
-      duration: 10
+      repeat: 1
+      duration: 20
       override:
         video_resolution: "sd1080p_1"
 
     # sd1080p_2: 预期 2016x1034 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "sd1080p_2"
 
     # hd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "hd1080p_1"
 
     # hd1080p_2: 预期 1296x2304 竖屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "hd1080p_2"
 
     # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "3k_2"
 
     # 720p_0: 预期 1280x720 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "720p_0"
 
     # 720p_1: 预期 1280x720 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "720p_1"
 
     # 720p_2: 预期 1600x900 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "720p_2"
 
     # 480p_0: 预期 640x480 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "480p_0"
+
+    # 480p_1: 预期 640x480 横屏（用户口述估计，TODO-CONFIRM 待真机 ffprobe 校准）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_1"
 
     # 480p_2: 预期 800x600 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
-      duration: 10
+      duration: 20
       override:
         video_resolution: "480p_2"
 
