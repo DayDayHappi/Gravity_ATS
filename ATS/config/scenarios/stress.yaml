@@ -11,7 +11,7 @@ scenario:
     - preview_start
   loop:
     enable: true
-    count: 20
+    count: 200
   tasks:
     # photo 按模式拆成 10 个 task，每个模式单元素 photo_modes + 独立 repeat，
     # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 10 模式等价）。
