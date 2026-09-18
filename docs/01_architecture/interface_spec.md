@@ -7,7 +7,7 @@
 | 层 | 文件 | 放什么 |
 |----|------|--------|
 | system | `config/system.yaml` | 串口、WiFi 网络环境（ssid/password 属这里）、pc.ip、runner、report |
-| modules | `config/modules/*.yaml` | 模块业务参数（photo_modes、video_duration、stream_duration、heartbeat_timeout、bitrate、preview 播放器参数…） |
+| modules | `config/modules/*.yaml` | 模块业务参数（photo_modes、video_duration、stream_duration、heartbeat_timeout、bitrate、preview 播放器参数、detect_strings…） |
 | scenarios | `config/scenarios/*.yaml` | 流程 / 组合 / 循环（prepare/tasks/loop/cleanup/preview.enabled） |
 
 **场景结构**：
@@ -31,6 +31,7 @@ scenario:
 - `loop`：整轮循环（count 次数 / duration 时长 / 都缺省=无限）。
 - `preview.enabled`：是否启动 RTMP 画面观察窗口（ADR-010），生命周期跨整个 Scenario（含 loop 多轮），不随单次 rtmp task 重启。
 - `prepare`/`cleanup` 内置动作：serial_init、wifi_connect、preclean、ftp_ready、preview_start、stop_stream、close_serial、preview_stop。
+- `detect_strings`（ADR-014）：video/rtmp 的 modules yaml 字段，值为 `drivers/detect_strings.py` 里 `DetectString.key` 的列表（如 `[tt_error]`）；未配置/空则不检测，正则本体不进 yaml。
 
 ## 2. CLI
 

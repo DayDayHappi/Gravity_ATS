@@ -16,6 +16,8 @@
 
 20260917 改动（devlog `20260917_1659`）：video 新增 480p_1 组合 —— `video_commands.py` 补 profile（640×480 横屏，TODO-CONFIRM）+ 解除禁用，`stress.yaml` 插 480p_1 task，`video_size_traverse.yaml` 仅改注释；`video.py` 零改动。**待真机 ffprobe 校准预期宽高**。另用户手改 stress.yaml 全部 video task 参数为 `repeat:1` + `duration:20`（原 `sd1080p_0/1` repeat=10、duration=10），属手动参数调整，随本次一并留痕。
 
+20260918 改动（devlog `20260918_0010` + `20260918_0030` + `20260918_0100`）：检测关键字符串集中化（ADR-014）—— 检测串定义唯一来源 `drivers/detect_strings.py`（DetectString + DETECT_STRINGS），`tt_error_monitor.py`→`string_hit_monitor.py`（TTErrorMonitor→StringHitMonitor 泛化），video/rtmp 改读 `detect_strings` 配置、命中只收集不判 FAIL；新增检测串 `imu fmq overflow f=`（纯字面串、`=` 后数字不校验、大小写敏感）；video 新增录像组合 `4k_0`（`cam_set video 4k 0`，预期 size 占位 `0x0` 待真机 ffprobe 校准，不接场景）。均**待真机**。
+
 ## Current Architecture
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
@@ -48,6 +50,9 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 - 新增场景 `video_size_traverse.yaml`（11 种 size 遍历 + 统一 H265 检测 + photo 遍历 + RTMP 推流；接入 video_integrity 见 devlog `20260909_1940`）
 - photo 单拍新增 3 个分辨率变体：`PHOTO_MODES` 枚举 +3 条（`single 1080p/720p/480p`），`stress.yaml` photo task `override.photo_modes` 7→10 项（devlog `20260917_1620`，photo.py 零改动，待真机）
 - `stress.yaml` photo task 1→10 拆分（各单模式 + `repeat:1`，搭骨架支持每模式独立 repeat；devlog `20260917_1634`，纯配置，待真机）
+- 检测关键字符串集中化（ADR-014）：`drivers/detect_strings.py` 唯一来源 + `string_hit_monitor.py` 泛化 + video/rtmp 改读 `detect_strings`（devlog `20260918_0010`，待真机）
+- 新增检测串 `imu fmq overflow f=`：`detect_strings.py` 追加 + video/rtmp.yaml 选择键加 `imu_fmq_overflow`（devlog `20260918_0030`，纯数据改动，待真机）
+- video 新增录像组合 `4k_0`：`video_commands.py` 补 profile（`cam_set video 4k 0`，预期 size 占位 0x0 待真机 ffprobe 校准，不接场景；devlog `20260918_0100`）
 
 ## Working On
 
@@ -56,7 +61,8 @@ WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测
 ## 固件行为快照（当前版本，未来可能变动）
 
 > 2026-09-09（commit `d7cee21`）起，录像 size 改为**完整组合 ID** 下发，权威映射与命令
-> 定义统一在 `ATS/drivers/video_commands.py`（11 种组合，含宽高/方向/禁用校验）。
+> 定义统一在 `ATS/drivers/video_commands.py`（当前 13 种组合，含宽高/方向/禁用校验；
+> 其中 `4k_0` 预期 size 占位 0x0 待真机校准）。
 > 下方历史表（2026-09-08，裸档位体系）已过时，仅作历史留档。
 
 历史裸档位实测（ffprobe 实测落盘文件，2026-09-08）：

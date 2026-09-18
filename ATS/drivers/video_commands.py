@@ -22,6 +22,9 @@ class VideoProfile:
 
 # 必须存完整命令，不能在业务代码按 key 拼接或依赖板端默认尾参数。
 VIDEO_PROFILES: Mapping[str, VideoProfile] = MappingProxyType({
+    # 4k 档位（固件新增功能，重新支持）；预期 size 未知，占位值 0x0 仅表示未校准，
+    # 非真实分辨率。TODO-CONFIRM：待真机 ffprobe 校准后回填 width/height/orientation。
+    "4k_0": VideoProfile("4k_0", "cam_set video 4k 0", 0, 0, "待校准"),
     "sd1080p_0": VideoProfile("sd1080p_0", "cam_set video sd1080p 0", 1920, 1080, "横屏"),
     "sd1080p_1": VideoProfile("sd1080p_1", "cam_set video sd1080p 1", 1920, 1080, "横屏"),
     "sd1080p_2": VideoProfile("sd1080p_2", "cam_set video sd1080p 2", 2016, 1034, "横屏"),

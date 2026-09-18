@@ -19,6 +19,7 @@
 | video | 录像并验证产物 | 串口 `Video recording completed successfully.` | ✓ task |
 | rtmp | 推流并验证流到达 | ffprobe 探到 h264 + heartbeat 无超时 | ✓ task |
 | rtmp_monitor | 订阅串口原始数据，检测推流 heartbeat | f_index 超时判异常 | 随 rtmp 运行 |
+| string_hit_monitor | 订阅串口原始数据，检测配置选定的关键字符串 | 命中收集（不判 FAIL） | 随 video/rtmp 运行（ADR-014） |
 | preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
 | utest（模块组） | 跑一个固件 utest testcase，取框架 result 行 + per-case 业务关键串叠加判据 | result 行 PASSED + 业务串齐全 | 独立 `utest` 场景（ADR-012），8 个 `utest_<case>` task，不作 normal task |
 
@@ -92,16 +93,18 @@
 - **Dependency**：逻辑依赖 FTP 就绪，由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：同 photo（不写循环、不感知场景）。
 - **Lifecycle**：拍摄 + 下载校验；FTP 校验为辅助。
+- **关键字符串检测（ADR-014）**：读 `detect_strings`（modules yaml 选择键列表），逐个实例化 `StringHitMonitor` 订阅串口，命中只追加 detail、不判 FAIL；定义唯一来源在 `drivers/detect_strings.py`。
 
 ## rtmp
 
 - **Responsibility**：发起推流、保持、验证流到达、停止。**不负责画面展示**（ADR-010：ffplay 已剥离到 preview_manager）。
-- **Input**：pc_ip、stream_duration、heartbeat_timeout、bitrate（可选，0=不设置）。
+- **Input**：pc_ip、stream_duration、heartbeat_timeout、bitrate（可选，0=不设置）、detect_strings（可选，未配置则不检测）。
 - **Output**：ffprobe 探到 h264+分辨率 且 heartbeat 无超时。
 - **Dependency**：逻辑依赖 WiFi 就绪，由 prepare.wifi_connect 保证；不依赖 FTP；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得在 rtmp_video_stop 之后才 ffprobe 探测**（探测的是实时流）；**不得启动 ffplay 或管理播放器进程**（ADR-010，属 preview_manager 职责）。
 - **运行依赖**：本模块判据依赖 `ffprobe` 可执行（属运行依赖，**仓库不随附** `tools/ffmpeg/`，需自行安装或拷贝，见 `05_handoff/build_environment.md`）。
 - **Lifecycle**：start → 等上线 → 探测 → 保持+heartbeat → stop。可选：start 之前若 `bitrate>0` 先发 `cam_set live bitrate`（协议在 `rtmp_commands.py`）。
+- **关键字符串检测（ADR-014）**：读 `detect_strings`（modules yaml 选择键列表），逐个实例化 `StringHitMonitor` 订阅串口，命中只追加 detail、不判 FAIL；定义唯一来源在 `drivers/detect_strings.py`。
 
 ## preview_manager（ADR-010）
 
@@ -121,6 +124,15 @@
 - **Dependency**：串口层。
 - **Forbidden Dependency**：**串口层只转发原始数据、不加业务逻辑**；monitor 不控制推流。
 - **Lifecycle**：与 rtmp 推流同生命周期。
+
+## string_hit_monitor（ADR-014）
+
+- **Responsibility**：订阅串口原始数据，按配置选定的关键字符串做命中收集（不判 FAIL，只追加 `TestResult.detail`）。
+- **Input**：串口原始数据（`add_listener`）+ `DetectString`（pattern/label）。
+- **Output**：命中文本列表（去 ANSI、跨 chunk 字面串拼接还原）。
+- **Dependency**：串口层；检测串定义唯一来源在 `drivers/detect_strings.py`。
+- **Forbidden Dependency**：**不做 status 判定**（不判 PASS/FAIL/ERROR）；**不内联检测串**（pattern 从 `DetectString` 传入）。
+- **Lifecycle**：与 video/rtmp 检测窗口同生命周期；由 `detect_strings` 配置（未配置则不实例化）。
 
 ## utest（ADR-012，每 case 一模块）
 

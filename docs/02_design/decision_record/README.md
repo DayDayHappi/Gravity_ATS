@@ -15,3 +15,4 @@
 | ADR-011 | 串口协议集中化 | 每模块串口命令/判据/超时/正则/路径统一沉淀到 drivers/<module>_commands.py，业务代码只引用；已固化为架构稳定约定（新增检测项同样遵守），待真机 |
 | ADR-012 | utest 统一日志框架接入 | 独立 utest 场景；每 case 一模块（8 个 `utest_<case>`）；判据=result 行（主）+ 业务关键串（补充）叠加（不扫 fail/error，避 qspi `1 lane fail!` 误判）；每 testcase 独立超时映射；FAILED 格式预留接口；2026-09-17 细粒度演进真机跑通 |
 | ADR-013 | 串口探测指纹按场景分派 | 探测/就绪指纹按场景选择键分派（default 旧指纹逐字不动；utest 追加认 `msh >` 无斜杠）；正则留 serial_console.py，yaml 只存选择键；旧固件零影响（已实施） |
+| ADR-014 | 检测关键字符串集中化与配置选择 | 检测串定义集中到 `drivers/detect_strings.py`（DetectString + DETECT_STRINGS 唯一来源），yaml 用 `detect_strings: [key]` 选择，未配置则不检测；TTErrorMonitor 泛化为 StringHitMonitor，命中只收集不判 FAIL（已实施） |

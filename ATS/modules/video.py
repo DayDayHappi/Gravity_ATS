@@ -2,12 +2,12 @@
 
 协议定义：ATS/drivers/video_commands.py（命令、判据、实测 size 映射）。
 测试编排：Scenario 的多个 video task + repeat/duration；模块不做 size 循环。
-保留最终完成标志、完整路径扫描、f_index 启动兜底和 TT ERROR 标注。
+保留最终完成标志、完整路径扫描、f_index 启动兜底和关键字符串标注。
 下载文件仍放在本次日志 videos/ 下，使用组合与板端时间戳目录区分。
 
 ``ftp_download: false`` 时走纯录像分支（不碰 FTP）：等 ``Video recording completed
 successfully.`` 即 PASS，仅扫描 /emmc/VIDEO 路径作证据展示，不 size/不下载；
-TT ERROR 检测保留（命中只标 detail，不判 FAIL）。
+关键字符串检测保留（命中只标 detail，不判 FAIL）。
 """
 import math
 import os
@@ -17,7 +17,7 @@ import time
 from .base import TestModule, register
 from ..core import logger
 from ..core.result import TestResult, Timer
-from .tt_error_monitor import TTErrorMonitor
+from .string_hit_monitor import build_monitor
 from ..drivers import video_commands as commands
 
 _VIDEO_DIR = "/emmc/VIDEO"
@@ -33,8 +33,8 @@ class VideoModule(TestModule):
     def __init__(self, config):
         super().__init__(config)
         self._console = None           # 录像窗口内用于摘除 listener（run() 时赋值）
-        self._tt_monitor = None        # TT ERROR 检测器
-        self._tt_monitor_cb = None     # TT ERROR listener 回调（用于 teardown 兜底移除）
+        self._hit_monitor = None       # 关键字符串命中检测器（detect_strings 选择）
+        self._hit_monitor_cb = None    # 命中检测 listener 回调（用于 teardown 兜底移除）
         self._profile = None
         self._duration = None
         self._recording_active = False
@@ -44,7 +44,7 @@ class VideoModule(TestModule):
         self._profile = None
         self._duration = None
         self._recording_active = False
-        self._tt_monitor = None
+        self._hit_monitor = None
         try:
             return self._run_once(ctx, console, params)
         finally:
@@ -53,7 +53,7 @@ class VideoModule(TestModule):
                 if self._recording_active:
                     self._stop_after_error(console)
             finally:
-                self._detach_tt_listener()
+                self._detach_hit_listener()
 
     def _run_once(self, ctx, console, params=None):
         # 不把运行时覆盖写回默认配置，实例复用/重试不会继承上一个 size。
@@ -76,7 +76,7 @@ class VideoModule(TestModule):
 
         ftp_download = bool(cfg.get("ftp_download", True))
         if not ftp_download:
-            return self._run_no_ftp(ctx, console, profile, resolution, duration, timer)
+            return self._run_no_ftp(ctx, console, profile, resolution, duration, timer, cfg)
 
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
@@ -103,10 +103,8 @@ class VideoModule(TestModule):
         if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
             return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
 
-        # TT ERROR 检测（录像窗口）：命中不判 FAIL，仅在结果 detail 标注（cycle/rep 由 runner 填）。
-        self._tt_monitor = TTErrorMonitor()
-        self._tt_monitor_cb = self._tt_monitor.update
-        console.add_listener(self._tt_monitor_cb)
+        # 关键字符串检测（录像窗口）：命中不判 FAIL，仅 detail 标注（cycle/rep 由 runner 填）。
+        self._attach_hit_listener(console, cfg)
 
         # 3. 开始录像。启动成功判据保持 Record Start 或编码心跳 f_index。
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
@@ -173,11 +171,11 @@ class VideoModule(TestModule):
             msg = f"{msg_base}，{sz//1024}KB | 下载不完整({local_sz//1024}KB/{sz//1024}KB)"
         return self._mk("PASS", msg, video_path, timer)
 
-    def _run_no_ftp(self, ctx, console, profile, resolution, duration, timer):
+    def _run_no_ftp(self, ctx, console, profile, resolution, duration, timer, cfg):
         """纯录像分支（ftp_download=false）：只拍不下载，完全不碰 FTP。
 
         判据与有下载分支一致：Record Start|f_index 启动 + Video recording
-        completed successfully. 完成；TT ERROR 检测保留（命中只标 detail，不判 FAIL）。
+        completed successfully. 完成；关键字符串检测保留（命中只标 detail，不判 FAIL）。
         """
         logger.step(f"  录像测试(无下载): {resolution} / {duration:g}s / "
                     f"预期 {profile.width}x{profile.height} {profile.orientation}")
@@ -188,10 +186,8 @@ class VideoModule(TestModule):
         if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
             return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
 
-        # TT ERROR 检测（录像窗口）：命中不判 FAIL，仅 detail 标注。
-        self._tt_monitor = TTErrorMonitor()
-        self._tt_monitor_cb = self._tt_monitor.update
-        console.add_listener(self._tt_monitor_cb)
+        # 关键字符串检测（录像窗口）：命中不判 FAIL，仅 detail 标注。
+        self._attach_hit_listener(console, cfg)
 
         # 2. 开始录像
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
@@ -241,8 +237,9 @@ class VideoModule(TestModule):
         return None
 
     def _mk(self, status, msg, detail, timer):
-        self._detach_tt_listener()
-        detail = self._attach_tt_hits(detail or "")
+        self._detach_hit_listener()
+        mon = self._hit_monitor
+        detail = mon.attach_to(detail or "") if mon else detail
         profile = getattr(self, "_profile", None)
         name = "video"
         if profile is not None:
@@ -259,14 +256,22 @@ class VideoModule(TestModule):
         return TestResult(name=name, module="video", status=status,
                           message=msg, detail=detail, elapsed_ms=timer.elapsed_ms())
 
-    def _detach_tt_listener(self):
-        cb = getattr(self, "_tt_monitor_cb", None)
+    def _attach_hit_listener(self, console, cfg):
+        """按 detect_strings 配置实例化 StringHitMonitor 并订阅串口（未配置则不检测）。"""
+        self._hit_monitor = build_monitor(cfg.get("detect_strings"))
+        if self._hit_monitor is None:
+            return
+        self._hit_monitor_cb = self._hit_monitor.update
+        console.add_listener(self._hit_monitor_cb)
+
+    def _detach_hit_listener(self):
+        cb = getattr(self, "_hit_monitor_cb", None)
         if cb is not None:
             try:
                 self._console.remove_listener(cb)
             except Exception:
                 pass
-            self._tt_monitor_cb = None
+            self._hit_monitor_cb = None
 
     def _stop_after_error(self, console):
         """尽力收尾，不覆盖原失败结果；不把清理成功当作本次录像成功。"""
@@ -280,18 +285,6 @@ class VideoModule(TestModule):
         finally:
             self._recording_active = False
 
-    def _attach_tt_hits(self, detail):
-        """把 TT ERROR 命中信息追加到 detail（命中不改变 status）。"""
-        mon = self._tt_monitor
-        hits = mon.get_hits() if mon else []
-        if not hits:
-            return detail
-        block = "\n".join(
-            [f"TT ERROR 命中 {len(hits)} 次："]
-            + [f"第{i}次: {h}" for i, h in enumerate(hits, 1)]
-        )
-        return (detail + "\n" + block) if detail else block
-
     def teardown(self, ctx, console):
-        self._detach_tt_listener()
-        self._tt_monitor = None
+        self._detach_hit_listener()
+        self._hit_monitor = None

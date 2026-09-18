@@ -2,6 +2,35 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 P0 — 新增录像组合 4k_0（已实施·待真机）
+
+需求已整理：[新增需求_video新增4k_0组合.md](../03_development/archive/新增需求_video新增4k_0组合.md)（Document Agent，2026-09-18）。**已实施**（devlog `20260918_0100`）：
+
+- `ATS/drivers/video_commands.py` 的 `VIDEO_PROFILES` 最前新增 `"4k_0": VideoProfile("4k_0", "cam_set video 4k 0", 0, 0, "待校准")`（TODO-CONFIRM）。
+- 未接任何场景、未动 `BLOCKED_VIDEO_PROFILES` / `video.py` / Runner / Scenario。
+- **待真机**：`cam_set video 4k 0` 后用 ffprobe 实测回填 `4k_0` 的 width/height/orientation，关闭 TODO-CONFIRM。
+
+## 🔴 P0 — 新增检测串 `imu fmq overflow f=`（已实施·待真机）
+
+用户 2026-09-18 需求：录像（video）与推流（rtmp）过程新增检测关键字符串 `imu fmq overflow f=`。**已实施**（devlog `20260918_0030`）：
+
+1. `ATS/drivers/detect_strings.py` 追加 `"imu_fmq_overflow": DetectString("imu_fmq_overflow", r"imu fmq overflow f=", "imu fmq overflow f=")`。
+2. `video.yaml` / `rtmp.yaml` 的 `detect_strings` 改为 `[tt_error, imu_fmq_overflow]`。
+
+- 纯数据改动，业务代码零改动；字面串子串匹配（`=` 后数字不校验）、大小写敏感、跨 chunk 前缀自动推导。
+- **待真机**：确认该字符串在固件日志中的实际形态（字符串与不校验数字已拍板，真机样本待补）。
+
+## 🔴 P0 — 检测关键字符串集中化与配置选择（ADR-014，已实施·待真机）
+
+设计已定：[ADR-014](../02_design/decision_record/ADR-014-检测关键字符串集中化与配置选择.md)（Document Agent，2026-09-18，Status=Accepted）。**已实施**（devlog `20260918_0010`）：
+
+1. `ATS/drivers/detect_strings.py`：`DetectString`（key/pattern/label）+ `DETECT_STRINGS`（首条 `tt_error`，pattern 逐字不动）。
+2. `ATS/modules/tt_error_monitor.py` → `string_hit_monitor.py`：`TTErrorMonitor` → `StringHitMonitor`（多 `DetectString` + 截断前缀自动推导 + 展示文案收敛进 `attach_to()`）。
+3. `video.py` / `rtmp.py`：读 `detect_strings` 配置、挂/摘 listener、命中只追加 detail 不判 FAIL；删除两份 `_attach_tt_hits`。
+4. `config/modules/video.yaml` / `rtmp.yaml`：加 `detect_strings: [tt_error]`。
+
+**待真机**：命中文案与 report 展示需真机确认（离线 mock 已 PASS）。缺省（不写 detect_strings）不检测；新增任意 `DetectString` 无需改业务代码（已核实）。
+
 ## 🔴 P0 — 全部改动待真机验证
 
 以下改动均已离线验证通过，**尚未真机验证**：
