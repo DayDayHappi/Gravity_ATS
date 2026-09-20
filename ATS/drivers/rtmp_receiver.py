@@ -23,20 +23,12 @@ import shutil
 import subprocess
 
 from ..core import logger
+from ..platform.resources import ResourceLocator
 
 
 def _find_ffprobe(preferred=None) -> str:
-    """查找 ffprobe 可执行文件。顺序：preferred -> PATH -> 常见绝对路径。"""
-    if preferred and (shutil.which(preferred) or os.path.isfile(preferred)):
-        return preferred
-    p = shutil.which("ffprobe")
-    if p:
-        return p
-    for cand in ("/usr/bin/ffprobe", "/usr/local/bin/ffprobe",
-                 os.path.expanduser("~/bin/ffprobe")):
-        if os.path.isfile(cand):
-            return cand
-    return ""
+    """查找 ffprobe 可执行文件。顺序：preferred -> bundled -> PATH（兼容 .exe）。"""
+    return ResourceLocator().find_tool("ffprobe", preferred)
 
 
 class RtmpReceiverError(Exception):

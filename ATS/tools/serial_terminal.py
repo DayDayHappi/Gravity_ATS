@@ -17,8 +17,6 @@
 import sys
 import os
 import threading
-import termios
-import tty
 
 try:
     import serial
@@ -28,6 +26,7 @@ except ImportError:  # pragma: no cover
 from ..core import logger
 from ..core.ansi import strip as ansi_strip
 from ..core.serial_console import detect_port, SerialError
+from ..platform.console_input import create_console_key_reader
 
 # 颜色码
 _GREEN = "\033[32m"
@@ -112,10 +111,6 @@ def run_terminal(port, baudrate, strip_ansi=True):
 
     reader = threading.Thread(target=_reader_loop, name="terminal-reader", daemon=True)
 
-    # 保存终端原设置，进入 cbreak 模式（逐字符读 stdin，使 Tab 可捕获）
-    fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
-
     print(f"\n{_YELLOW}════════ 交互式串口终端 ════════{_RESET}")
     print(f"  端口: {port}  波特率: {baudrate}")
     print(f"  ANSI 剥离: {'开' if state['strip_ansi'] else '关'}（Tab 切换）")
@@ -126,63 +121,61 @@ def run_terminal(port, baudrate, strip_ansi=True):
 
     buf = ""
     try:
-        tty.setcbreak(fd)
-        while not state["stop"]:
-            ch = sys.stdin.read(1)
-            if not ch:
-                break
-            # Ctrl+C
-            if ch == "\x03":
-                break
-            # Tab: 切换 ANSI 剥离
-            if ch == "\t":
-                state["strip_ansi"] = not state["strip_ansi"]
-                _print_status(
-                    f"[ANSI 剥离: {'开' if state['strip_ansi'] else '关'}]")
-                # 刷新当前输入行（cbreak 下 Tab 不回显，补显当前 buf）
-                with print_lock:
-                    sys.stdout.write(f"{_DIM}> {_RESET}{buf}")
-                    sys.stdout.flush()
-                continue
-            # 回车: 发送命令
-            if ch in ("\r", "\n"):
-                line = buf
-                buf = ""
-                # 换行显示
-                with print_lock:
-                    sys.stdout.write("\n")
-                    sys.stdout.flush()
-                if line.strip().lower() in _EXIT_CMDS:
+        # 进入 cbreak 模式（逐字符读 stdin，使 Tab 可捕获）；Windows 走 msvcrt.getwch，
+        # 非 tty 时退化为 stream.read(1)。
+        with create_console_key_reader() as keys:
+            while not state["stop"]:
+                ch = keys.read_key()
+                if not ch:
                     break
-                if line:
-                    _print_tx(line)
-                    try:
-                        ser.write((line + "\n").encode("utf-8"))
-                        ser.flush()
-                    except Exception as e:
-                        _print_status(f"[发送失败] {e}")
-                continue
-            # 退格: 删一个字符
-            if ch in ("\x7f", "\x08"):
-                if buf:
-                    buf = buf[:-1]
+                # Ctrl+C
+                if ch == "\x03":
+                    break
+                # Tab: 切换 ANSI 剥离
+                if ch == "\t":
+                    state["strip_ansi"] = not state["strip_ansi"]
+                    _print_status(
+                        f"[ANSI 剥离: {'开' if state['strip_ansi'] else '关'}]")
+                    # 刷新当前输入行（cbreak 下 Tab 不回显，补显当前 buf）
                     with print_lock:
-                        sys.stdout.write("\b \b")
+                        sys.stdout.write(f"{_DIM}> {_RESET}{buf}")
                         sys.stdout.flush()
-                continue
-            # 普通字符: 累积 + 回显
-            buf += ch
-            with print_lock:
-                sys.stdout.write(ch)
-                sys.stdout.flush()
+                    continue
+                # 回车: 发送命令
+                if ch in ("\r", "\n"):
+                    line = buf
+                    buf = ""
+                    # 换行显示
+                    with print_lock:
+                        sys.stdout.write("\n")
+                        sys.stdout.flush()
+                    if line.strip().lower() in _EXIT_CMDS:
+                        break
+                    if line:
+                        _print_tx(line)
+                        try:
+                            ser.write((line + "\n").encode("utf-8"))
+                            ser.flush()
+                        except Exception as e:
+                            _print_status(f"[发送失败] {e}")
+                    continue
+                # 退格: 删一个字符
+                if ch in ("\x7f", "\x08"):
+                    if buf:
+                        buf = buf[:-1]
+                        with print_lock:
+                            sys.stdout.write("\b \b")
+                            sys.stdout.flush()
+                    continue
+                # 普通字符: 累积 + 回显
+                buf += ch
+                with print_lock:
+                    sys.stdout.write(ch)
+                    sys.stdout.flush()
     except KeyboardInterrupt:
         pass
     finally:
         state["stop"] = True
-        try:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        except Exception:
-            pass
         try:
             reader.join(timeout=1.0)
         except Exception:

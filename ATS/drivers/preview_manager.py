@@ -10,20 +10,23 @@
 
 关键适配（stress 多轮 start/stop 推流的现实）：nginx-rtmp 在 EVB 停止推流
 （``rtmp_video_stop``）时会断开该 stream 的观看连接，单次 ffplay 进程会在流断后退出、
-且下一轮 ``rtmp_video_start`` 时不会自动重连。因此 ``start()`` 内部用**重连 wrapper**：
-ffplay 退出后 sleep + 重试，直到 ``stop()`` 终止 wrapper 及子进程。这与 ``restart()``
-落地方式一致——由 PreviewManager 自动重连，不依赖外部显式调用。
+且下一轮 ``rtmp_video_start`` 时不会自动重连。因此 ``start()`` 内部用 Python 重连
+worker 线程：ffplay 退出后 sleep + 重试，直到 ``stop()`` 终止 worker 及子进程。
 
-启动方式沿用既有已验证逻辑（从 ``modules/rtmp.py`` 迁移）：
-- 有 DISPLAY + 终端模拟器（gnome-terminal/xterm 等）时，在独立终端窗口跑 wrapper；
-- 否则回退 subprocess 直启 bash wrapper（``setsid`` 成新会话，便于 ``killpg`` 整组回收）；
-- 无 DISPLAY 或无 ffplay 则跳过（无人值守/SSH 常见，不影响判据）。
+进程管理走平台抽象层（``ProcessController`` + ``ResourceLocator`` 构造注入），
+Windows 用 ``CREATE_NEW_PROCESS_GROUP`` + taskkill 整树回收、ffplay 直启带窗口；
+Linux 用 ``start_new_session`` + ``killpg`` 整组回收。ffplay 查找走 ``find_tool()``
+（自动处理 ``.exe`` 后缀 + bundled 目录 + PATH）。
+
+无 ffplay / Linux 无 DISPLAY 时跳过（无人值守/SSH 常见，不影响判据）。
 """
 import os
-import signal
 import subprocess
+import threading
 
 from ..core import logger
+from ..platform.processes import ProcessController
+from ..platform.resources import ResourceLocator
 
 
 def _detect_pc_ip(target_ip: str) -> str:
@@ -45,57 +48,36 @@ def _detect_pc_ip(target_ip: str) -> str:
         return ""
 
 
-def _find_ffplay(preferred=None) -> str:
-    """查找 ffplay 可执行文件。顺序：preferred -> PATH -> 常见绝对路径。"""
-    import shutil
-    if preferred and (shutil.which(preferred) or os.path.isfile(preferred)):
-        return preferred
-    p = shutil.which("ffplay")
-    if p:
-        return p
-    for cand in ("/usr/bin/ffplay", "/usr/local/bin/ffplay",
-                 os.path.expanduser("~/bin/ffplay")):
-        if os.path.isfile(cand):
-            return cand
-    return ""
-
-
-# 终端模拟器候选：用于在独立终端窗口跑 ffplay 画面观察
-_TERMINAL_CANDIDATES = [
-    "gnome-terminal", "xterm", "konsole", "xfce4-terminal",
-    "terminator", "mate-terminal", "lxterminal",
-]
-
-
-def _find_terminal() -> str:
-    """查找可用的终端模拟器，返回其路径或空串。"""
-    import shutil
-    for t in _TERMINAL_CANDIDATES:
-        p = shutil.which(t)
-        if p:
-            return p
-    return ""
-
-
 class PreviewManager:
-    """RTMP 画面观察器：管理 ffplay 重连 wrapper 的生命周期（start/stop/restart/is_running）。
+    """RTMP 画面观察器：管理 ffplay 重连 worker 的生命周期（start/stop/restart/is_running）。
 
     整个 Scenario 生命周期只应有一个实例（由 ``prepare_action("preview_start")`` 创建并
     写入 ``ctx.preview_manager``，``cleanup_action("preview_stop")`` 回收），不得在每个
     task/loop 轮次新建——避免 stress 多轮累积窗口与资源泄漏。
+
+    构造注入 ``process_controller`` / ``resource_locator``，测试可传 mock。
     """
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict = None, *,
+                 process_controller: ProcessController = None,
+                 resource_locator: ResourceLocator = None):
         self.config = config or {}
-        self._ffplay_path = _find_ffplay(self.config.get("ffplay_path", "ffplay"))
-        self._retry = float(self.config.get("retry_interval", 3.0))
+        self._processes = process_controller or ProcessController()
+        self._resources = resource_locator or ResourceLocator()
+        self._ffplay_path = self._resources.find_tool(
+            "ffplay", self.config.get("ffplay_path", "ffplay"))
+        self._retry = max(0.05, float(self.config.get("retry_interval", 3.0)))
         self._required = bool(self.config.get("preview_required", False))
+        # ffplay 窗口初始尺寸（-x/-y 是窗口尺寸，非视频缩放；0/空 = 不传，跟随原始分辨率）
+        self._window_w = int(self.config.get("window_width", 0) or 0)
+        self._window_h = int(self.config.get("window_height", 0) or 0)
 
         self._url = None
-        self._wrapper_proc = None   # 重连 wrapper 进程（终端模拟器 或 bash -c）
-        self._in_terminal = False   # 是否走独立终端窗口模式
-        self._active = False        # 本次是否成功启动（用于终端模式下 gnome-terminal 立即返回的兜底）
-        self._log_handle = None     # 直启模式 stderr 日志句柄
+        self._stop_event = None      # worker 停止信号（threading.Event，替代取消令牌）
+        self._thread = None          # 重连 worker 线程
+        self._current_process = None  # 当前 ffplay 子进程（供 stop 立即回收）
+        self._lock = threading.RLock()
+        self._log_handle = None      # preview.log 句柄
 
     # ------------------------------------------------------------------
     # 生命周期接口
@@ -104,36 +86,45 @@ class PreviewManager:
     def start(self, url: str) -> bool:
         """启动画面观察（幂等：已在运行则直接返回 True）。
 
-        用重连 wrapper 跑 ffplay，直到 ``stop()`` 终止。返回是否成功启动
-        （无 DISPLAY / 无 ffplay 时为 False，不影响判据）。
+        启动重连 worker 线程跑 ffplay，直到 ``stop()`` 终止。返回是否成功启动
+        （无 ffplay / Linux 无 DISPLAY 时为 False，不影响判据）。
         """
         if self.is_running():
             logger.info("PreviewManager 已在运行，跳过重复启动")
             return True
-        self._url = url
-
         if not self._ffplay_path:
             logger.warn("未找到 ffplay，跳过画面观察（判据仍由 ffprobe + heartbeat 给出）")
             return False
-        if not os.environ.get("DISPLAY"):
-            logger.info("无 DISPLAY 环境变量，跳过画面观察（无人值守/SSH 常见）")
+        if not self._can_show():
+            logger.info("当前会话不能显示画面窗口，跳过画面观察（无人值守/SSH 常见）")
             return False
 
-        terminal = _find_terminal()
-        if terminal:
-            return self._launch_terminal(url, terminal)
-        return self._launch_direct(url)
+        self._url = url
+        self._stop_event = threading.Event()
+        self._open_log()
+        self._thread = threading.Thread(
+            target=self._worker, name="rtmp-preview-reconnect", daemon=True)
+        self._thread.start()
+        logger.info("画面观察重连 worker 已启动")
+        return True
 
     def stop(self):
-        """关闭画面观察：终止重连 wrapper 及子进程，清空状态。幂等。"""
-        if not self._active:
-            self._wrapper_proc = None
+        """关闭画面观察：终止 worker 及当前 ffplay 子进程，清空状态。幂等。"""
+        evt = self._stop_event
+        if evt is None:
             return
-        self._report_unexpected_exit()
-        self._terminate_wrapper()
-        self._active = False
-        self._wrapper_proc = None
-        self._in_terminal = False
+        evt.set()
+        with self._lock:
+            proc = self._current_process
+        if proc is not None:
+            self._processes.terminate(proc)
+        thread = self._thread
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=3.0)
+        self._thread = None
+        self._stop_event = None
+        with self._lock:
+            self._current_process = None
         self._close_log()
 
     def restart(self, url: str = None) -> bool:
@@ -142,119 +133,76 @@ class PreviewManager:
         return self.start(url or self._url)
 
     def is_running(self) -> bool:
-        """是否在运行。
-
-        直启模式以 ``wrapper.poll() is None`` 为准；终端模式下部分终端模拟器
-        （如 gnome-terminal）启动后立即返回，故以 ``_active`` 兜底判断。
-        """
-        if not self._active:
-            return False
-        if self._in_terminal:
-            return True
-        return self._wrapper_proc is not None and self._wrapper_proc.poll() is None
+        """worker 线程是否存活。"""
+        return self._thread is not None and self._thread.is_alive()
 
     # ------------------------------------------------------------------
     # 启动实现
     # ------------------------------------------------------------------
 
-    def _wrapper_script(self, url: str) -> str:
-        """生成重连 wrapper 的 bash 脚本：ffplay 退出后 sleep 重连，直到被 stop 终止。"""
-        ffplay_abs = os.path.abspath(self._ffplay_path)
-        return (
-            f'echo "RTMP 画面观察: {url}"; '
-            f'while true; do '
-            f'  "{ffplay_abs}" -rtmp_live live -rtmp_buffer 0 -fflags nobuffer '
-            f'-flags low_delay -framedrop -sync ext "{url}"; '
-            f'  echo; echo "== ffplay 已退出，{self._retry:g}s 后重连 =="; '
-            f'  sleep {self._retry}; '
-            f'done'
-        )
-
-    def _launch_terminal(self, url: str, terminal: str) -> bool:
-        """独立终端窗口模式：终端模拟器里跑重连 wrapper。"""
-        script = self._wrapper_script(url)
-        try:
-            self._wrapper_proc = subprocess.Popen(
-                [terminal, "--", "bash", "-c", script],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-            self._in_terminal = True
-            self._active = True
-            logger.info(f"已在独立终端窗口启动画面观察 ({terminal})")
+    def _can_show(self) -> bool:
+        """Windows 交互会话默认可显示；Linux 需有 DISPLAY（SSH/无人值守跳过）。"""
+        if self._processes.is_windows:
             return True
-        except Exception as e:
-            logger.warn(f"终端启动画面观察失败(可忽略，不影响判据): {e}")
-            self._wrapper_proc = None
-            return False
+        return bool(os.environ.get("DISPLAY"))
 
-    def _launch_direct(self, url: str) -> bool:
-        """直启模式：subprocess 直启 bash wrapper（setsid 便于 killpg 整组回收）。"""
-        script = self._wrapper_script(url)
-        err = subprocess.DEVNULL
-        log_dir = logger.log_dir()
-        if log_dir:
+    def _argv(self):
+        argv = [
+            self._ffplay_path,
+            "-rtmp_live", "live",
+            "-rtmp_buffer", "0",
+            "-fflags", "nobuffer",
+            "-flags", "low_delay",
+            "-framedrop",
+            "-sync", "ext",
+        ]
+        if self._window_w > 0:
+            argv += ["-x", str(self._window_w)]
+        if self._window_h > 0:
+            argv += ["-y", str(self._window_h)]
+        argv.append(self._url)
+        return argv
+
+    def _worker(self):
+        """重连 worker：循环启动 ffplay，退出后 sleep 重试，直到 stop 信号。"""
+        evt = self._stop_event
+        while not evt.is_set():
+            proc = None
             try:
-                self._log_handle = open(os.path.join(log_dir, "preview.log"), "wb")
-                err = self._log_handle
-            except Exception:
-                self._log_handle = None
-        try:
-            self._wrapper_proc = subprocess.Popen(
-                ["bash", "-c", script],
-                stdout=subprocess.DEVNULL,
-                stderr=err,
-                preexec_fn=os.setsid,
-            )
-            self._in_terminal = False
-            self._active = True
-            logger.info(f"画面观察已启动 (pid={self._wrapper_proc.pid})")
-            return True
-        except Exception as e:
-            logger.warn(f"画面观察启动失败(可忽略，不影响判据): {e}")
-            self._wrapper_proc = None
-            self._close_log()
-            return False
+                proc = self._processes.start(
+                    self._argv(),
+                    stdout=subprocess.DEVNULL,
+                    stderr=self._log_handle or subprocess.DEVNULL,
+                    show_window=self._processes.is_windows,
+                )
+                with self._lock:
+                    self._current_process = proc
+                proc.wait()
+                if not evt.is_set():
+                    level = logger.error if self._required else logger.warn
+                    level("preview stopped unexpectedly（画面观察意外退出），准备自动重连")
+            except Exception as exc:
+                if not evt.is_set():
+                    logger.warn(f"画面观察进程异常: {exc}")
+            finally:
+                if proc is not None and proc.poll() is None:
+                    self._processes.terminate(proc)
+                with self._lock:
+                    if self._current_process is proc:
+                        self._current_process = None
+            evt.wait(self._retry)
 
-    # ------------------------------------------------------------------
-    # 停止与异常处理
-    # ------------------------------------------------------------------
-
-    def _terminate_wrapper(self):
-        """终止重连 wrapper 及其子进程（进程组 kill，防 ffplay 残留）。"""
-        if self._wrapper_proc is None:
+    def _open_log(self):
+        directory = logger.log_dir()
+        if not directory:
             return
         try:
-            pgid = os.getpgid(self._wrapper_proc.pid)
-            os.killpg(pgid, signal.SIGTERM)
-            try:
-                self._wrapper_proc.wait(timeout=3)
-            except Exception:
-                pass
-        except Exception:
-            pass
-        # 兜底：SIGKILL 确保回收
-        if self._wrapper_proc.poll() is None:
-            try:
-                os.killpg(os.getpgid(self._wrapper_proc.pid), signal.SIGKILL)
-                self._wrapper_proc.wait(timeout=3)
-            except Exception:
-                pass
-
-    def _report_unexpected_exit(self):
-        """若曾启动但已意外退出（如用户手动关闭窗口），按 preview_required 决定影响级别。"""
-        if self._in_terminal:
-            # 终端模式下无法精确探测 wrapper 是否仍存活，跳过（记录见 devlog）
-            return
-        if self._wrapper_proc is not None and self._wrapper_proc.poll() is not None:
-            msg = "preview stopped unexpectedly（画面观察意外退出）"
-            if self._required:
-                logger.error(f"{msg}（preview_required=true）")
-            else:
-                logger.warn(f"{msg}（不影响判据）")
+            self._log_handle = open(os.path.join(directory, "preview.log"), "ab")
+        except OSError:
+            self._log_handle = None
 
     def _close_log(self):
-        if self._log_handle:
+        if self._log_handle is not None:
             try:
                 self._log_handle.close()
             except Exception:

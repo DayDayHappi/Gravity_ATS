@@ -10,17 +10,15 @@
   - ``exec_async``（异步命令，如 wifi join / dfs_capture_start / rtmp_video_start）：
     **只发命令、不发哨兵**，直接等业务完成字符串（Got IP / Save Photo Successful）。
     因为哨兵只能表示命令已返回、不能表示异步业务真正完成。
-- **自动探测**：未指定端口时扫描 ``/dev/ttyUSB*``+``/dev/ttyACM*``，按候选波特率
-  逐个尝试，用 EVB 指纹（JX009 / msh /> / Some IC design company.cn Build）匹配。
+- **自动探测**：未指定端口时通过平台抽象层枚举候选串口（Linux ``/dev/ttyUSB*``/``/dev/ttyACM*``、
+  Windows ``COMx``），按候选波特率逐个尝试，用 EVB 指纹（JX009 / msh /> / Some IC design company.cn Build）匹配。
 - **波特率回退**：默认 2000000 探不到时回退 [250000, 115200, 921600]。
 
 对外只暴露 ``SerialConsole`` 和 ``detect_port``，上层模块通过 ``exec_sync``/``exec_async``
 发命令，不感知底层细节。
 """
-import os
 import re
 import time
-import glob
 import threading
 import secrets
 from collections import deque
@@ -503,14 +501,16 @@ class SerialConsole:
 
 # ---------- 自动探测 ----------
 
-def _list_candidate_ports() -> list:
-    """枚举当前用户可访问的 /dev/ttyUSB* 和 /dev/ttyACM*。"""
-    ports = sorted(set(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")))
-    accessible = []
-    for p in ports:
-        if os.access(p, os.R_OK | os.W_OK):
-            accessible.append(p)
-    return accessible
+def _list_candidate_ports(port_provider=None) -> list:
+    """枚举候选串口：Linux /dev/ttyUSB*、/dev/ttyACM* 与 Windows COMx 统一走平台抽象层。"""
+    if port_provider is None:
+        from ..platform.serial_ports import PySerialPortProvider
+        port_provider = PySerialPortProvider()
+    try:
+        return list(port_provider.candidate_names())
+    except Exception as exc:
+        logger.error(f"串口枚举失败: {exc}")
+        return []
 
 
 def _probe_port_baud(port: str, baudrate: int, detect_timeout: float = 2.0,
@@ -560,7 +560,8 @@ def detect_port(baudrate: int = 2000000,
                 baud_candidates=None,
                 interactive: bool = True,
                 detect_timeout: float = 2.0,
-                fingerprint_set: str = "default"):
+                fingerprint_set: str = "default",
+                port_provider=None):
     """自动探测 EVB 串口。
 
     遍历候选端口 × 候选波特率，用指纹匹配。默认波特率优先，探不到则回退候选列表。
@@ -571,6 +572,7 @@ def detect_port(baudrate: int = 2000000,
         interactive: 多个匹配时是否交互让用户选。
         detect_timeout: 每个组合的探测超时。
         fingerprint_set: 指纹集选择键（ADR-013），默认 ``default``（旧固件）。
+        port_provider: 串口枚举提供者（默认惰性构造 PySerialPortProvider，测试可传 mock）。
 
     Returns:
         (port, baudrate) 元组；未探测到返回 (None, None)。
@@ -581,10 +583,10 @@ def detect_port(baudrate: int = 2000000,
     # 优先尝试默认波特率，再去重其余候选
     ordered = [baudrate] + [b for b in candidates if b != baudrate]
 
-    ports = _list_candidate_ports()
+    ports = _list_candidate_ports(port_provider)
     if not ports:
-        logger.error("未发现任何可访问的串口设备 (/dev/ttyUSB* /dev/ttyACM*)")
-        logger.error("请检查: 1) EVB 已上电并连接  2) 当前用户在 dialout 组  3) USB-串口驱动已加载")
+        logger.error("未发现可用串口设备（Linux ttyUSB/ttyACM 或 Windows COM）")
+        logger.error("请检查 EVB 供电/USB 连接、串口驱动、端口占用和当前用户权限")
         return None, None
 
     logger.info(f"开始自动探测 EVB 串口，候选端口 {ports}，候选波特率 {ordered}")

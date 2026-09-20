@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from ..core import logger
+from ..platform.resources import ResourceLocator
 
 # ---------------------------------------------------------------------------
 # 错误分类（需求 §10 + §20.2 补充）
@@ -118,11 +119,9 @@ class H265Validator:
     def _resolve_ffmpeg(path: str) -> str:
         if not path:
             return ""
-        if shutil.which(path) or os.path.isfile(path):
-            return path
-        sysp = shutil.which("ffmpeg")
-        if sysp:
-            return sysp
+        found = ResourceLocator().find_tool("ffmpeg", path)
+        if found:
+            return found
         return path  # 保留原值，validate 时报 TOOL_NOT_FOUND
 
     def tool_available(self) -> bool:

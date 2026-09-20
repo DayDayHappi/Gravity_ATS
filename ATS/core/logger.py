@@ -23,6 +23,31 @@ _RUN_FP = None          # run.log 文件句柄
 _VERBOSE = False        # 详细模式
 
 
+def _enable_windows_vt():
+    """Windows 旧控制台默认不解析 ANSI 颜色码，用 SetConsoleMode 启用 VT 处理。
+
+    Win10+ 原生支持，零第三方依赖；非 Windows 或非 tty 时静默跳过。
+    失败（如被重定向到文件）静默忽略，不影响日志落盘。
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        # STD_OUTPUT_HANDLE = -11；GetStdHandle 拿控制台输出句柄
+        handle = kernel32.GetStdHandle(-11)
+        mode = ctypes.c_uint32()
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            return
+        ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+        if mode.value & ENABLE_VIRTUAL_TERMINAL_PROCESSING:
+            return
+        kernel32.SetConsoleMode(
+            handle, ctypes.c_uint32(mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    except Exception:
+        pass
+
+
 def _now() -> str:
     """当前时间字符串，精确到毫秒。"""
     return _dt.datetime.now().strftime("%H:%M:%S.") + "%03d" % (
@@ -45,6 +70,7 @@ def init_logger(log_root: str, verbose: bool = False) -> str:
     _LOG_DIR = os.path.join(log_root, _RUN_TS)
     os.makedirs(_LOG_DIR, exist_ok=True)
     _VERBOSE = verbose
+    _enable_windows_vt()
     _open_files()
     return _RUN_TS
 
