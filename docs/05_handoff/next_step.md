@@ -2,6 +2,38 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 P0 — serial_console.exec_sync 长时压测误判（已实施·待真机）
+
+**现象（真机 stress 压测，2026-09-18 日志 `logs/stress/20260918/20260918_163736`）**：压测约第 26 轮起（06:48，RTMP 推流 10 分钟结束后回到 photo），photo/video 的所有 `cam_set photo|video <mode>` 全判 `[FAIL] 设置模式/设置录像组合 失败`，此后每轮持续 FAIL；photo 因第一步 cam_set 失败提前 return，**不再发 `dfs_capture_start`**（用户观察到的「06:09:52 后只发 cam_set photo 不再发 capture」即此）。
+
+**根因（脚本侧，非固件）**：`ATS/core/serial_console.py` 的 `exec_sync` 用字符串前缀切片定位「命令后新输出」：
+
+```python
+# _wait_pattern
+new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
+```
+
+环形缓冲 `deque(maxlen=65536)` 长时间压测后滚满，命令执行期间（snapshot→哨兵）任何新数据都会顶掉头部，`full.startswith(snapshot)` 恒为 False → `new = full`（整个缓冲，混入 RTMP 阶段残留）。`exec_sync` 无 expect 时 `_judge` 用 `_ERROR_RE`（含 `invalid`）扫 `resp_clean`，命中 RTMP 期间固件正常调试日志 `preset capCfg ... invalid, use default`（全 log 780 条）→ 误判 `success=False`。
+
+**证据**：固件回显成功（`I/App Dfs: auto mode`、`product_w(1920)*product_h(1080) is 1080p`）+ 哨兵 1.6s 内完整出现（非超时），与 run.log 判 FAIL 矛盾；cycle 25 photo 全 PASS、cycle 26 起 photo+video 全 FAIL，失败点精确落在「RTMP 10min 结束→photo 首命令」。
+
+**影响范围**：`ATS/modules/photo.py` L77、`ATS/modules/video.py` L102/L185 的 `exec_sync(cam_set...)` 均受影响。
+
+**已实施**（devlog `20260920_1053`，方案 A）：快照定位从「字符串前缀」改「单调递增序号游标」（`deque(str)`→`deque(tuple[int,str])` + `_snapshot_seq`/`_buffer_text_since`），并收窄 `_ERROR_RE` 排除 `invalid[, ]use default` 相机正常 fallback。对外 API 不变，离线模拟滚满场景 PASS。
+
+**待真机**：`python3 -m ATS.main --scenario stress --no-interactive-wifi` 跑至 26 轮以上（越过 RTMP 10min），确认 photo/video 不再「设置模式/设置录像组合 失败」。详见 [排查报告](../03_development/archive/串口环形缓冲满导致cam_set误判_排查报告.md)、[BUG-005](../03_development/bugfix/BUG-005-exec_sync环形缓冲滚满快照失效.md)。
+
+## 🔴 P0 — 串口上下电控制模块（ADR-015，设计已定·待 Code Agent 实施）
+
+设计已定：[ADR-015](../02_design/decision_record/ADR-015-串口上下电控制模块.md)（Document Agent，2026-09-18，Status=Accepted，待实施）。
+
+- 新增系统边界 PC→控制模块→电源→EVB，封装 driver 能力 `ATS/drivers/power_switch.py`（`power_on()`/`power_off()`/`reboot()` 被动接口，不感知触发时机）。
+- 协议唯一来源 `ATS/drivers/power_commands.py`（ADR-011）：上电 `A0 01 03 A4`、下电 `A0 01 02 A3`、返回帧 `A0 01 <state> <sum>`（`01`=ON/`00`=OFF），波特率 115200。
+- 端口区分：启用时对候选串口发上电帧，回 `A0 01 01 A2` 者=控制器，另一=板子；探测独立，`serial_init` 仍走 `detect_port` 找板子。
+- 配置：`config/system.yaml` 增 `power_switch` 段（`enabled: false` 默认关，未启用零影响）。
+- 触发时机由另一独立模块 import 调用实现（本次不接，禁止耦合）。
+- **待 Code Agent 实施**；`reboot_delay`（断电-上电间隔）默认值待真机确定（TODO-CONFIRM）。
+
 ## 🔴 P0 — 新增录像组合 4k_0（已实施·待真机）
 
 需求已整理：[新增需求_video新增4k_0组合.md](../03_development/archive/新增需求_video新增4k_0组合.md)（Document Agent，2026-09-18）。**已实施**（devlog `20260918_0100`）：

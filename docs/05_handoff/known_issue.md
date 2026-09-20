@@ -15,6 +15,12 @@
 
 排查先 grep serial.log 的 `RV_Backtrace` / `ImuThread` / `discontinuous frame` / `interp not finish in sof` / `write failed errno` / `write open failed`。
 
+## 脚本侧已知问题（待 Code Agent 修复，非固件 bug）
+
+| Issue | Impact | 状态 |
+|-------|--------|------|
+| `exec_sync` 长时压测误判：环形缓冲滚满后 `full.startswith(snapshot)` 失效 → `new=full` 混入 RTMP 残留日志，`_ERROR_RE` 命中固件正常调试串 `preset capCfg ... invalid, use default`（780 条）→ `cam_set photo/video` 被误判 FAIL，photo 提前 return 不再发 `dfs_capture_start` | stress 压测约第 26 轮起 photo/video 全 FAIL（真机 2026-09-18） | **已修复（方案 A 序号游标，devlog `20260920_1053`，待真机）** |
+
 ## 文档过时点（后续顺手修）
 
 | 位置 | 现象 |

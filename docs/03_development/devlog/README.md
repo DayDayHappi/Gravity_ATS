@@ -29,7 +29,7 @@
 
 | 日期 | 文件 | 说明 |
 |------|------|------|
-| 2026-09-18 | [20260918_0100_video新增4k_0组合.md](20260918_0100_video新增4k_0组合.md) | video 新增 4k_0 组合：video_commands.py 的 VIDEO_PROFILES 最前加 4k_0（cam_set video 4k 0，占位 0x0/待校准 TODO-CONFIRM），纯增量，不接场景、不动 BLOCKED_VIDEO_PROFILES/video.py；现有 12 组合行为不变 |
+| 2026-09-20 | [20260920_1053_修复环形缓冲滚满致cam_set误判_方案A序号游标定位.md](20260920_1053_修复环形缓冲滚满致cam_set误判_方案A序号游标定位.md) | 方案 A 修复 serial_console 环形缓冲滚满后快照定位失效致 cam_set 误判：快照从字符串前缀改单调递增序号游标（deque(str)→deque(tuple[int,str])，新增 _snapshot_seq/_buffer_text_since，_wait_pattern/_wait_regex/exec_sync/exec_async/wait_for_ready 改用游标），并收窄 _ERROR_RE 排除 invalid,use default 相机正常 fallback；对外 API 不变，离线模拟滚满场景 PASS，待真机 stress 26 轮验证 |
 | 2026-09-18 | [20260918_0030_新增检测串imu_fmq_overflow.md](20260918_0030_新增检测串imu_fmq_overflow.md) | 新增检测串 `imu fmq overflow f=`：detect_strings.py 追加 imu_fmq_overflow（字面串、`=` 后数字不校验、跨 chunk 前缀自动推导），video/rtmp.yaml 的 detect_strings 加 imu_fmq_overflow；纯数据改动，业务代码零改动 |
 | 2026-09-18 | [20260918_0010_检测关键字符串集中化与配置选择ADR-014.md](20260918_0010_检测关键字符串集中化与配置选择ADR-014.md) | ADR-014 源码实施：检测串集中到 drivers/detect_strings.py（DetectString+DETECT_STRINGS 唯一来源）；tt_error_monitor.py→string_hit_monitor.py（TTErrorMonitor→StringHitMonitor 泛化，截断前缀自动推导+展示文案 attach_to 收敛）；video/rtmp 改读 detect_strings 配置、删两份 _attach_tt_hits；video/rtmp.yaml 加 detect_strings:[tt_error]；缺省不检测 |
 | 2026-09-17 | [20260917_1824_utest细粒度判据实施.md](20260917_1824_utest细粒度判据实施.md) | utest 单文件→包迁移 + D1 叠加判据：drivers/utest_commands.py→drivers/utest/（_common + 8 per-case commands，业务关键串正则 D7 严格/宽松）、modules/utest.py→modules/utest/（base.py 叠加判据模板 + 8 case 模块 utest_*）、scenario tasks 改 8 个 utest_<case>、config._MODULE_FILE_MAP 补映射、utest.yaml 加 min_speed_kbs=0；mock 样本 8 case 全 PASS + 负向路径（业务串缺失/FAILED 不救回/无 result 行/阈值）全符合 D1 |

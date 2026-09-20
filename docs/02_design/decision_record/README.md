@@ -16,3 +16,4 @@
 | ADR-012 | utest 统一日志框架接入 | 独立 utest 场景；每 case 一模块（8 个 `utest_<case>`）；判据=result 行（主）+ 业务关键串（补充）叠加（不扫 fail/error，避 qspi `1 lane fail!` 误判）；每 testcase 独立超时映射；FAILED 格式预留接口；2026-09-17 细粒度演进真机跑通 |
 | ADR-013 | 串口探测指纹按场景分派 | 探测/就绪指纹按场景选择键分派（default 旧指纹逐字不动；utest 追加认 `msh >` 无斜杠）；正则留 serial_console.py，yaml 只存选择键；旧固件零影响（已实施） |
 | ADR-014 | 检测关键字符串集中化与配置选择 | 检测串定义集中到 `drivers/detect_strings.py`（DetectString + DETECT_STRINGS 唯一来源），yaml 用 `detect_strings: [key]` 选择，未配置则不检测；TTErrorMonitor 泛化为 StringHitMonitor，命中只收集不判 FAIL（已实施） |
+| ADR-015 | 串口上下电控制模块 | 新增系统边界 PC→控制模块→电源→EVB；driver 能力 `power_switch.py`（power_on/power_off/reboot 被动接口）+ 协议唯一来源 `power_commands.py`；上电帧探测区分控制器(115200)与板子(2000000)（防接反）；长连接独立供电；配置 system.yaml `power_switch.enabled`（默认关零影响）；触发时机由独立模块 import 调用，禁止耦合（设计已定·待实施） |

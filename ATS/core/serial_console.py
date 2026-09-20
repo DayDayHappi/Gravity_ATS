@@ -64,9 +64,14 @@ _FINGERPRINT_SET_RE = {
     for name, patterns in _FINGERPRINT_SETS.items()
 }
 
-# 默认错误关键字（exec_sync 未提供 expect 时据此判定失败）
+# 默认错误关键字（exec_sync 未提供 expect 时据此判定失败）。
+# invalid 加负向前瞻排除「invalid[, ]use default」：固件相机正常 fallback 日志
+# ``preset capCfg ... invalid, use default``（RTMP 阶段持续刷，实测 780 条）非错误；
+# 其余 invalid（如 invalid argument/parameter）仍判失败。video 的 cam_set 另有
+# VIDEO_SET_ERROR 二次判定兜底，photo 的 cam_set 失败由后续 capture 超时兜底。
 _ERROR_RE = re.compile(
-    r"\b(error|failed|fail|cannot|no such|not found|invalid|exception)\b",
+    r"\b(error|failed|fail|cannot|no such|not found|"
+    r"invalid(?![\s,]*use\s+default)|exception)\b",
     re.IGNORECASE,
 )
 
@@ -111,8 +116,11 @@ class SerialConsole:
         self._reader_thread = None
         self._stop_event = threading.Event()
         self._lock = threading.Lock()
-        # 环形缓冲：存最近收到的文本（剥离 ANSI 前），供命令匹配
+        # 环形缓冲：存最近收到的文本（剥离 ANSI 前），供命令匹配。
+        # 每个 chunk 打全局自增序号 (seq, text)（方案 A）：命令响应定位用「序号游标」
+        # 而非「字符串前缀」，避免 deque 滚满后 startswith 失效致增量定位失败。
         self._buffer = deque(maxlen=65536)
+        self._buffer_seq = 0   # 全局单调递增 chunk 序号（读线程 append 时自增）
         self._buffer_lock = threading.Lock()
         self._cond = threading.Condition(self._buffer_lock)  # 缓冲有新数据时通知
         # 原始数据监听器：读线程收到串口数据时回调（只通知原始文本，不做业务判断）。
@@ -173,7 +181,8 @@ class SerialConsole:
                 logger.log_serial_raw("RX<", chunk)
                 # 喂缓冲（保留原始，匹配时再按需剥离 ANSI）
                 with self._cond:
-                    self._buffer.append(text)
+                    self._buffer_seq += 1
+                    self._buffer.append((self._buffer_seq, text))
                     self._cond.notify_all()
                 # 通知原始数据监听器（只转发原始文本，不做任何业务/PASS/FAIL 判断）
                 if self._listeners:
@@ -191,9 +200,26 @@ class SerialConsole:
                 time.sleep(0.1)
 
     def _buffer_text(self) -> str:
-        """获取当前缓冲全部文本（线程安全）。"""
+        """获取当前缓冲全部文本（线程安全）。
+
+        供 ``wait_for_ready`` 等「检查整个缓冲」的场景使用（不需要增量定位）。
+        """
         with self._buffer_lock:
-            return "".join(self._buffer)
+            return "".join(text for _, text in self._buffer)
+
+    def _snapshot_seq(self) -> int:
+        """记录发命令前的序号游标（线程安全）。"""
+        with self._buffer_lock:
+            return self._buffer_seq
+
+    def _buffer_text_since(self, start_seq: int) -> str:
+        """返回 ``seq > start_seq`` 的 chunk 拼接文本（命令响应的增量定位）。
+
+        deque FIFO 淘汰的必然是 ``seq <= start_seq`` 的旧 chunk，不影响增量定位；
+        因此无需依赖「字符串前缀相等」这一在缓冲滚满后失效的假设（方案 A）。
+        """
+        with self._buffer_lock:
+            return "".join(text for seq, text in self._buffer if seq > start_seq)
 
     def _drain_buffer_from(self, marker: str) -> str:
         """从缓冲中截取 marker 之后的内容作为新命令的响应起点。
@@ -265,8 +291,8 @@ class SerialConsole:
     def _gen_sentinel(self) -> str:
         return f"{_SENTINEL_PREFIX}{secrets.token_hex(4)}__"
 
-    def _wait_pattern(self, pattern: str, timeout: float, start_snapshot: str) -> tuple:
-        """等待 pattern 出现在"start_snapshot 之后的新输出"中。
+    def _wait_pattern(self, pattern: str, timeout: float, start_seq: int) -> tuple:
+        """等待 pattern 出现在"start_seq 游标之后的新输出"中。
 
         哨兵 pattern 会出现在两处：(1) 命令回显行 ``cmd; echo <TOKEN>``，
         (2) echo 的真正输出行 ``<TOKEN>``。这里匹配行首的真正输出，避免命中回显。
@@ -278,8 +304,7 @@ class SerialConsole:
         # 匹配行首的哨兵（前面是换行或字符串开头），不匹配回显行里的 "; echo TOKEN"
         pat = re.compile(r"(?:^|\n)" + re.escape(pattern))
         while True:
-            full = self._buffer_text()
-            new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
+            new = self._buffer_text_since(start_seq)
             m = pat.search(new)
             if m:
                 # 截到哨兵结束位置
@@ -292,13 +317,12 @@ class SerialConsole:
                 if remaining > 0:
                     self._cond.wait(timeout=remaining)
 
-    def _wait_regex(self, regex: str, timeout: float, start_snapshot: str) -> tuple:
+    def _wait_regex(self, regex: str, timeout: float, start_seq: int) -> tuple:
         """等待正则 regex 匹配新输出，返回 (是否匹配, match对象, 新输出)。"""
         deadline = time.monotonic() + timeout
         pat = re.compile(regex)
         while True:
-            full = self._buffer_text()
-            new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
+            new = self._buffer_text_since(start_seq)
             m = pat.search(ansi.strip(new))
             if m:
                 return True, m, new
@@ -329,8 +353,8 @@ class SerialConsole:
         """
         timer = Timer().start()
         sentinel = self._gen_sentinel()
-        # 记录发命令前的缓冲快照，作为"新输出"起点
-        snapshot = self._buffer_text()
+        # 记录发命令前的序号游标，作为"新输出"起点（方案 A）
+        start_seq = self._snapshot_seq()
         # 该 msh 不支持 `;` 分隔命令，改用换行分隔：先发 cmd，再发 echo "TOKEN"
         # echo 必须带引号（固件 echo "string" 用法）。
         # 用 _write_safe 分片写入（命令+哨兵可能达几十字节，避免板子串口接收缓冲溢出）
@@ -339,7 +363,7 @@ class SerialConsole:
         except SerialError as e:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
-        ok, new = self._wait_pattern(sentinel, timeout, snapshot)
+        ok, new = self._wait_pattern(sentinel, timeout, start_seq)
         elapsed = timer.elapsed_ms()
 
         # 响应 = 哨兵前的新输出，去掉回显的命令本身和哨兵行
@@ -375,7 +399,7 @@ class SerialConsole:
             result_timeout: 等待期望结果的总超时（秒）。
         """
         timer = Timer().start()
-        snapshot = self._buffer_text()
+        start_seq = self._snapshot_seq()
         # 只发命令、不发哨兵。用 _write_safe 分片写入，避免长命令溢出丢字节。
         try:
             self._write_safe(f'{cmd}\n')
@@ -383,7 +407,7 @@ class SerialConsole:
             return Response(error=str(e), elapsed_ms=timer.elapsed_ms())
 
         # 直接在 result_timeout 内等期望正则（命令执行期间持续读流）
-        matched, m, new = self._wait_regex(expect, result_timeout, snapshot)
+        matched, m, new = self._wait_regex(expect, result_timeout, start_seq)
         elapsed = timer.elapsed_ms()
         res = Response(raw=new, clean=ansi.strip(new), elapsed_ms=elapsed)
         if matched:
@@ -444,8 +468,8 @@ class SerialConsole:
             logger.info("EVB 已就绪")
             return True
         while time.monotonic() < deadline:
-            snapshot = self._buffer_text()
-            matched, _, _ = self._wait_regex(self._ready_re.pattern, 1.0, snapshot)
+            start_seq = self._snapshot_seq()
+            matched, _, _ = self._wait_regex(self._ready_re.pattern, 1.0, start_seq)
             if matched:
                 logger.info("EVB 已就绪")
                 return True

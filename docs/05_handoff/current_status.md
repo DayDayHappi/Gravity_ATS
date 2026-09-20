@@ -18,6 +18,8 @@
 
 20260918 改动（devlog `20260918_0010` + `20260918_0030` + `20260918_0100`）：检测关键字符串集中化（ADR-014）—— 检测串定义唯一来源 `drivers/detect_strings.py`（DetectString + DETECT_STRINGS），`tt_error_monitor.py`→`string_hit_monitor.py`（TTErrorMonitor→StringHitMonitor 泛化），video/rtmp 改读 `detect_strings` 配置、命中只收集不判 FAIL；新增检测串 `imu fmq overflow f=`（纯字面串、`=` 后数字不校验、大小写敏感）；video 新增录像组合 `4k_0`（`cam_set video 4k 0`，预期 size 占位 `0x0` 待真机 ffprobe 校准，不接场景）。均**待真机**。
 
+20260920 改动（devlog `20260920_1053`）：修复 `serial_console.exec_sync` 环形缓冲滚满后快照定位失效致 cam_set 误判（BUG-005）。方案 A：快照定位从「字符串前缀」改「单调递增序号游标」（`deque(str)`→`deque(tuple[int,str])` + `_snapshot_seq`/`_buffer_text_since`，`_wait_pattern`/`_wait_regex`/`exec_sync`/`exec_async`/`wait_for_ready` 改用游标）；并收窄 `_ERROR_RE` 排除 `invalid[, ]use default` 相机正常 fallback。对外 API 不变，离线模拟滚满场景 PASS，**待真机 stress 26 轮验证**。
+
 ## Current Architecture
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
