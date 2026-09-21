@@ -53,6 +53,8 @@ def parse_args(argv=None):
                    help="交互式串口终端(类Xcom)：手动发命令、实时看板子返回，用于调试")
     p.add_argument("--raw", action="store_true",
                    help="串口终端模式下显示原始字节(不剥离ANSI颜色码)")
+    p.add_argument("--power-stress", action="store_true",
+                   help="串口上下电控制模块独立压测(TC-PS-001，仅控制器不接EVB)")
     return p.parse_args(argv)
 
 
@@ -198,6 +200,20 @@ def main(argv=None) -> int:
     if args.terminal:
         from ATS.tools.serial_terminal import run_from_args
         return run_from_args(args, system_cfg)
+
+    # --power-stress: 串口上下电控制模块独立压测（TC-PS-001，不走测试流程）
+    if args.power_stress:
+        from ATS.tools.power_switch_stress import run_from_args as run_ps_stress
+        # 关键前置：先初始化 logger，否则 power_switch.log 因 _LOG_DIR=None 恒空转。
+        # power-stress 不是 scenario，日志根目录单独约定 logs/power_stress/<date>/。
+        rpt_cfg = system_cfg.get("report", {}) or {}
+        log_base = rpt_cfg.get("log_dir", "logs")
+        date = _dt.datetime.now().strftime("%Y%m%d")
+        log_root = os.path.join(log_base, "power_stress", date)
+        logger.init_logger(log_root, verbose=args.verbose)
+        rc = run_ps_stress(args, system_cfg)
+        logger.close()
+        return rc
 
     # --format -> emmc 模块参数覆盖
     module_overrides = {}

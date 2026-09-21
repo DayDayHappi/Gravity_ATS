@@ -15,10 +15,12 @@
              │ 逐个模块调用
 模块层    wifi / emmc / ftp / photo / video / rtmp / utest（一次测试动作）
              │ 调用通信接口
-通信层    SerialConsole（串口） / FtpClient / RtmpReceiver / PreviewManager
+通信层    SerialConsole（串口） / FtpClient / RtmpReceiver / PreviewManager / PowerSwitch
              │
-硬件层    EVB 板（msh shell / FTP 服务 / RTMP 推流）
+硬件层    EVB 板（msh shell / FTP 服务 / RTMP 推流）+ 上下电控制模块（独立串口 115200）
 ```
+
+- **上下电控制模块（ADR-015）**：新增一条与 EVB 主链路平行的系统边界 `PC →（串口 115200）→ 上下电控制模块 →（电源线）→ EVB`，提供「断电重启」能力。PowerSwitch 为 driver 能力（非测试模块），暴露 `power_on()/power_off()/reboot()` 被动接口，**不感知触发时机**（由独立模块 import 调用，单向依赖）。与 EVB 串口（2000000）靠「上电帧探测」区分防接反。已实施（devlog `20260921_1104`），**待真机验证**（控制器 115200 与 EVB 2000000 防接反、`reboot_delay` 电容放电值）。
 
 - **PreviewManager**（ADR-010）是驱动层的观察能力，生命周期挂在 `prepare.preview_start`/`cleanup.preview_stop`（跨整个 Scenario，含 loop 多轮），不属任一 Task，不影响判据。
 
@@ -61,11 +63,13 @@
 - **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前三个场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
 - **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
+- **上下电控制生命周期（ADR-015）**：探测与串口长连接挂 `prepare`/`cleanup`（探测成功保持打开、存 ctx，cleanup 关闭），**不随单次 task 开关**；`enabled: false`（默认关）时零影响。
 
 ## 4. 数据流概览
 
 - **串口流**：命令下行 → EVB 执行 → 响应上行 → 哨兵 / 正则解析
 - **产物流**：拍照/录像 → EVB 落盘 `/emmc` → FTP 下载到 PC → 校验
 - **推流流**：EVB 编码 → RTMP → PC nginx-rtmp → ffprobe 探测
+- **电源控制流（ADR-015）**：PC →（串口 115200）→ 上下电控制模块 →（电源线）→ EVB（上电/下电/重启，协议字节在 `power_commands.py`，见 `data_flow.md`）
 
 详见 [data_flow.md](data_flow.md)。

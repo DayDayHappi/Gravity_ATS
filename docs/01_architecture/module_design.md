@@ -22,6 +22,7 @@
 | string_hit_monitor | 订阅串口原始数据，检测配置选定的关键字符串 | 命中收集（不判 FAIL） | 随 video/rtmp 运行（ADR-014） |
 | preview_manager | RTMP 画面观察（ffplay 单例），生命周期归 Scenario | is_running() | prepare.preview_start 启动，不作 task（ADR-010） |
 | utest（模块组） | 跑一个固件 utest testcase，取框架 result 行 + per-case 业务关键串叠加判据 | result 行 PASSED + 业务串齐全 | 独立 `utest` 场景（ADR-012），8 个 `utest_<case>` task，不作 normal task |
+| power_switch | 上下电控制能力（断电/上电/重启），被动接口 | 上电帧回 `A0 01 01 A2` | driver 能力，不作 task；由独立模块 import 调用（ADR-015，已实施·待真机） |
 
 ---
 
@@ -146,3 +147,13 @@
 - **协议**：命令/判据/超时映射唯一来源在 `ATS/drivers/utest/`（`_common.py` 公共 + `<case>_commands.py` 每 case 的 TESTCASE/BUSINESS_RES），业务只 import 引用（ADR-011）。
 - **结构**：`modules/utest/base.py` 收敛叠加判据模板（`UtestCaseModule`），8 个子类（`utest_efuse`/`utest_filesystem`/`utest_i2c`/`utest_imu`/`utest_pvt_auto`/`utest_pvt`/`utest_flash_xip_speed`/`utest_flash_read`）只设 testcase + business_res 常量；`qspi_test` 本期不建模块（D6），超时映射保留。
 - **Lifecycle**：一次动作 = `exec_sync(utest_run <name>)` 跑一个 testcase，8 项由 scenario 驱动。FAILED/ERROR/SKIPPED 的 result 行确切格式暂无实测样本，状态枚举已预留接口，未知状态走 `_error` 兜底。
+
+## power_switch（ADR-015，上下电控制 driver 能力）
+
+- **Responsibility**：通过独立串口控制上下电控制模块，对 EVB 板执行下电/上电/重启。**是环境/能力，不是测试动作**，不作 task。
+- **Input**：控制器串口（115200）+ `power_switch` 配置（enabled/baudrate/reboot_delay）。
+- **Output**：上电帧回 `A0 01 01 A2`（ON）为成功判据；`reboot()` = 下电 → 延时 → 上电。
+- **Dependency**：逻辑依赖独立串口已探测成功；代码单向被 import，**禁止反向 import 触发模块**（触发时机由另一独立模块决策）。
+- **Forbidden Dependency**：**不感知「何时触发重启」**（只提供 `power_on/power_off/reboot` 被动接口）；**不写协议字节**（唯一来源 `drivers/power_commands.py`，ADR-011）；**不复用 `detect_port`/`serial_init` 顺带识别控制器**（探测完全独立）。
+- **端口区分**：启用时对候选串口按 115200 发上电帧，回 `A0 01 01 A2` 者 = 控制器，另一 = EVB（防接反）；`detect_port` 仍按 EVB 指纹找板子，互不干扰。
+- **Lifecycle**：prepare `power_switch_init` 探测（enabled 时，候选端口 = 全部可访问串口 减去 EVB 端口），成功保持打开存 `ctx.power_switch`；cleanup `power_switch_close` 关闭；`enabled: false`（默认）时不探测、零影响。已实施（devlog `20260921_1104`），待真机验证。

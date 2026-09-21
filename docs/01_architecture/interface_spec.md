@@ -6,7 +6,7 @@
 
 | 层 | 文件 | 放什么 |
 |----|------|--------|
-| system | `config/system.yaml` | 串口、WiFi 网络环境（ssid/password 属这里）、pc.ip、runner、report |
+| system | `config/system.yaml` | 串口、WiFi 网络环境（ssid/password 属这里）、pc.ip、runner、report、上下电控制（power_switch） |
 | modules | `config/modules/*.yaml` | 模块业务参数（photo_modes、video_duration、stream_duration、heartbeat_timeout、bitrate、preview 播放器参数、detect_strings…） |
 | scenarios | `config/scenarios/*.yaml` | 流程 / 组合 / 循环（prepare/tasks/loop/cleanup/preview.enabled） |
 
@@ -33,6 +33,18 @@ scenario:
 - `prepare`/`cleanup` 内置动作：serial_init、wifi_connect、preclean、ftp_ready、preview_start、stop_stream、close_serial、preview_stop。
 - `detect_strings`（ADR-014）：video/rtmp 的 modules yaml 字段，值为 `drivers/detect_strings.py` 里 `DetectString.key` 的列表（如 `[tt_error]`）；未配置/空则不检测，正则本体不进 yaml。
 
+**`power_switch` 段（ADR-015，system.yaml，与 `serial` 同级）**：
+
+```yaml
+power_switch:
+  enabled: false        # 默认关，未启用零影响（可选能力增量语义）
+  baudrate: 115200      # 控制器串口波特率（与 EVB 的 2000000 不同）
+  reboot_delay: <值>    # 断电→上电间隔（秒），需满足板子电容放电；默认值待真机确定 TODO-CONFIRM
+```
+
+- 协议字节/判据/超时**不进 yaml**（ADR-011：协议属固件契约，留 `drivers/power_commands.py`），yaml 只存开关与硬件参数。
+- 探测与串口长连接挂 `prepare`/`cleanup`：`power_switch_init`（enabled 时探测，候选端口排除 EVB 端口，成功存 `ctx.power_switch`）/ `power_switch_close`（幂等关闭）；启用时对候选串口发上电帧区分控制器与 EVB。
+
 ## 2. CLI
 
 ```bash
@@ -44,6 +56,7 @@ python3 -m ATS.main --no-interactive-wifi  # 非交互连 WiFi
 python3 -m ATS.main --port /dev/ttyUSB0    # 指定串口
 python3 -m ATS.main --terminal             # 交互式串口终端
 python3 -m ATS.main --format               # 强制格式化 eMMC
+python3 -m ATS.main --power-stress         # 串口上下电控制模块独立压测(TC-PS-001，仅控制器不接EVB)
 ```
 
 > 注意：`--modules` / `--skip` 已移除，`--scenario` 成为主入口。`test_config.yaml` 已删除。
@@ -59,6 +72,7 @@ python3 -m ATS.main --format               # 强制格式化 eMMC
 ## 4. 文件格式
 
 - **串口日志**：`serial.log`，每字节带毫秒时间戳，含 ANSI 原始字节（目录由 `logger.init_logger(log_root)` 决定，`log_root` 由 main.py 按「场景/日期」拼好）。
+- **上下电控制器日志**：`power_switch.log`（ADR-015），控制器通信 4 字节二进制帧的独立留痕（`[HH:MM:SS.mmm] TX>/RX< A0 01 03 A4`，hex 大写），与 `serial.log` 分离；**懒加载**，`power_switch.enabled=false` 或未走 power 路径时不产生该文件。
 - **报告**：`result.json`（机器可读）+ `junit.xml`（CI）+ `report.html`（人读）。
 - **输出目录**（场景/日期/运行时间戳三级分层，date=`%Y%m%d`，run_ts=`%Y%m%d_%H%M%S`）：
   - 日志（所有场景）：`logs/<场景>/<date>/<run_ts>/`。

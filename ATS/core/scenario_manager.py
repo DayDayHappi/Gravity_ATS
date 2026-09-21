@@ -76,6 +76,38 @@ def _action_serial_init(ctx, system_cfg):
     ctx.console = console
 
 
+@prepare_action("power_switch_init")
+def _action_power_switch_init(ctx, system_cfg):
+    """探测上下电控制模块（ADR-015）：enabled 时对候选串口发上电帧探测控制器。
+
+    - 幂等：``power_switch.enabled`` 为 false 时直接 return，零副作用。
+    - 候选端口 = 全部可访问串口 减去已确定 EVB 的端口（ctx.console.port），
+      防止把 EVB 误当控制器（控制器 115200 / EVB 2000000，帧协议也互斥）。
+    - 探测成功后控制器保持长连接，存 ctx.power_switch，由 cleanup 关闭。
+    """
+    ps_cfg = system_cfg.get("power_switch", {}) or {}
+    if not ps_cfg.get("enabled", False):
+        return
+
+    from ..drivers.power_switch import detect_power_switch, _accessible_ports
+
+    console = getattr(ctx, "console", None)
+    evb_port = getattr(console, "port", None)
+    candidates = [p for p in _accessible_ports() if p != evb_port]
+    if not candidates:
+        logger.warn("power_switch_init: 无候选串口（可能未插控制器），跳过")
+        return
+
+    baudrate = ps_cfg.get("baudrate", 115200)
+    reboot_delay = ps_cfg.get("reboot_delay")
+    ps = detect_power_switch(candidate_ports=candidates, baudrate=baudrate,
+                             reboot_delay=reboot_delay)
+    if ps is None:
+        logger.warn("power_switch_init: 未探测到上下电控制模块，跳过（后续 reboot 不可用）")
+        return
+    ctx.power_switch = ps
+
+
 @prepare_action("wifi_connect")
 def _action_wifi_connect(ctx, system_cfg):
     """WiFi 状态收敛器（ADR-008）：先检测已联网则保留，未联网则执行 join。
@@ -282,6 +314,19 @@ def _action_preview_stop(ctx, system_cfg):
     except Exception as e:
         logger.warn(f"preview_stop 异常(可忽略): {e}")
     ctx.preview_manager = None
+
+
+@cleanup_action("power_switch_close")
+def _action_power_switch_close(ctx, system_cfg):
+    """关闭上下电控制模块串口（ADR-015）。幂等：无实例则直接 return。"""
+    ps = getattr(ctx, "power_switch", None)
+    if ps is None:
+        return
+    try:
+        ps.close()
+    except Exception as e:
+        logger.warn(f"power_switch_close 异常(可忽略): {e}")
+    ctx.power_switch = None
 
 
 @cleanup_action("close_serial")

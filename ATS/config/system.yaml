@@ -11,6 +11,11 @@ serial:
   sentinel_timeout: 5      # 哨兵下发确认超时
   detect_timeout: 2.0      # 自动探测每端口读响应超时
 
+power_switch:              # 上下电控制模块（ADR-015），环境级硬件
+  enabled: false           # 默认关；false 时不探测、不 open 串口，零影响
+  baudrate: 115200         # 控制器串口波特率（与 EVB 的 2000000 不同）
+  reboot_delay: 3.0        # 断电→上电间隔（秒）；暂定值，TODO-CONFIRM 待真机确定
+
 wifi:                      # 网络环境（连接目标，非 wifi 模块测试参数）
   default_ssid: "sw_test_24g"
   default_password: "12345678"   # 可用 ${WIFI_PASSWORD} 环境变量覆盖

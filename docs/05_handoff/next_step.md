@@ -23,16 +23,19 @@ new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
 
 **待真机**：`python3 -m ATS.main --scenario stress --no-interactive-wifi` 跑至 26 轮以上（越过 RTMP 10min），确认 photo/video 不再「设置模式/设置录像组合 失败」。详见 [排查报告](../03_development/archive/串口环形缓冲满导致cam_set误判_排查报告.md)、[BUG-005](../03_development/bugfix/BUG-005-exec_sync环形缓冲滚满快照失效.md)。
 
-## 🔴 P0 — 串口上下电控制模块（ADR-015，设计已定·待 Code Agent 实施）
+## ✅ 已完成 — 串口上下电控制模块（ADR-015，已实施·真机通过）
 
-设计已定：[ADR-015](../02_design/decision_record/ADR-015-串口上下电控制模块.md)（Document Agent，2026-09-18，Status=Accepted，待实施）。
+设计已定：[ADR-015](../02_design/decision_record/ADR-015-串口上下电控制模块.md)（Document Agent，2026-09-18，Status=Accepted）。**已实施并真机通过**（devlog `20260921_1104` 实施 + `20260921_1330` 发帧读响应 + `20260921_1402` 独立日志 + `20260921_1436` 首轮误判修复；Code Agent，2026-09-21）：
 
-- 新增系统边界 PC→控制模块→电源→EVB，封装 driver 能力 `ATS/drivers/power_switch.py`（`power_on()`/`power_off()`/`reboot()` 被动接口，不感知触发时机）。
-- 协议唯一来源 `ATS/drivers/power_commands.py`（ADR-011）：上电 `A0 01 03 A4`、下电 `A0 01 02 A3`、返回帧 `A0 01 <state> <sum>`（`01`=ON/`00`=OFF），波特率 115200。
-- 端口区分：启用时对候选串口发上电帧，回 `A0 01 01 A2` 者=控制器，另一=板子；探测独立，`serial_init` 仍走 `detect_port` 找板子。
+- 新增系统边界 PC→控制模块→电源→EVB，封装 driver 能力 `ATS/drivers/power_switch.py`（`power_on()`/`power_off()`/`reboot()` 被动接口，不感知触发时机；读空响应自动重试一次）。
+- 协议唯一来源 `ATS/drivers/power_commands.py`（ADR-011）：上电 `A0 01 03 A4`、下电 `A0 01 02 A3`、返回帧 `A0 01 <state> <sum>`（`01`=ON/`00`=OFF），波特率 115200，4 字节二进制帧；含 `is_valid_state_frame`/`frame_state` 判据。
+- 端口区分：启用时对候选串口发上电帧，回 `A0 01 01 A2` 者=控制器，另一=板子；探测独立，`serial_init` 仍走 `detect_port` 找板子；候选端口排除 EVB 端口。
 - 配置：`config/system.yaml` 增 `power_switch` 段（`enabled: false` 默认关，未启用零影响）。
+- 生命周期：prepare `power_switch_init`（探测 + 长连接存 `ctx.power_switch`）/ cleanup `power_switch_close`（幂等关闭），normal/stress 已挂接。
+- 通信独立留痕：`power_switch.log`（懒加载，仅启用时产生），与板子 `serial.log` 分离。
 - 触发时机由另一独立模块 import 调用实现（本次不接，禁止耦合）。
-- **待 Code Agent 实施**；`reboot_delay`（断电-上电间隔）默认值待真机确定（TODO-CONFIRM）。
+- **真机已通过**：TC-PS-001 压测（30 周期 60 次切换）PASS，首轮误判已修复。
+- **仍遗留（TODO-CONFIRM）**：`reboot_delay`（断电-上电间隔）默认值待接 EVB 板实测电容放电时间确定。
 
 ## 🔴 P0 — 新增录像组合 4k_0（已实施·待真机）
 

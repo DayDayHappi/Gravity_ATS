@@ -20,6 +20,7 @@ _RUN_TS = None          # 本次运行时间戳（目录名）
 _LOG_DIR = None         # 本次运行日志目录
 _SERIAL_FP = None       # serial.log 文件句柄
 _RUN_FP = None          # run.log 文件句柄
+_PWR_FP = None          # power_switch.log 文件句柄（懒加载，首次写才创建）
 _VERBOSE = False        # 详细模式
 
 
@@ -82,6 +83,29 @@ def log_serial_raw(direction: str, data: bytes):
     log_serial(direction, text)
 
 
+def log_power_switch(direction: str, data: str):
+    """写一行上下电控制器日志（power_switch.log，懒加载）。
+
+    控制器走独立 pyserial 直连，通信字节与板子的 serial.log 分离留痕，
+    便于压测时回溯开关切换帧（稀疏，不宜混入板子高频串口流）。
+
+    懒加载：首次调用才创建 ``power_switch.log``；``_LOG_DIR`` 为 None
+    （logger 未初始化）时静默 return，不产生空文件。
+
+    Args:
+        direction: ``"TX>"``（发送）或 ``"RX<"``（接收）。
+        data: 帧的 hex 大写文本（如 ``"A0 01 03 A4"``）。
+    """
+    global _PWR_FP
+    if _LOG_DIR is None:
+        return
+    if _PWR_FP is None:
+        _PWR_FP = open(os.path.join(_LOG_DIR, "power_switch.log"), "w",
+                       encoding="utf-8", errors="replace")
+    _PWR_FP.write(f"[{_now()}] {direction} {data}\n")
+    _PWR_FP.flush()
+
+
 def _write_run(level: str, msg: str, to_console: bool):
     if _RUN_FP is not None:
         _RUN_FP.write(f"[{_now()}] [{level}] {msg}\n")
@@ -135,13 +159,16 @@ def result_line(status: str, name: str, elapsed_ms: int, msg: str = ""):
 
 
 def close():
-    global _SERIAL_FP, _RUN_FP
+    global _SERIAL_FP, _RUN_FP, _PWR_FP
     if _SERIAL_FP:
         _SERIAL_FP.close()
         _SERIAL_FP = None
     if _RUN_FP:
         _RUN_FP.close()
         _RUN_FP = None
+    if _PWR_FP:
+        _PWR_FP.close()
+        _PWR_FP = None
 
 
 def log_dir() -> str:
