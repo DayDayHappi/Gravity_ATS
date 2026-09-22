@@ -35,4 +35,5 @@ __pycache__/
 *~
 .DS_Store
 
-/tests/
+# tests/（单元测试源码，属 Code Agent 交付物，跟踪进 git；与 .claude/agents/ 同类放行）
+# 注：曾有 "/tests/" 忽略规则致测试源码未入 git（ADR-016 QA-GAP-02），已移除。

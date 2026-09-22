@@ -2,31 +2,37 @@
 
 > 只保留未完成任务，按优先级。
 
-## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，第二轮验收问题待修复）
+## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，第三轮验收问题待修复）
 
-设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），运行时闭环 7 P0 + 6 P1 已修复（devlog `20260922_1330`）。**2026-09-22 第二轮验收又发现 2 P0 + 2 P1 + 1 P2 + 1 硬件风险 + 1 验收缺口，当前需完成本轮修正后再进入真机**。
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），第一轮 7 P0 + 6 P1 已修复（devlog `20260922_1330`），第二轮 2 P0 + 2 P1 + 1 P2 + QA-GAP-01 已落地（含 `recovery_validation.yaml`、23 个 unittest、`board_recovery ERROR`）。**2026-09-22 第三轮验收确认主架构成熟，但剩余 3 个软件修复点 + 1 真机门槛 + 1 QA 缺口，完成后应停止扩功能、直接进真机**。
 
-**权威修复依据**：[ADR016 第二轮验收新增问题与修改建议](../03_development/archive/ADR016_第二轮验收新增问题与修改建议.md)。
+**权威修复依据**：[ADR016 第三轮验收问题与修复建议](../03_development/archive/ADR016_第三轮验收问题与修复建议.md)。
 
-### 本轮新增问题
+### 本轮剩余问题
 
 | 编号 | 优先级 | 问题 | 一句话 |
 |------|--------|------|--------|
-| NEW-P0-01 | P0 | 恢复失败/耗尽后无 framework FAIL/ERROR | 恢复失败但退出码仍可能为 0，CI 误判通过 |
-| NEW-P0-02 | P0 | Recovery Policy 枚举 + `max_attempts` 未完整 fail-closed | 配置拼错（如 `abort_scenaro`）→ 恢复失败后继续执行 |
-| NEW-P1-01 | P1 | 生命周期接线未前置校验 | `enabled=true` 但忘 `health_monitor_start`/`power_switch_init` 时静默失效 |
-| NEW-P1-02 | P1 | mock 验证未固化成持久测试 | 后续重构易回归 |
-| NEW-P2-01 | P2 | watchdog stop 不立即唤醒 + 锁内日志 IO | cleanup 线程短暂残留、reader 回调不必要等待 |
-| HW-RISK-01 | 真机门槛 | PowerCycle 后 EVB 串口是否 USB 重枚举未知 | 若重枚举，原 SerialConsole 句柄失效，需 `serial_reconnect` |
-| QA-GAP-01 | 验收缺口 | 无专用 `recovery_validation` 场景 | 缺少官方真机验收入口 |
+| NEW-P0-03 | P0 | `after_recovery=continue` 被 Coordinator 判合法，但 Runner 当成 unknown action | 恢复成功反而被记 ERROR 并中止 Scenario |
+| NEW-P0-04 | P0 | PowerCycle 未严格验证 OFF/ON 控制器回帧 | 板子可能没真正断电，却被判恢复成功 |
+| NEW-P1-03 | P1 | `--dry-run` 不执行 Scenario runtime contract 校验 | dry-run 可能错误提示「配置通过」 |
+| HW-RISK-01 | 真机门槛 | PowerCycle 后 EVB UART 是否 USB 重枚举未知 | 原 SerialConsole 句柄可能失效 |
+| QA-GAP-02 | QA | tests/ 被 `.gitignore` 忽略，未进源码快照 | 无法源码级验收 23 个 unittest |
 
-### 修复顺序（验收报告 §10 Stage 1~7）
+### 修复顺序（验收报告 §10 Stage 1~5）
 
-Stage 1 结果一致性（NEW-P0-01）→ Stage 2 policy fail-closed（NEW-P0-02）→ Stage 3 Scenario contract（NEW-P1-01）→ Stage 4 测试固化（NEW-P1-02）→ Stage 5 线程优化（NEW-P2-01）→ Stage 6 recovery_validation 场景（QA-GAP-01）→ Stage 7 真机（先验 HW-RISK-01 再跑 TC-BH/TC-RCV）。
+Stage 1 统一 `continue` 语义（NEW-P0-03）→ Stage 2 PowerCycle 严格回帧（NEW-P0-04，`reboot_checked()`）→ Stage 3 dry-run 静态契约校验（NEW-P1-03）→ Stage 4 源码快照纳入 tests（QA-GAP-02）→ Stage 5 真机（先验 HW-RISK-01 再跑 TC-BH/TC-RCV）。
 
-### 架构红线（验收报告 §11 强调，修复时必守）
+### QA-GAP-02 根因（Document Agent 复核确认）
 
-Runner 负责 `RecoveryOutcome → retry/abort/framework TestResult`，但**不认识具体硬件**；`RecoveryCoordinator` 不生成业务 TestResult（框架级 `board_recovery ERROR` 由 Runner 产出）；`PowerSwitch` 仍只负责上下电；框架**不得偷偷自动补** `health_monitor_start/stop`、`power_switch_init` 等 action（由 Scenario 显式声明）。
+`tests/` 被 `.gitignore` 第 38 行 `/tests/` 明确忽略，导致 4 个测试文件（23 个 unittest）**未被 git 跟踪**，故第三轮源码快照（只扫 git 跟踪文件）不含 tests。修复需在 `.gitignore` 放行 `tests/`（类似已放行的 `.claude/agents/`），否则测试永远进不了快照与 CI。
+
+### 架构红线（验收报告 §11，修复时必守）
+
+Runner 负责 `RecoveryOutcome → retry/continue/abort/framework TestResult`，不认识具体硬件；`RecoveryCoordinator` 只返回 Outcome 不生成 TestResult；`PowerSwitch` 只负责上下电（可新增 `reboot_checked()`，不感知 health/Scenario/policy）；`ScenarioManager` 负责生命周期静态契约校验，但不偷偷自动补 action。
+
+### 真机前配置注意（验收报告 §9）
+
+执行 `python -m ATS.main --scenario recovery_validation` 前，须在测试机将 `system.yaml` 的 `power_switch.enabled` 改为 `true`（否则 `power_switch_init` 跳过、backend validate 失败——这是配置设计，非 bug）。
 
 ### 能力边界（不变，已同步 known_issue）
 

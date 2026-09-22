@@ -162,6 +162,46 @@ class PowerSwitch:
         time.sleep(delay)
         self.power_on()
 
+    def reboot_checked(self, delay=None):
+        """严格版重启（NEW-P0-04）：下电 → 验证 OFF 回帧 → 延时 → 上电 → 验证 ON 回帧。
+
+        供 Recovery 使用：fresh-ready 只能证明 reboot 后收到新 RX，不能证明控制器
+        真的执行了 OFF→ON；本接口要求电源控制链路 + EVB 启动链路都成功。
+
+        判据（依据 ADR-015 真机协议）：
+        - 下电回帧：至少 ``is_valid_state_frame``（4 字节 + 校验和正确）。ADR-015 实测
+          下电首发改常回 ON、再发才回 OFF，故不强制 ``state == OFF``（不凭猜测加强语义）。
+        - 上电回帧：严格 ``POWER_STATE_ON``（控制器探测本就以 ON 为明确判据）。
+
+        Args:
+            delay: 断电→上电间隔（秒）；None 时用实例的 reboot_delay。
+
+        Raises:
+            PowerSwitchError: OFF/ON 回帧校验失败（控制器无响应或非法帧）。
+        """
+        if delay is None:
+            delay = self.reboot_delay
+
+        # 1. 下电 + 验证合法状态帧
+        off_resp = self.power_off()
+        if not commands.is_valid_state_frame(off_resp):
+            raise PowerSwitchError(
+                f"上下电控制下电回帧非法: {off_resp.hex(' ').upper() if off_resp else '<空>'}"
+            )
+        logger.info(f"上下电控制: 下电确认合法回帧 {off_resp.hex(' ').upper()}")
+
+        # 2. 断电延时（电容放电）
+        logger.info(f"上下电控制: 断电等待 {delay:g}s（电容放电）...")
+        time.sleep(delay)
+
+        # 3. 上电 + 严格验证 ON
+        on_resp = self.power_on()
+        if on_resp != commands.POWER_STATE_ON:
+            raise PowerSwitchError(
+                f"上下电控制上电回帧非 ON: {on_resp.hex(' ').upper() if on_resp else '<空>'}"
+            )
+        logger.info(f"上下电控制: 上电确认 ON 回帧 {on_resp.hex(' ').upper()}")
+
     def close(self):
         """关闭控制串口。"""
         if self._ser is not None:

@@ -481,7 +481,7 @@ class ScenarioManager:
         if module_overrides:
             self._apply_module_overrides(scenario, module_overrides)
         # NEW-P1-01：Scenario 生命周期接线前置校验（enabled 必须真实接线，fail-closed）
-        self._validate_scenario_runtime_contract(scenario)
+        self.validate_scenario(scenario)
 
         ctx = Context()
         ctx.system_config = self.system_cfg
@@ -560,6 +560,13 @@ class ScenarioManager:
         for task in scenario.tasks:
             if task.module in module_overrides:
                 task.override = {**task.override, **module_overrides[task.module]}
+
+    def validate_scenario(self, scenario: Scenario):
+        """公开入口（NEW-P1-03）：静态校验 Scenario runtime contract。
+
+        供 ``run()`` 与 ``--dry-run`` 共用；dry-run 只做静态校验（不做串口/网络探测）。
+        """
+        self._validate_scenario_runtime_contract(scenario)
 
     def _validate_scenario_runtime_contract(self, scenario: Scenario):
         """NEW-P1-01：校验 Scenario 声明与生命周期 action 接线一致，fail-closed。
