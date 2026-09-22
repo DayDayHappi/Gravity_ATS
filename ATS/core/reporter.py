@@ -122,6 +122,7 @@ th,td{padding:8px 12px;border-bottom:1px solid #eee;text-align:left;font-size:13
 th{background:#eee}.st-PASS{color:#2e7d32;font-weight:bold}
 .st-FAIL{color:#c62828;font-weight:bold}.st-SKIP{color:#f9a825}
 .st-ERROR{color:#6a1b9a;font-weight:bold}
+.recovery{margin:24px 0}
 </style></head><body>
 <h1>VX100 EVB 自动化测试报告</h1>
 <div class="summary">
@@ -143,11 +144,28 @@ th{background:#eee}.st-PASS{color:#2e7d32;font-weight:bold}
 </tr>
 {% endfor %}
 </table>
+{% if recovery_events %}
+<div class="recovery">
+<h2>Recovery Events（板卡恢复事件）</h2>
+<table><tr><th>时间</th><th>场景</th><th>轮次</th><th>任务</th><th>状态</th><th>原因</th><th>后端</th><th>尝试</th><th>恢复结果</th><th>环境收敛</th></tr>
+{% for e in recovery_events %}
+<tr>
+  <td>{{e.timestamp}}</td><td>{{e.scenario}}</td>
+  <td>C{{e.cycle}}/R{{e.rep}}</td><td>{{e.task}}</td>
+  <td>{{e.health_state}}</td><td>{{e.reason}}</td>
+  <td>{{e.backend}}</td><td>{{e.attempt}}</td>
+  <td>{{e.recovery_result}}</td><td>{{e.restore_result}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% endif %}
 </body></html>"""
 
 
-def write_html(results: list, out_dir: str) -> str:
+def write_html(results: list, out_dir: str, recovery_events: list = None) -> str:
     summary = _summary(results)
+    recovery_events = list(recovery_events or [])
     try:
         from jinja2 import Template
         tpl = Template(_HTML_TPL)
@@ -157,6 +175,7 @@ def write_html(results: list, out_dir: str) -> str:
             pass_rate=summary["pass_rate"],
             elapsed=round(summary["total_elapsed_ms"] / 1000, 1),
             results=[_result_to_dict(r) for r in results],
+            recovery_events=recovery_events,
         )
     except ImportError:
         # 无 jinja2：退化为基础 HTML 表格
@@ -165,10 +184,22 @@ def write_html(results: list, out_dir: str) -> str:
             f"<td>{r.elapsed_ms}ms</td><td>{r.message}</td><td><pre>{r.detail}</pre></td></tr>"
             for r in results
         )
+        rec_rows = "".join(
+            f"<tr><td>{e.get('timestamp','')}</td><td>{e.get('scenario','')}</td>"
+            f"<td>C{e.get('cycle','')}/R{e.get('rep','')}</td><td>{e.get('task','')}</td>"
+            f"<td>{e.get('health_state','')}</td><td>{e.get('reason','')}</td>"
+            f"<td>{e.get('backend','')}</td><td>{e.get('attempt','')}</td>"
+            f"<td>{e.get('recovery_result','')}</td><td>{e.get('restore_result','')}</td></tr>"
+            for e in recovery_events
+        )
+        rec_block = (f"<h2>Recovery Events</h2><table border=1><tr>"
+                     f"<th>时间</th><th>场景</th><th>轮次</th><th>任务</th><th>状态</th>"
+                     f"<th>原因</th><th>后端</th><th>尝试</th><th>恢复结果</th><th>环境收敛</th></tr>"
+                     f"{rec_rows}</table>") if recovery_events else ""
         html = (
             f"<html><body><h1>测试报告</h1>"
             f"<p>通过 {summary['passed']}/{summary['total']}（{summary['pass_rate']}%）</p>"
-            f"<table border=1>{rows}</table></body></html>"
+            f"<table border=1>{rows}</table>{rec_block}</body></html>"
         )
     path = os.path.join(out_dir, "report.html")
     with open(path, "w", encoding="utf-8") as f:
@@ -201,7 +232,7 @@ def generate(results: list, out_dir: str, junit: bool = True, html: bool = True,
     if junit:
         paths["junit"] = write_junit(results, out_dir)
     if html:
-        paths["html"] = write_html(results, out_dir)
+        paths["html"] = write_html(results, out_dir, recovery_events)
     print_summary(results)
     for k, p in paths.items():
         logger.info(f"  {k} 报告: {p}")

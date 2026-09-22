@@ -279,7 +279,7 @@ def main(argv=None) -> int:
     out_dir = os.path.join(report_root, run_ts)
     rpt_cfg = system_cfg.get("report", {})
     from ATS.core.reporter import generate as gen_report
-    recovery_events = getattr(manager.ctx, "recovery_history", None) or []
+    recovery_events = list(getattr(manager, "recovery_history", None) or [])
     gen_report(results, out_dir,
                junit=rpt_cfg.get("junit", True),
                html=rpt_cfg.get("html", True),

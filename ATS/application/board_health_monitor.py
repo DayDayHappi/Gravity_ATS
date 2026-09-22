@@ -11,8 +11,12 @@
 ``HEALTHY →（超过 inactivity_timeout 无串口活动）→ SUSPECTED →（主动健康确认连续失败）→ UNRESPONSIVE``。
 
 「无串口输出」不直接等价「整板死机」：``UNRESPONSIVE`` 只表示 ATS 无法通过当前
-EVB 控制链路取得有效响应，不推断根因。主动 probe 必须在安全点执行（无并发命令
-事务时），由 Runner 控制流在 checkpoint 调用 ``probe()``，Monitor 线程只观察。
+EVB 控制链路取得有效响应，不推断根因。
+
+持续监测（P0-01/P0-02 修复）：内置轻量 watchdog 线程，每 ``check_interval`` 秒
+只比较 ``time.monotonic() - last_rx``；超过 ``inactivity_timeout`` 时置 SUSPECTED
+并 ``runtime_control.request_recovery()``。watchdog 线程**禁止** exec_sync/exec_async/
+health_check/PowerSwitch/FTP/网络 IO——主动健康 probe 仍由 Runner 在安全点执行。
 """
 import time
 import threading
@@ -66,6 +70,7 @@ class BoardHealthMonitor:
         self.inactivity_timeout = float(cfg.get("inactivity_timeout", 60.0))
         self.confirm_failures = int(cfg.get("confirm_failures", 3))
         self.confirm_interval = float(cfg.get("confirm_interval", 3.0))
+        self._validate_params()
 
         self._lock = threading.Lock()
         self._started = False
@@ -76,6 +81,19 @@ class BoardHealthMonitor:
         self._rx_count = 0
         self._consecutive_probe_failures = 0
         self._events = []                  # HealthEvent 列表（留痕）
+        self._watchdog = None
+        self._stop_watchdog = threading.Event()
+
+    def _validate_params(self):
+        """参数合法性校验（P1-06）：非法配置 fail-closed。"""
+        if self.check_interval <= 0:
+            raise ValueError(f"board_health.check_interval 必须 > 0，实际 {self.check_interval}")
+        if self.inactivity_timeout <= 0:
+            raise ValueError(f"board_health.inactivity_timeout 必须 > 0，实际 {self.inactivity_timeout}")
+        if self.confirm_failures < 1:
+            raise ValueError(f"board_health.confirm_failures 必须 >= 1，实际 {self.confirm_failures}")
+        if self.confirm_interval < 0:
+            raise ValueError(f"board_health.confirm_interval 必须 >= 0，实际 {self.confirm_interval}")
 
     # ---------- 生命周期 ----------
 
@@ -90,10 +108,43 @@ class BoardHealthMonitor:
             self._last_rx_clock = time.strftime("%H:%M:%S")
             runtime_control.clear_recovery()
             self._events = []
+        # 启动 watchdog 线程（P0-01：持续监测，长 Task 中途死机能及时发现）
+        self._stop_watchdog.clear()
+        self._watchdog = threading.Thread(
+            target=self._watchdog_loop, name="board-health-watchdog", daemon=True
+        )
+        self._watchdog.start()
 
     def stop(self):
+        self._stop_watchdog.set()
         with self._lock:
             self._started = False
+        if self._watchdog is not None:
+            self._watchdog.join(timeout=2.0)
+            self._watchdog = None
+
+    # ---------- watchdog（持续监测线程，禁止阻塞/IO） ----------
+
+    def _watchdog_loop(self):
+        """轻量 watchdog：每 check_interval 秒比较 last_rx 距今，超时置 SUSPECTED。
+
+        禁止 exec_sync/exec_async/health_check/PowerSwitch/FTP/网络 IO。
+        """
+        while not self._stop_watchdog.is_set():
+            time.sleep(self.check_interval)
+            with self._lock:
+                if not self._started or self._state != HEALTHY:
+                    # 已 SUSPECTED/UNRESPONSIVE 时不重复推进，等待 Runner 安全点确认
+                    continue
+                if (time.monotonic() - self._last_rx_monotonic) > self.inactivity_timeout:
+                    self._state = SUSPECTED
+                    self._reason = (
+                        f"超过 {self.inactivity_timeout:g}s 无串口活动"
+                        f"（last_rx={self._last_rx_clock}）"
+                    )
+                    runtime_control.request_recovery()
+                    self._record_event_locked(SUSPECTED, self._reason)
+                    logger.warn(f"板卡疑似无响应（SUSPECTED）: {self._reason}")
 
     # ---------- 串口监听（读线程回调，禁止阻塞） ----------
 
@@ -112,20 +163,11 @@ class BoardHealthMonitor:
     # ---------- 状态查询（Runner checkpoint 调用） ----------
 
     def current_state(self) -> str:
-        """返回当前状态；SUSPECTED 由「超时检测」动态推进（基于 last_rx 距今）。"""
+        """返回当前状态。watchdog 已负责持续推进 HEALTHY -> SUSPECTED，
+        本方法不再做超时推进（避免与 watchdog 重复），仅返回当前状态。"""
         with self._lock:
             if not self._started:
                 return HEALTHY
-            # 已 UNRESPONSIVE 保持；否则按超时推进 HEALTHY -> SUSPECTED
-            if self._state != UNRESPONSIVE:
-                if (time.monotonic() - self._last_rx_monotonic) > self.inactivity_timeout:
-                    self._state = SUSPECTED
-                    self._reason = (
-                        f"超过 {self.inactivity_timeout:g}s 无串口活动"
-                        f"（last_rx={self._last_rx_clock}）"
-                    )
-                    runtime_control.request_recovery()
-                    self._record_event(SUSPECTED, self._reason)
             return self._state
 
     def is_unresponsive(self) -> bool:
@@ -155,12 +197,11 @@ class BoardHealthMonitor:
                 self._state = HEALTHY
                 self._reason = "健康确认通过"
                 self._consecutive_probe_failures = 0
-                # 成功 probe 视为一次有效活动，刷新 last_rx，避免立即重新 SUSPECTED
                 now = time.monotonic()
                 self._last_rx_monotonic = now
                 self._last_rx_clock = time.strftime("%H:%M:%S")
                 runtime_control.clear_recovery()
-                self._record_event(HEALTHY, self._reason)
+                self._record_event_locked(HEALTHY, self._reason)
             else:
                 self._consecutive_probe_failures += 1
                 self._reason = (
@@ -172,9 +213,9 @@ class BoardHealthMonitor:
                         f"主动健康确认连续失败 {self._consecutive_probe_failures} 次"
                     )
                     runtime_control.request_recovery()
-                    self._record_event(UNRESPONSIVE, self._reason)
+                    self._record_event_locked(UNRESPONSIVE, self._reason)
                 else:
-                    self._record_event(SUSPECTED, self._reason)
+                    self._record_event_locked(SUSPECTED, self._reason)
         return ok
 
     def mark_healthy(self):
@@ -187,11 +228,55 @@ class BoardHealthMonitor:
             self._last_rx_monotonic = now
             self._last_rx_clock = time.strftime("%H:%M:%S")
             runtime_control.clear_recovery()
-            self._record_event(HEALTHY, self._reason)
+            self._record_event_locked(HEALTHY, self._reason)
+
+    # ---------- 完整确认流程（P0-03，安全点由 Runner 调用） ----------
+
+    def confirm_health(self, console):
+        """在同一安全点一次性完成 ``confirm_failures`` 次主动健康确认（P0-03）。
+
+        规则（ADR-016 / 验收报告 §6）：
+        - 任一次 probe 成功 → 回 HEALTHY、清零失败计数、返回 HEALTHY（继续测试）。
+        - 连续失败达 ``confirm_failures`` → UNRESPONSIVE，返回 UNRESPONSIVE。
+        - 每次 probe 间 sleep ``confirm_interval``（P1-06：时间参数真正接线）。
+
+        必须在安全点（无并发命令事务）由 Runner 调用；Monitor 线程/wdog 不执行。
+
+        Returns:
+            最终状态字符串（HEALTHY / UNRESPONSIVE）。
+        """
+        if console is None:
+            # 无 console 无法确认，直接判 UNRESPONSIVE
+            with self._lock:
+                self._state = UNRESPONSIVE
+                self._reason = "无 console，无法健康确认"
+                runtime_control.request_recovery()
+                self._record_event_locked(UNRESPONSIVE, self._reason)
+            return UNRESPONSIVE
+
+        # 从头开始一次完整确认流程（清零历史失败计数，避免跨 checkpoint 累计）
+        with self._lock:
+            self._consecutive_probe_failures = 0
+
+        for i in range(self.confirm_failures):
+            self.probe(console)
+            state = self.current_state()
+            if state == HEALTHY:
+                return HEALTHY
+            if state == UNRESPONSIVE:
+                return UNRESPONSIVE
+            # 未达阈值：sleep confirm_interval 后继续下一次 probe
+            if self.confirm_interval > 0 and i < self.confirm_failures - 1:
+                time.sleep(self.confirm_interval)
+        return self.current_state()
 
     # ---------- 证据与状态导出 ----------
 
     def _record_event(self, state, reason):
+        with self._lock:
+            self._record_event_locked(state, reason)
+
+    def _record_event_locked(self, state, reason):
         self._events.append(HealthEvent(state, reason, time.monotonic(), time.strftime("%H:%M:%S")))
 
     def get_status(self) -> dict:

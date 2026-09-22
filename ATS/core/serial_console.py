@@ -212,6 +212,14 @@ class SerialConsole:
         with self._buffer_lock:
             return self._buffer_seq
 
+    def snapshot_rx_cursor(self) -> int:
+        """记录当前 RX 序号游标（ADR-016 P0-06：PowerCycle 前的 fresh-ready 起点）。
+
+        Recovery 流程在 PowerCycle 前记录游标，之后 ``wait_for_ready_since``
+        只匹配 ``seq > cursor`` 的新 RX，避免命中 reboot 前的旧 msh 缓冲。
+        """
+        return self._snapshot_seq()
+
     def _buffer_text_since(self, start_seq: int) -> str:
         """返回 ``seq > start_seq`` 的 chunk 拼接文本（命令响应的增量定位）。
 
@@ -479,6 +487,37 @@ class SerialConsole:
             except Exception:
                 pass
         logger.error(f"等待 EVB 就绪超时({timeout}s)")
+        return False
+
+    def wait_for_ready_since(self, cursor: int, timeout: float = None) -> bool:
+        """等待「cursor 之后」出现新的就绪标志（ADR-016 P0-06：fresh-ready）。
+
+        与 ``wait_for_ready`` 不同：本方法**不检查历史缓冲**，只匹配
+        ``seq > cursor`` 的新 RX。供 PowerCycle 后判断「新板已真正 boot 到 msh」，
+        避免命中 reboot 前残留的旧 ``msh />`` 缓冲。
+
+        Args:
+            cursor: ``snapshot_rx_cursor()`` 在 PowerCycle 前记录的序号游标。
+            timeout: 超时（秒）；None 用 ready_timeout。
+        """
+        timeout = timeout or self.ready_timeout
+        # 主动发回车唤醒 shell（新板 boot 后可能不再主动打印提示符）
+        try:
+            self.send_raw("\n")
+        except Exception:
+            pass
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            # 只匹配 cursor 之后的新 RX（_wait_regex 内部按游标取增量）
+            matched, _, _ = self._wait_regex(self._ready_re.pattern, 1.0, cursor)
+            if matched:
+                logger.info("EVB 已就绪（fresh-ready，仅认 reboot 后新 RX）")
+                return True
+            try:
+                self.send_raw("\n")
+            except Exception:
+                pass
+        logger.error(f"等待 EVB 重启后就绪超时({timeout}s，未发现新 boot 证据)")
         return False
 
     # ---------- 自检 ----------

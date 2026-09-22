@@ -20,6 +20,12 @@
 | Issue | Impact | 状态 |
 |-------|--------|------|
 | `exec_sync` 长时压测误判：环形缓冲滚满后 `full.startswith(snapshot)` 失效 → `new=full` 混入 RTMP 残留日志，`_ERROR_RE` 命中固件正常调试串 `preset capCfg ... invalid, use default`（780 条）→ `cam_set photo/video` 被误判 FAIL，photo 提前 return 不再发 `dfs_capture_start` | stress 压测约第 26 轮起 photo/video 全 FAIL（真机 2026-09-18） | **已修复（方案 A 序号游标，devlog `20260920_1053`，待真机）** |
+| ADR-016 运行时闭环 7 P0 + 6 P1（Monitor 非持续监测、cooperative cancellation 未闭环、abort 只退当前 cycle、recovery_history 被 cleanup 清空、board_ready 命中旧缓冲、monitor-only 无 FAIL/abort 语义等） | 曾不建议作为 stress/aging 自动恢复正式版本 | **已修复**（devlog `20260922_1330`，13 项全过，待真机 TC-BH/TC-RCV） |
+
+## ADR-016 能力边界（设计内限制，非 bug）
+
+- **只能识别「串口静默型整板无响应」**（超过 `inactivity_timeout` 无任何 RX：板子彻底安静、CPU hang 后不再打印、掉电）。若业务线程已死、msh 无法工作但后台错误日志持续刷串口，`last_rx` 会一直更新，Monitor 不会进入 SUSPECTED。本轮不扩大成复杂多源 watchdog。
+- 未来扩展方向：Task 业务 timeout → 触发 board health probe → shell 也不响应 → 升级 UNRESPONSIVE，覆盖「串口仍刷日志但控制链路已死」的故障。
 
 ## 文档过时点（后续顺手修）
 

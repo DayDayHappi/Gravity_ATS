@@ -2,23 +2,24 @@
 
 > 只保留未完成任务，按优先级。
 
-## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，已实施·待真机）
+## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，已修复·待真机）
 
-设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。**Code Agent 已实施**（devlog `20260921_1820`），Phase 1~5 全部落地：
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。**主体代码已实施**（devlog `20260921_1820`），2026-09-22 验收发现运行时闭环 7 P0 + 6 P1，**Code Agent 已全部修复**（devlog `20260922_1330`）。
 
-- `ATS/application/board_health_monitor.py`（HEALTHY/SUSPECTED/UNRESPONSIVE 状态机）
-- `ATS/application/recovery_coordinator.py`（IDLE→…→HEALTHY 状态机 + 次数限制 + Context 失效）
-- `ATS/application/recovery_backends/`（base.py + power_cycle.py）+ `ATS/application/runtime_control.py`
-- `core/` 接线：context（`invalidate_board_runtime_state`）/logger（recovery.log）/scenario（策略字段）/scenario_manager（board_ready + health_monitor_start/stop）/runner（`_recovery_checkpoint`）/reporter（recovery_events）/main
-- `config/modules/board_health.yaml`（Monitor 参数）
+### 修复落地（13 项全过，见 devlog）
 
-**待真机**：`TC-BH-001~003` + `TC-RCV-001~005`（见 ADR-016 Acceptance Criteria）；`inactivity_timeout`（默认 60s）需真实 stress 日志校准。
+- **P0**：watchdog 持续监测（P0-01）+ cooperative cancellation 触发链闭环（P0-02）；`confirm_health()` 同安全点一次性完成 `confirm_failures` 次确认（P0-03）；`ScenarioAbort` 异常实现真正的 Scenario 级 abort（P0-04）；`recovery_history` 在 `ctx.cleanup()` 前物化到 `manager.recovery_history`（P0-05）；`snapshot_rx_cursor()` + `wait_for_ready_since()` 实现 fresh-ready（P0-06）；monitor-only 确认 UNRESPONSIVE 记 `board_health` FAIL + abort（P0-07）。
+- **P1**：retry 二次 Outcome 进入 while 循环处理（P1-01）；`validate()` 前置校验 backend/restore（P1-02）；recovery 要求 monitor 前置 fail-closed（P1-03）；restore 未知 action fail-closed（P1-04）；HTML 增 Recovery Events 区域（P1-05）；`check_interval`/`confirm_interval` 真正接线 + 参数合法性校验（P1-06）。
 
-**待补（Document Agent 复核记录，建议 Code Agent 后续跟进）**：
+**权威修复依据**：[ADR016 实现验收问题清单与修复建议](../03_development/archive/ADR016_实现验收问题清单与修复建议.md)。
 
-1. **HTML 报告 Recovery Events 区域未实现**（ADR-016 §29）：仅 `result.json` 增 `recovery_events` 字段，`write_html` 未接入。
-2. **TC-RCV-002 检查时机偏移**（ADR-016 §13）：设计要求「正式 tasks 前」报 `RecoveryBackendUnavailable`，实现在恢复触发点才检查 backend 可用性；功能上满足「不静默 fallback」，但时机晚于设计。
-3. **`check_interval`/`confirm_interval` 预留未使用**（ADR-016 §11）：Monitor 为按需查询模式（无后台周期线程），`confirm_interval` 未接入 probe 逻辑。
+### 待真机
+
+`TC-BH-001~003` + `TC-RCV-001~005`（验收报告 §20）；`inactivity_timeout`（默认 60s）需真实 stress 日志校准。建议先建独立验证场景 `stress_recovery_validation`，全过再接入正式 stress/aging。
+
+### 能力边界（不变，已同步 known_issue）
+
+当前只识别「串口静默型整板无响应」，不覆盖「串口仍刷日志但控制链路已死」；未来扩展 Task 业务 timeout → probe → shell 不响应 → 升级 UNRESPONSIVE（需 ADR）。
 
 ---
 

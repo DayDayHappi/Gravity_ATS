@@ -114,12 +114,23 @@ def _action_board_ready(ctx, system_cfg):
 
     供 RecoveryCoordinator 在 Power Cycle 后复用（第一阶段不重新执行完整
     serial_init，控制串口预计保持打开）。控制串口未打开时优雅降级（返回，不抛）。
+
+    P0-06：若 ctx.recovery_cursor 已由 Coordinator 记录（PowerCycle 前），则用
+    ``wait_for_ready_since(cursor)`` 只认 reboot 后的新 RX，避免命中旧 msh 缓冲；
+    否则（首次 serial_init 后）用普通 ``wait_for_ready``。
     """
     console = getattr(ctx, "console", None)
     if console is None:
         logger.warn("board_ready: 无 console，跳过")
         return
-    if not console.wait_for_ready():
+    cursor = getattr(ctx, "recovery_cursor", None)
+    if cursor is not None:
+        ready = console.wait_for_ready_since(cursor)
+        # fresh-ready 完成后清游标，避免后续误用
+        ctx.recovery_cursor = None
+    else:
+        ready = console.wait_for_ready()
+    if not ready:
         raise ScenarioError("EVB 重启后就绪超时（等待 msh 失败）")
     if not console.health_check():
         raise ScenarioError("EVB 重启后串口自检失败")
@@ -308,14 +319,28 @@ def _action_health_monitor_start(ctx, system_cfg):
 
     - 开关：scenario 的 ``health_monitor.enabled``（ctx 透传）为 false 直接 return，
       零副作用（向后兼容）。
+    - P1-03：``recovery.enabled=true`` 但 ``health_monitor.enabled=false`` 时，
+      fail-closed 抛 ScenarioError（配置约束，禁止静默无效）。
     - 创建 BoardHealthMonitor 存 ctx.board_health_monitor，订阅串口原始数据。
-    - 若 recovery.enabled 同时为真，创建 RecoveryCoordinator 存 ctx.recovery_coordinator。
+    - 若 recovery.enabled 同时为真，创建 RecoveryCoordinator 并立即 validate()
+      （P1-02：backend/restore 前置校验，失败在 tasks 前报错）。
     """
     hm_cfg = getattr(ctx, "health_monitor", None) or {}
+    rc_cfg = getattr(ctx, "recovery", None) or {}
+
+    # P1-03：recovery 要求 monitor 前置（fail-closed）
+    if rc_cfg.get("enabled", False) and not hm_cfg.get("enabled", False):
+        raise ScenarioError(
+            "配置错误：recovery.enabled=true 要求 health_monitor.enabled=true（当前 "
+            "health_monitor.enabled=false，机制不会工作）"
+        )
+
     if not hm_cfg.get("enabled", False):
         return
+
     from ..application.board_health_monitor import BoardHealthMonitor
     from ..application.recovery_coordinator import RecoveryCoordinator
+    from ..application.recovery_backends.base import RecoveryBackendUnavailable
     from .config import load_module_config
 
     console = getattr(ctx, "console", None)
@@ -326,10 +351,21 @@ def _action_health_monitor_start(ctx, system_cfg):
         console.add_listener(monitor.on_rx)
     ctx.board_health_monitor = monitor
 
-    # recovery.enabled 时创建 Coordinator（策略来自 scenario 的 recovery 段）
-    rc_cfg = getattr(ctx, "recovery", None) or {}
+    # recovery.enabled 时创建 Coordinator 并前置校验（P1-02）
     if rc_cfg.get("enabled", False):
         coord = RecoveryCoordinator(policy=rc_cfg, ctx=ctx, console=console, monitor=monitor)
+        try:
+            coord.validate()
+        except (RecoveryBackendUnavailable, ValueError) as e:
+            # fail-closed：tasks 前明确报错，禁止静默降级
+            monitor.stop()
+            if console is not None:
+                try:
+                    console.remove_listener(monitor.on_rx)
+                except Exception:
+                    pass
+            ctx.board_health_monitor = None
+            raise ScenarioError(f"恢复机制配置校验失败: {e}")
         ctx.recovery_coordinator = coord
         logger.info("板卡健康监测 + 恢复机制已启用（monitor + recovery）")
     else:
@@ -422,6 +458,7 @@ class ScenarioManager:
         self.system_cfg = None
         self.ctx = None
         self.preview_cfg = {}   # scenario 层 preview 开关（ADR-010），load 时解析
+        self.recovery_history = []   # ADR-016 P0-05：ctx.cleanup 前保存，供报告读取
 
     def load(self, name: str) -> Scenario:
         """加载场景名 -> Scenario 对象（含参数合并前的原始 task）。"""
@@ -471,6 +508,8 @@ class ScenarioManager:
                     self._run_action(action, ctx, "cleanup")
                 except Exception as e:
                     logger.warn(f"cleanup 动作 {action} 异常: {e}")
+            # P0-05：ctx.cleanup() 前保存 recovery_history，避免被清空后报告丢失
+            self.recovery_history = list(getattr(ctx, "recovery_history", None) or [])
             # 关闭 ctx 持有的资源（如 FTP 连接）
             try:
                 ctx.cleanup()

@@ -24,7 +24,7 @@
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
 WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测器），不作 task（ADR-008 已实施）。
-ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / RecoveryCoordinator / RecoveryBackend，跨模块系统级协调，已实施（devlog `20260921_1820`），待真机。
+ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / RecoveryCoordinator / RecoveryBackend，跨模块系统级协调，已实施（devlog `20260921_1820`），运行时闭环已修复（devlog `20260922_1330`，7 P0 + 6 P1 全过），待真机。
 
 ## Completed
 
@@ -56,11 +56,11 @@ ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / Re
 - 检测关键字符串集中化（ADR-014）：`drivers/detect_strings.py` 唯一来源 + `string_hit_monitor.py` 泛化 + video/rtmp 改读 `detect_strings`（devlog `20260918_0010`，待真机）
 - 新增检测串 `imu fmq overflow f=`：`detect_strings.py` 追加 + video/rtmp.yaml 选择键加 `imu_fmq_overflow`（devlog `20260918_0030`，纯数据改动，待真机）
 - video 新增录像组合 `4k_0`：`video_commands.py` 补 profile（`cam_set video 4k 0`，预期 size 占位 0x0 待真机 ffprobe 校准，不接场景；devlog `20260918_0100`）
-- 板卡健康监测与可插拔恢复机制（ADR-016）源码已实施（devlog `20260921_1820`）：`ATS/application/`（board_health_monitor + recovery_coordinator + recovery_backends + runtime_control）+ `core/` 接线（context/logger/scenario/scenario_manager/runner/reporter/main）+ `config/modules/board_health.yaml`；待真机（HTML Recovery Events 区域待补）
+- 板卡健康监测与可插拔恢复机制（ADR-016）已实施（devlog `20260921_1820`）：`ATS/application/`（board_health_monitor + recovery_coordinator + recovery_backends + runtime_control）+ `core/` 接线（context/logger/scenario/scenario_manager/runner/reporter/main）+ `config/modules/board_health.yaml`；**运行时闭环已修复**（devlog `20260922_1330`，7 P0 + 6 P1 全过，见 [验收问题清单](../03_development/archive/ADR016_实现验收问题清单与修复建议.md)），待真机
 
 ## Working On
 
-- **板卡健康监测与可插拔恢复机制（ADR-016，已实施·待真机）**：Document Agent 2026-09-21 定稿设计，Code Agent 同日实施（devlog `20260921_1820`），Phase 1~5 全部落地：`ATS/application/`（monitor + coordinator + backends + runtime_control）+ core 接线 + `board_health.yaml`。**待真机验证** TC-BH-001~003 / TC-RCV-001~005。已记录实现偏差：HTML 报告 Recovery Events 区域待补、backend 可用性检查时机晚于设计（tasks 前 vs 触发点）、`check_interval`/`confirm_interval` 预留未用。
+- **板卡健康监测与可插拔恢复机制（ADR-016，已实施·运行时闭环已修复·待真机）**：Document Agent 2026-09-21 定稿，Code Agent 同日实施主体代码（devlog `20260921_1820`）。2026-09-22 验收（[问题清单](../03_development/archive/ADR016_实现验收问题清单与修复建议.md)）发现 7 P0 + 6 P1，Code Agent 已全部修复（devlog `20260922_1330`）：watchdog 持续监测、cooperative cancellation 闭环、Scenario 级 abort、recovery_history 物化、fresh-ready 游标、monitor-only FAIL/abort、backend/restore 前置校验、HTML Recovery Events、时间参数接线。待真机 TC-BH/TC-RCV。
 - **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层）+ 20260907/08 改动（cam_set 恢复 + RTMP heartbeat 裸 f_index + video_integrity 接线）+ 20260909 改动（video_commands 命令表 + video_size_traverse 场景 + 3k 场景迁移 3k_2 + video_size_traverse 接入检测）+ 20260917 改动（photo 单拍 3 个分辨率变体 + photo task 1→10 拆分）全部未跑真机。
 
 ## 固件行为快照（当前版本，未来可能变动）

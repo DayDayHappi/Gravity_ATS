@@ -166,10 +166,13 @@ class RecoveryCoordinator:
         )
         logger.warn(f"板卡无响应，开始恢复（backend={backend.name}，第 {attempt} 次）")
 
-        # 3. 失效板端运行状态（PowerCycle 前）
+        # 3. 记录 fresh-ready 游标（P0-06：PowerCycle 前记录，board_ready 只认新 RX）
+        self._snapshot_recovery_cursor()
+
+        # 4. 失效板端运行状态（PowerCycle 前）
         self._invalidate_board_state()
 
-        # 4. 执行恢复
+        # 5. 执行恢复
         self._state = RECOVERING
         try:
             backend.recover(self.ctx)
@@ -183,7 +186,7 @@ class RecoveryCoordinator:
             return RecoveryOutcome(self.on_exhausted, False, backend=backend.name,
                                    attempts=self._attempts, message=f"恢复执行失败: {e}")
 
-        # 5. 环境重新收敛（board_ready + 声明式 restore 列表）
+        # 6. 环境重新收敛（board_ready + 声明式 restore 列表）
         self._state = RECONCILING
         restore_result = self._restore_environment()
         ok = restore_result == "ok"
@@ -218,6 +221,33 @@ class RecoveryCoordinator:
             return None
         return self._backend
 
+    def validate(self):
+        """前置校验（P1-02/P1-04）：正式 tasks 前调用，fail-closed。
+
+        - backend 未注册 / 不可用（如 power_switch 未启用）→ 抛
+          ``RecoveryBackendUnavailable``，禁止静默降级。
+        - restore 列表里存在未注册的 prepare action → 抛 ValueError，
+          禁止恢复不完整仍判 ok。
+        """
+        # 1. backend 前置校验（P1-02）
+        backend = self._resolve_backend()
+        if backend is None:
+            raise RecoveryBackendUnavailable(
+                f"recovery.backend={self.backend_name!r} 不可用：后端未注册或 "
+                f"power_switch 未启用/探测失败（禁止静默 fallback）"
+            )
+
+        # 2. restore action 前置校验（P1-04）
+        for name in self.restore:
+            if name == "board_ready":
+                continue
+            if PREPARE_ACTIONS.get(name) is None:
+                raise ValueError(
+                    f"recovery.restore 含未注册动作 {name!r}（已注册: "
+                    f"{sorted(PREPARE_ACTIONS.keys())}）"
+                )
+        return True
+
     def _invalidate_board_state(self):
         """失效板端运行状态（调用 Context 局部失效，不清 system_config/console 等）。"""
         if self.ctx is not None:
@@ -226,15 +256,31 @@ class RecoveryCoordinator:
             except Exception as e:
                 logger.warn(f"失效板端运行状态异常(可忽略): {e}")
 
+    def _snapshot_recovery_cursor(self):
+        """PowerCycle 前记录串口 RX 游标（P0-06），供 board_ready 做 fresh-ready。"""
+        console = getattr(self.ctx, "console", None) if self.ctx is not None else None
+        if console is not None and hasattr(console, "snapshot_rx_cursor"):
+            try:
+                cursor = console.snapshot_rx_cursor()
+                self.ctx.recovery_cursor = cursor
+                logger.log_recovery(f"fresh-ready cursor 已记录: {cursor}")
+            except Exception as e:
+                logger.warn(f"记录 fresh-ready 游标异常(可忽略): {e}")
+
     def _restore_environment(self) -> str:
-        """复用现有 prepare action 重新收敛环境（board_ready 必做，restore 按声明）。"""
+        """复用现有 prepare action 重新收敛环境（board_ready 必做，restore 按声明）。
+
+        fail-closed（P1-04）：未知 restore action 直接判 restore failed，不得
+        静默跳过后返回 ok。
+        """
         system_cfg = getattr(self.ctx, "system_config", None) or {}
         actions = ["board_ready"] + [a for a in self.restore if a != "board_ready"]
         for name in actions:
             fn = PREPARE_ACTIONS.get(name)
             if fn is None:
-                logger.log_recovery(f"restore 跳过未知动作: {name}")
-                continue
+                logger.log_recovery(f"restore 未知动作，恢复失败: {name}")
+                logger.error(f"恢复失败：restore 含未注册动作 {name!r}")
+                return f"restore failed: unknown action {name!r}"
             try:
                 logger.log_recovery(f"restore action: {name}")
                 fn(self.ctx, system_cfg)
