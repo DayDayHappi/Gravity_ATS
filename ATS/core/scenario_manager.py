@@ -480,6 +480,8 @@ class ScenarioManager:
         scenario = self.load(scenario_name)
         if module_overrides:
             self._apply_module_overrides(scenario, module_overrides)
+        # NEW-P1-01：Scenario 生命周期接线前置校验（enabled 必须真实接线，fail-closed）
+        self._validate_scenario_runtime_contract(scenario)
 
         ctx = Context()
         ctx.system_config = self.system_cfg
@@ -558,6 +560,65 @@ class ScenarioManager:
         for task in scenario.tasks:
             if task.module in module_overrides:
                 task.override = {**task.override, **module_overrides[task.module]}
+
+    def _validate_scenario_runtime_contract(self, scenario: Scenario):
+        """NEW-P1-01：校验 Scenario 声明与生命周期 action 接线一致，fail-closed。
+
+        原则：Scenario 显式声明（YAML 保持可审计），框架**不**偷偷自动补 action；
+        声明了 enabled 却漏接对应生命周期 action 时直接报 ScenarioError。
+
+        校验规则（仅对已声明的能力做接线检查，未声明零影响）：
+        - health_monitor.enabled=true → prepare 含 health_monitor_start、
+          cleanup 含 health_monitor_stop。
+        - recovery.enabled=true → health_monitor.enabled=true、
+          prepare 含 health_monitor_start。
+        - recovery.backend=power_cycle → prepare 含 power_switch_init，且
+          power_switch_init 在 health_monitor_start 之前。
+        - health_monitor_stop 必须早于 power_switch_close / close_serial
+          （cleanup 本身不被 Monitor 误判为死机）。
+        """
+        hm = scenario.health_monitor or {}
+        rc = scenario.recovery or {}
+        prepare = list(scenario.prepare)
+        cleanup = list(scenario.cleanup)
+
+        if hm.get("enabled", False):
+            if "health_monitor_start" not in prepare:
+                raise ScenarioError(
+                    "配置错误：health_monitor.enabled=true 但 prepare 缺 health_monitor_start"
+                )
+            if "health_monitor_stop" not in cleanup:
+                raise ScenarioError(
+                    "配置错误：health_monitor.enabled=true 但 cleanup 缺 health_monitor_stop"
+                )
+
+        if rc.get("enabled", False):
+            if not hm.get("enabled", False):
+                raise ScenarioError(
+                    "配置错误：recovery.enabled=true 要求 health_monitor.enabled=true"
+                )
+            if "health_monitor_start" not in prepare:
+                raise ScenarioError(
+                    "配置错误：recovery.enabled=true 但 prepare 缺 health_monitor_start"
+                )
+            if rc.get("backend") == "power_cycle":
+                if "power_switch_init" not in prepare:
+                    raise ScenarioError(
+                        "配置错误：recovery.backend=power_cycle 但 prepare 缺 power_switch_init"
+                    )
+                if "health_monitor_start" in prepare and "power_switch_init" in prepare:
+                    if prepare.index("power_switch_init") > prepare.index("health_monitor_start"):
+                        raise ScenarioError(
+                            "配置错误：power_switch_init 必须在 health_monitor_start 之前"
+                        )
+
+        # cleanup 顺序：health_monitor_stop 必须早于 power_switch_close / close_serial
+        if "health_monitor_stop" in cleanup:
+            for later in ("power_switch_close", "close_serial"):
+                if later in cleanup and cleanup.index("health_monitor_stop") > cleanup.index(later):
+                    raise ScenarioError(
+                        f"配置错误：health_monitor_stop 必须在 {later} 之前（避免 cleanup 被误判为死机）"
+                    )
 
     def _run_action(self, action: str, ctx: Context, kind: str):
         registry = PREPARE_ACTIONS if kind == "prepare" else CLEANUP_ACTIONS

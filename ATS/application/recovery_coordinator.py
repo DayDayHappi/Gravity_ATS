@@ -222,14 +222,31 @@ class RecoveryCoordinator:
         return self._backend
 
     def validate(self):
-        """前置校验（P1-02/P1-04）：正式 tasks 前调用，fail-closed。
+        """前置校验（P1-02/P1-04/NEW-P0-02）：正式 tasks 前调用，fail-closed。
 
+        - policy 字段完整校验：max_attempts >= 1；after_recovery / on_exhausted
+          必须为已支持枚举值（NEW-P0-02，防拼写错误导致恢复失败后继续执行）。
         - backend 未注册 / 不可用（如 power_switch 未启用）→ 抛
           ``RecoveryBackendUnavailable``，禁止静默降级。
         - restore 列表里存在未注册的 prepare action → 抛 ValueError，
           禁止恢复不完整仍判 ok。
         """
-        # 1. backend 前置校验（P1-02）
+        # 1. policy 字段校验（NEW-P0-02）
+        if not isinstance(self.max_attempts, int) or self.max_attempts < 1:
+            raise ValueError(
+                f"recovery.max_attempts 必须为 >=1 的整数，实际 {self.max_attempts!r}"
+            )
+        if self.after_recovery not in ("retry_current_task", "continue"):
+            raise ValueError(
+                f"recovery.after_recovery 只支持 retry_current_task/continue，"
+                f"实际 {self.after_recovery!r}"
+            )
+        if self.on_exhausted not in ("abort_scenario",):
+            raise ValueError(
+                f"recovery.on_exhausted 只支持 abort_scenario，实际 {self.on_exhausted!r}"
+            )
+
+        # 2. backend 前置校验（P1-02）
         backend = self._resolve_backend()
         if backend is None:
             raise RecoveryBackendUnavailable(
@@ -237,7 +254,7 @@ class RecoveryCoordinator:
                 f"power_switch 未启用/探测失败（禁止静默 fallback）"
             )
 
-        # 2. restore action 前置校验（P1-04）
+        # 3. restore action 前置校验（P1-04）
         for name in self.restore:
             if name == "board_ready":
                 continue

@@ -122,16 +122,21 @@ class BoardHealthMonitor:
         if self._watchdog is not None:
             self._watchdog.join(timeout=2.0)
             self._watchdog = None
+        # NEW-P2-01：Scenario 生命周期收尾兜底，清除恢复请求
+        runtime_control.clear_recovery()
 
     # ---------- watchdog（持续监测线程，禁止阻塞/IO） ----------
 
     def _watchdog_loop(self):
         """轻量 watchdog：每 check_interval 秒比较 last_rx 距今，超时置 SUSPECTED。
 
+        用 ``_stop_watchdog.wait(check_interval)``（NEW-P2-01）：stop() 的 set() 能
+        立即唤醒，避免长 check_interval 下 join 超时残留。
+
         禁止 exec_sync/exec_async/health_check/PowerSwitch/FTP/网络 IO。
+        锁内只改 state/reason/event，logger 移出锁外（避免 reader 回调等待文件 IO）。
         """
-        while not self._stop_watchdog.is_set():
-            time.sleep(self.check_interval)
+        while not self._stop_watchdog.wait(self.check_interval):
             with self._lock:
                 if not self._started or self._state != HEALTHY:
                     # 已 SUSPECTED/UNRESPONSIVE 时不重复推进，等待 Runner 安全点确认
@@ -144,7 +149,11 @@ class BoardHealthMonitor:
                     )
                     runtime_control.request_recovery()
                     self._record_event_locked(SUSPECTED, self._reason)
-                    logger.warn(f"板卡疑似无响应（SUSPECTED）: {self._reason}")
+                    should_log = True
+                else:
+                    should_log = False
+            if should_log:
+                logger.warn(f"板卡疑似无响应（SUSPECTED）: {self._reason}")
 
     # ---------- 串口监听（读线程回调，禁止阻塞） ----------
 

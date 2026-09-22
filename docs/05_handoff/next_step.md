@@ -2,24 +2,35 @@
 
 > 只保留未完成任务，按优先级。
 
-## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，已修复·待真机）
+## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，第二轮验收问题待修复）
 
-设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。**主体代码已实施**（devlog `20260921_1820`），2026-09-22 验收发现运行时闭环 7 P0 + 6 P1，**Code Agent 已全部修复**（devlog `20260922_1330`）。
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），运行时闭环 7 P0 + 6 P1 已修复（devlog `20260922_1330`）。**2026-09-22 第二轮验收又发现 2 P0 + 2 P1 + 1 P2 + 1 硬件风险 + 1 验收缺口，当前需完成本轮修正后再进入真机**。
 
-### 修复落地（13 项全过，见 devlog）
+**权威修复依据**：[ADR016 第二轮验收新增问题与修改建议](../03_development/archive/ADR016_第二轮验收新增问题与修改建议.md)。
 
-- **P0**：watchdog 持续监测（P0-01）+ cooperative cancellation 触发链闭环（P0-02）；`confirm_health()` 同安全点一次性完成 `confirm_failures` 次确认（P0-03）；`ScenarioAbort` 异常实现真正的 Scenario 级 abort（P0-04）；`recovery_history` 在 `ctx.cleanup()` 前物化到 `manager.recovery_history`（P0-05）；`snapshot_rx_cursor()` + `wait_for_ready_since()` 实现 fresh-ready（P0-06）；monitor-only 确认 UNRESPONSIVE 记 `board_health` FAIL + abort（P0-07）。
-- **P1**：retry 二次 Outcome 进入 while 循环处理（P1-01）；`validate()` 前置校验 backend/restore（P1-02）；recovery 要求 monitor 前置 fail-closed（P1-03）；restore 未知 action fail-closed（P1-04）；HTML 增 Recovery Events 区域（P1-05）；`check_interval`/`confirm_interval` 真正接线 + 参数合法性校验（P1-06）。
+### 本轮新增问题
 
-**权威修复依据**：[ADR016 实现验收问题清单与修复建议](../03_development/archive/ADR016_实现验收问题清单与修复建议.md)。
+| 编号 | 优先级 | 问题 | 一句话 |
+|------|--------|------|--------|
+| NEW-P0-01 | P0 | 恢复失败/耗尽后无 framework FAIL/ERROR | 恢复失败但退出码仍可能为 0，CI 误判通过 |
+| NEW-P0-02 | P0 | Recovery Policy 枚举 + `max_attempts` 未完整 fail-closed | 配置拼错（如 `abort_scenaro`）→ 恢复失败后继续执行 |
+| NEW-P1-01 | P1 | 生命周期接线未前置校验 | `enabled=true` 但忘 `health_monitor_start`/`power_switch_init` 时静默失效 |
+| NEW-P1-02 | P1 | mock 验证未固化成持久测试 | 后续重构易回归 |
+| NEW-P2-01 | P2 | watchdog stop 不立即唤醒 + 锁内日志 IO | cleanup 线程短暂残留、reader 回调不必要等待 |
+| HW-RISK-01 | 真机门槛 | PowerCycle 后 EVB 串口是否 USB 重枚举未知 | 若重枚举，原 SerialConsole 句柄失效，需 `serial_reconnect` |
+| QA-GAP-01 | 验收缺口 | 无专用 `recovery_validation` 场景 | 缺少官方真机验收入口 |
 
-### 待真机
+### 修复顺序（验收报告 §10 Stage 1~7）
 
-`TC-BH-001~003` + `TC-RCV-001~005`（验收报告 §20）；`inactivity_timeout`（默认 60s）需真实 stress 日志校准。建议先建独立验证场景 `stress_recovery_validation`，全过再接入正式 stress/aging。
+Stage 1 结果一致性（NEW-P0-01）→ Stage 2 policy fail-closed（NEW-P0-02）→ Stage 3 Scenario contract（NEW-P1-01）→ Stage 4 测试固化（NEW-P1-02）→ Stage 5 线程优化（NEW-P2-01）→ Stage 6 recovery_validation 场景（QA-GAP-01）→ Stage 7 真机（先验 HW-RISK-01 再跑 TC-BH/TC-RCV）。
+
+### 架构红线（验收报告 §11 强调，修复时必守）
+
+Runner 负责 `RecoveryOutcome → retry/abort/framework TestResult`，但**不认识具体硬件**；`RecoveryCoordinator` 不生成业务 TestResult（框架级 `board_recovery ERROR` 由 Runner 产出）；`PowerSwitch` 仍只负责上下电；框架**不得偷偷自动补** `health_monitor_start/stop`、`power_switch_init` 等 action（由 Scenario 显式声明）。
 
 ### 能力边界（不变，已同步 known_issue）
 
-当前只识别「串口静默型整板无响应」，不覆盖「串口仍刷日志但控制链路已死」；未来扩展 Task 业务 timeout → probe → shell 不响应 → 升级 UNRESPONSIVE（需 ADR）。
+当前只识别「串口静默型整板无响应」；PowerCycle 后串口是否重枚举是当前最大真机未知项（HW-RISK-01）。
 
 ---
 

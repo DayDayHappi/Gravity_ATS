@@ -1,0 +1,44 @@
+# 板卡健康监测与可插拔恢复机制 专用真机验收场景（ADR-016，QA-GAP-01）
+# 用途：正式执行 TC-BH-001~003 + TC-RCV-001~005 的官方入口。
+# 不修改 normal/stress/aging——现有稳定场景保持向后兼容不受影响。
+# 首轮验证建议用单次短录像 task，不要直接拿 stress 200 loop 做真机。
+scenario:
+  name: recovery_validation
+  preview:
+    enabled: false          # 验收聚焦恢复机制，关闭画面观察
+
+  health_monitor:
+    enabled: true           # 启用板卡健康监测（watchdog + active probe）
+
+  recovery:
+    enabled: true
+    backend: power_cycle    # 唯一后端（ADR-016 第一阶段）
+    max_attempts: 2         # 最多自动恢复 2 次，超过 abort
+    after_recovery: retry_current_task
+    on_exhausted: abort_scenario
+    restore:                # PowerCycle 后环境重新收敛（复用 prepare action）
+      - board_ready
+      - wifi_connect
+      - preclean
+      - ftp_ready
+
+  prepare:
+    - serial_init
+    - power_switch_init     # 必须先于 health_monitor_start（场景契约校验）
+    - wifi_connect
+    - preclean
+    - ftp_ready
+    - health_monitor_start
+
+  tasks:
+    # 单次 180s 录像：足够长以触发「长 Task 中途死机」路径，又不至于过久。
+    - module: video
+      duration: 180
+      override:
+        video_resolution: "sd1080p_0"
+
+  cleanup:
+    - health_monitor_stop   # 必须先于 power_switch_close/close_serial（防误判）
+    - stop_stream
+    - power_switch_close
+    - close_serial

@@ -123,6 +123,10 @@ class TestRunner:
                     if outcome is None:
                         break
                     if outcome.action == "abort_scenario":
+                        # NEW-P0-01：恢复失败/耗尽必须生成 framework FAIL/ERROR，
+                        # 保证最终退出码非 0（结果一致性）。
+                        if not outcome.success:
+                            self._record_framework_recovery_error(outcome, cycle)
                         logger.error("恢复策略 on_exhausted/abort_scenario，中止整个 Scenario")
                         raise ScenarioAbort("abort_scenario")
                     if outcome.action == "retry_current_task":
@@ -130,7 +134,24 @@ class TestRunner:
                         outcome = self._run_module(task.module, cls, module_defaults,
                                                    params, cycle, rep, repeat_total)
                         continue   # 二次 Outcome 继续进入本循环处理（P1-01）
-                    break   # continue / 其他：退出
+                    # NEW-P0-02 兜底：未知 Outcome.action fail-closed，禁止静默 break 继续
+                    logger.error(f"未知 RecoveryOutcome.action: {outcome.action!r}，"
+                                 f"fail-closed 中止 Scenario")
+                    self._record_framework_recovery_error(outcome, cycle)
+                    raise ScenarioAbort(f"unknown recovery action: {outcome.action!r}")
+
+    def _record_framework_recovery_error(self, outcome, cycle):
+        """NEW-P0-01：恢复失败的 Outcome 转成 framework 级 TestResult（board_recovery ERROR）。
+
+        Coordinator 不感知报告结构，此处由 Runner 负责「RecoveryOutcome → framework
+        TestResult」，保证恢复失败/耗尽最终能影响退出码（不被 PASS 覆盖）。
+        """
+        msg = (f"恢复失败：backend={outcome.backend}, attempts={outcome.attempts}, "
+               f"reason={outcome.message}")
+        self._record(TestResult(
+            name="board_recovery", module="board_recovery", status=ERROR,
+            message=msg), cycle)
+        self.module_status["board_recovery"] = ERROR
 
     def _run_module(self, name, cls, config, params, cycle, rep_index, repeat_total):
         """执行单次模块：实例化 -> setup -> run(带重试) -> teardown -> recovery checkpoint。

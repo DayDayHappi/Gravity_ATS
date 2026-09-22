@@ -26,7 +26,7 @@
 
 - **PreviewManager**（ADR-010）是驱动层的观察能力，生命周期挂在 `prepare.preview_start`/`cleanup.preview_stop`（跨整个 Scenario，含 loop 多轮），不属任一 Task，不影响判据。
 
-- **板卡健康监测与恢复（ADR-016）**：新增「应用服务层」（Application Service，`ATS/application/`），只承担跨模块系统级协调，不改变 Scenario/Runner/Module/Driver 既有职责。三层分离：`BoardHealthMonitor`（只监测 EVB 健康，输出 `HEALTHY/SUSPECTED/UNRESPONSIVE` 状态，**不调用 PowerSwitch**）→ `RecoveryCoordinator`（只协调恢复策略/次数限制/Context 失效/环境收敛）→ `RecoveryBackend`（适配恢复能力，首实现 `PowerCycleBackend` 复用 ADR-015 的 PowerSwitch）。属 Scenario 生命周期能力（非 Task），挂 `prepare.health_monitor_start`/`cleanup.health_monitor_stop`。已实施（devlog `20260921_1820`），运行时闭环已修复（devlog `20260922_1330`，7 P0 + 6 P1 全过），待真机。
+- **板卡健康监测与恢复（ADR-016）**：新增「应用服务层」（Application Service，`ATS/application/`），只承担跨模块系统级协调，不改变 Scenario/Runner/Module/Driver 既有职责。三层分离：`BoardHealthMonitor`（只监测 EVB 健康，输出 `HEALTHY/SUSPECTED/UNRESPONSIVE` 状态，**不调用 PowerSwitch**）→ `RecoveryCoordinator`（只协调恢复策略/次数限制/Context 失效/环境收敛）→ `RecoveryBackend`（适配恢复能力，首实现 `PowerCycleBackend` 复用 ADR-015 的 PowerSwitch）。属 Scenario 生命周期能力（非 Task），挂 `prepare.health_monitor_start`/`cleanup.health_monitor_stop`。已实施（详见 ADR-016 当前状态）。
 
 ## 1.5 协议与判据分离（ADR-011，稳定约定）
 
@@ -69,7 +69,7 @@
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
 - **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
 - **上下电控制生命周期（ADR-015）**：探测与串口长连接挂 `prepare`/`cleanup`（探测成功保持打开、存 ctx，cleanup 关闭），**不随单次 task 开关**；`enabled: false`（默认关）时零影响。
-- **板卡健康监测生命周期（ADR-016）**：`health_monitor_start` 挂 prepare（推荐顺序 `serial_init → power_switch_init → wifi_connect → preclean → ftp_ready → preview_start → health_monitor_start`）；cleanup 首先执行 `health_monitor_stop` 再 `stop_stream → preview_stop → power_switch_close → close_serial`，防止正常清理被误判为死机。已实施（devlog `20260921_1820`），运行时闭环已修复（devlog `20260922_1330`），待真机。
+- **板卡健康监测生命周期（ADR-016）**：`health_monitor_start` 挂 prepare（推荐顺序 `serial_init → power_switch_init → wifi_connect → preclean → ftp_ready → preview_start → health_monitor_start`）；cleanup 首先执行 `health_monitor_stop` 再 `stop_stream → preview_stop → power_switch_close → close_serial`，防止正常清理被误判为死机。已实施（详见 ADR-016 当前状态）。
 
 ## 4. 数据流概览
 
@@ -77,6 +77,6 @@
 - **产物流**：拍照/录像 → EVB 落盘 `/emmc` → FTP 下载到 PC → 校验
 - **推流流**：EVB 编码 → RTMP → PC nginx-rtmp → ffprobe 探测
 - **电源控制流（ADR-015）**：PC →（串口 115200）→ 上下电控制模块 →（电源线）→ EVB（上电/下电/重启，协议字节在 `power_commands.py`，见 `data_flow.md`）
-- **健康监测与恢复流（ADR-016）**：EVB 串口活动 → `BoardHealthMonitor` 输出 `HealthEvent` → `RecoveryCoordinator` 决策 → `RecoveryBackend`（`PowerCycleBackend` → `PowerSwitch`）→ 环境重新收敛 → Runner 恢复流程（retry/abort）。已实施（devlog `20260921_1820`），运行时闭环已修复（devlog `20260922_1330`），待真机，见 `data_flow.md`。
+- **健康监测与恢复流（ADR-016）**：EVB 串口活动 → `BoardHealthMonitor` 输出 `HealthEvent` → `RecoveryCoordinator` 决策 → `RecoveryBackend`（`PowerCycleBackend` → `PowerSwitch`）→ 环境重新收敛 → Runner 恢复流程（retry/abort）。已实施（详见 ADR-016 当前状态），见 `data_flow.md`。
 
 详见 [data_flow.md](data_flow.md)。

@@ -45,7 +45,7 @@ power_switch:
 - 协议字节/判据/超时**不进 yaml**（ADR-011：协议属固件契约，留 `drivers/power_commands.py`），yaml 只存开关与硬件参数。
 - 探测与串口长连接挂 `prepare`/`cleanup`：`power_switch_init`（enabled 时探测，候选端口排除 EVB 端口，成功存 `ctx.power_switch`）/ `power_switch_close`（幂等关闭）；启用时对候选串口发上电帧区分控制器与 EVB。
 
-**`board_health` 段（ADR-016，`config/modules/board_health.yaml`，Scenario 生命周期级能力参数，沿用 PreviewManager 模式，已实施·运行时闭环已修复·待真机）**：
+**`board_health` 段（ADR-016，`config/modules/board_health.yaml`，Scenario 生命周期级能力参数，沿用 PreviewManager 模式，已实施）**：
 
 ```yaml
 # config/modules/board_health.yaml（Monitor 参数，非 Scenario Task）
@@ -55,7 +55,7 @@ confirm_failures: <值>      # 主动 health_check 连续失败多少次进 UNRE
 confirm_interval: <值>      # 主动确认间隔（秒）
 ```
 
-**Scenario Recovery Policy（ADR-016，`config/scenarios/*.yaml`，测试策略，已实施·运行时闭环已修复·待真机）**：
+**Scenario Recovery Policy（ADR-016，`config/scenarios/*.yaml`，测试策略，已实施）**：
 
 ```yaml
 health_monitor:
