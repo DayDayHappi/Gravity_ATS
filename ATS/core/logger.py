@@ -21,6 +21,7 @@ _LOG_DIR = None         # 本次运行日志目录
 _SERIAL_FP = None       # serial.log 文件句柄
 _RUN_FP = None          # run.log 文件句柄
 _PWR_FP = None          # power_switch.log 文件句柄（懒加载，首次写才创建）
+_RECOVERY_FP = None     # recovery.log 文件句柄（懒加载，恢复控制流独立留痕）
 _VERBOSE = False        # 详细模式
 
 
@@ -106,6 +107,25 @@ def log_power_switch(direction: str, data: str):
     _PWR_FP.flush()
 
 
+def log_recovery(msg: str):
+    """写一行恢复控制流日志（recovery.log，懒加载，ADR-016）。
+
+    职责边界：serial.log=EVB 原始串口、power_switch.log=电源控制器原始 TX/RX、
+    recovery.log=恢复控制流、run.log=整体运行轨迹。Monitor/Coordinator 的
+    分析信息写 recovery.log，禁止写入 serial.log。
+
+    懒加载：首次调用才创建 ``recovery.log``；``_LOG_DIR`` 为 None 时静默 return。
+    """
+    global _RECOVERY_FP
+    if _LOG_DIR is None:
+        return
+    if _RECOVERY_FP is None:
+        _RECOVERY_FP = open(os.path.join(_LOG_DIR, "recovery.log"), "w",
+                            encoding="utf-8", errors="replace")
+    _RECOVERY_FP.write(f"[{_now()}] {msg}\n")
+    _RECOVERY_FP.flush()
+
+
 def _write_run(level: str, msg: str, to_console: bool):
     if _RUN_FP is not None:
         _RUN_FP.write(f"[{_now()}] [{level}] {msg}\n")
@@ -159,7 +179,7 @@ def result_line(status: str, name: str, elapsed_ms: int, msg: str = ""):
 
 
 def close():
-    global _SERIAL_FP, _RUN_FP, _PWR_FP
+    global _SERIAL_FP, _RUN_FP, _PWR_FP, _RECOVERY_FP
     if _SERIAL_FP:
         _SERIAL_FP.close()
         _SERIAL_FP = None
@@ -169,6 +189,9 @@ def close():
     if _PWR_FP:
         _PWR_FP.close()
         _PWR_FP = None
+    if _RECOVERY_FP:
+        _RECOVERY_FP.close()
+        _RECOVERY_FP = None
 
 
 def log_dir() -> str:

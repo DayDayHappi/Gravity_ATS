@@ -60,12 +60,13 @@ def _scenario_stats(results: list) -> dict:
     return stats
 
 
-def write_json(results: list, out_dir: str) -> str:
+def write_json(results: list, out_dir: str, recovery_events: list = None) -> str:
     summary = _summary(results)
     data = {
         "summary": summary,
         "scenario_stats": _scenario_stats(results),
         "results": [_result_to_dict(r) for r in results],
+        "recovery_events": list(recovery_events or []),
         "generated_at": _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     path = os.path.join(out_dir, "result.json")
@@ -192,10 +193,11 @@ def print_summary(results: list):
     logger.step("=" * 50)
 
 
-def generate(results: list, out_dir: str, junit: bool = True, html: bool = True) -> dict:
-    """生成全部报告，返回各文件路径。"""
+def generate(results: list, out_dir: str, junit: bool = True, html: bool = True,
+             recovery_events: list = None) -> dict:
+    """生成全部报告，返回各文件路径。recovery_events 为 ADR-016 恢复事件留痕。"""
     os.makedirs(out_dir, exist_ok=True)
-    paths = {"json": write_json(results, out_dir)}
+    paths = {"json": write_json(results, out_dir, recovery_events)}
     if junit:
         paths["junit"] = write_junit(results, out_dir)
     if html:

@@ -49,6 +49,8 @@ class Scenario:
     cleanup: list = field(default_factory=list)
     loop: LoopConfig = field(default_factory=LoopConfig)
     serial_fingerprint: str = "default"   # 串口探测/就绪指纹集选择键（ADR-013）
+    health_monitor: dict = field(default_factory=dict)   # 板卡健康监测策略（ADR-016）
+    recovery: dict = field(default_factory=dict)          # 恢复策略（ADR-016）
 
 
 # prepare/cleanup 动作注册表：动作名 -> 可调用对象

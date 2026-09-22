@@ -64,4 +64,29 @@ PC ──串口(115200)──> 上下电控制模块 ──电源线──> EVB 
 - 端口区分：启用时对候选串口按 115200 发上电帧，回 `A0 01 01 A2` 者 = 控制器，另一 = EVB（防接反）。
 - `reboot()` = 下电 → 延时（`reboot_delay`）→ 上电；延时默认值待真机确定（TODO-CONFIRM）。
 - 触发时机（何时重启）由独立模块 import 调用，本能力只被动执行，禁止耦合。
-- 已实施（devlog `20260921_1104`），待真机验证。
+- 已实施（devlog `20260921_1104`），真机通过（TC-PS-001 压测 PASS）。
+
+## 6. 健康监测与恢复流（板卡健康监测，ADR-016，已实施·待真机）
+
+```
+EVB 串口活动 ──> BoardHealthMonitor（观察 + 状态判定，不调 PowerSwitch）
+                      │ HealthEvent
+                      ▼
+             RecoveryCoordinator（恢复决策 + 次数限制 + Context 失效）
+                      │ 统一 recover() 请求
+                      ▼
+             RecoveryBackend（PowerCycleBackend → PowerSwitch.reboot()）
+                      │ 上下电（复用 ADR-015 电源控制流）
+                      ▼
+             环境重新收敛（board_ready → WiFi → preclean → FTP ready）
+                      │
+                      ▼
+             Runner 恢复流程（retry_current_task / abort_scenario）
+```
+
+- **状态机（Monitor）**：`HEALTHY →（超 inactivity_timeout）→ SUSPECTED →（主动 health_check 连续失败 confirm_failures 次）→ UNRESPONSIVE`。UNRESPONSIVE 只表示 ATS 无法通过 EVB 控制链路取得有效响应，不推断根因。
+- **状态机（Coordinator）**：`IDLE → REQUESTED → RECOVERING → RECONCILING → HEALTHY`（失败进 FAILED）；`recovery_in_progress` 互斥，同一时间只允许一个恢复流程。
+- **健康确认**：`last_rx` 超时只进 SUSPECTED；主动 probe 复用 `console.health_check()`（`echo EVBTEST_HELLO`），必须在 Runner 安全点执行（Monitor listener 只观察，禁止下发命令）。
+- **Context 失效**：PowerCycle 后 `evb_ip`/`wifi_ready`/`skip_wifi`/`ftp_client`/`ftp_server_started` 失效（`invalidate_board_runtime_state()`，不调 `ctx.cleanup()`）；`system_config`/`power_switch`/`recovery_coordinator`/`board_health_monitor`/`pc_ip` 保持。
+- **事件留痕**：`ctx.recovery_history` + 报告 `recovery_events` 区；恢复事件不被后续 PASS 覆盖；日志 `recovery.log` 独立于 `serial.log`。
+- **红线**：Monitor 不认识 PowerSwitch；Module 不认识 Recovery；Runner 不认识具体硬件；RTMP heartbeat timeout 但 shell health_check PASS 只判 RTMP FAIL，禁止 PowerCycle。

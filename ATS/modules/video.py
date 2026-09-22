@@ -117,7 +117,11 @@ class VideoModule(TestModule):
             self._stop_after_error(console)
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
 
-        time.sleep(duration)
+        # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
+        # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
+        from ..application import runtime_control
+        if runtime_control.wait(duration):
+            logger.warn("录像等待期间收到板卡恢复请求，提前结束录像等待")
 
         # 4. 等录像全流程的最终完成标志，不把 Save Video Successful 当成完成。
         r = console.exec_async(commands.VIDEO_STOP_COMMAND,
@@ -199,7 +203,11 @@ class VideoModule(TestModule):
             self._stop_after_error(console)
             return self._mk("FAIL", "开始录像失败", r.clean[-300:], timer)
 
-        time.sleep(duration)
+        # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
+        # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
+        from ..application import runtime_control
+        if runtime_control.wait(duration):
+            logger.warn("录像等待期间收到板卡恢复请求，提前结束录像等待")
 
         # 3. 等录像全流程最终完成标志
         r = console.exec_async(commands.VIDEO_STOP_COMMAND,

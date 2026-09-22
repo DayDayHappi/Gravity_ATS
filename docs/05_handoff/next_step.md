@@ -2,6 +2,26 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，已实施·待真机）
+
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。**Code Agent 已实施**（devlog `20260921_1820`），Phase 1~5 全部落地：
+
+- `ATS/application/board_health_monitor.py`（HEALTHY/SUSPECTED/UNRESPONSIVE 状态机）
+- `ATS/application/recovery_coordinator.py`（IDLE→…→HEALTHY 状态机 + 次数限制 + Context 失效）
+- `ATS/application/recovery_backends/`（base.py + power_cycle.py）+ `ATS/application/runtime_control.py`
+- `core/` 接线：context（`invalidate_board_runtime_state`）/logger（recovery.log）/scenario（策略字段）/scenario_manager（board_ready + health_monitor_start/stop）/runner（`_recovery_checkpoint`）/reporter（recovery_events）/main
+- `config/modules/board_health.yaml`（Monitor 参数）
+
+**待真机**：`TC-BH-001~003` + `TC-RCV-001~005`（见 ADR-016 Acceptance Criteria）；`inactivity_timeout`（默认 60s）需真实 stress 日志校准。
+
+**待补（Document Agent 复核记录，建议 Code Agent 后续跟进）**：
+
+1. **HTML 报告 Recovery Events 区域未实现**（ADR-016 §29）：仅 `result.json` 增 `recovery_events` 字段，`write_html` 未接入。
+2. **TC-RCV-002 检查时机偏移**（ADR-016 §13）：设计要求「正式 tasks 前」报 `RecoveryBackendUnavailable`，实现在恢复触发点才检查 backend 可用性；功能上满足「不静默 fallback」，但时机晚于设计。
+3. **`check_interval`/`confirm_interval` 预留未使用**（ADR-016 §11）：Monitor 为按需查询模式（无后台周期线程），`confirm_interval` 未接入 probe 逻辑。
+
+---
+
 ## 🔴 P0 — serial_console.exec_sync 长时压测误判（已实施·待真机）
 
 **现象（真机 stress 压测，2026-09-18 日志 `logs/stress/20260918/20260918_163736`）**：压测约第 26 轮起（06:48，RTMP 推流 10 分钟结束后回到 photo），photo/video 的所有 `cam_set photo|video <mode>` 全判 `[FAIL] 设置模式/设置录像组合 失败`，此后每轮持续 FAIL；photo 因第一步 cam_set 失败提前 return，**不再发 `dfs_capture_start`**（用户观察到的「06:09:52 后只发 cam_set photo 不再发 capture」即此）。

@@ -108,6 +108,23 @@ def _action_power_switch_init(ctx, system_cfg):
     ctx.power_switch = ps
 
 
+@prepare_action("board_ready")
+def _action_board_ready(ctx, system_cfg):
+    """轻量 EVB 就绪确认（ADR-016）：``console.wait_for_ready() → health_check()``。
+
+    供 RecoveryCoordinator 在 Power Cycle 后复用（第一阶段不重新执行完整
+    serial_init，控制串口预计保持打开）。控制串口未打开时优雅降级（返回，不抛）。
+    """
+    console = getattr(ctx, "console", None)
+    if console is None:
+        logger.warn("board_ready: 无 console，跳过")
+        return
+    if not console.wait_for_ready():
+        raise ScenarioError("EVB 重启后就绪超时（等待 msh 失败）")
+    if not console.health_check():
+        raise ScenarioError("EVB 重启后串口自检失败")
+
+
 @prepare_action("wifi_connect")
 def _action_wifi_connect(ctx, system_cfg):
     """WiFi 状态收敛器（ADR-008）：先检测已联网则保留，未联网则执行 join。
@@ -285,9 +302,62 @@ def _action_preview_start(ctx, system_cfg):
     ctx.preview_manager = mgr
 
 
+@prepare_action("health_monitor_start")
+def _action_health_monitor_start(ctx, system_cfg):
+    """启动板卡健康监测器（ADR-016，Scenario 生命周期能力，非 Task）。
+
+    - 开关：scenario 的 ``health_monitor.enabled``（ctx 透传）为 false 直接 return，
+      零副作用（向后兼容）。
+    - 创建 BoardHealthMonitor 存 ctx.board_health_monitor，订阅串口原始数据。
+    - 若 recovery.enabled 同时为真，创建 RecoveryCoordinator 存 ctx.recovery_coordinator。
+    """
+    hm_cfg = getattr(ctx, "health_monitor", None) or {}
+    if not hm_cfg.get("enabled", False):
+        return
+    from ..application.board_health_monitor import BoardHealthMonitor
+    from ..application.recovery_coordinator import RecoveryCoordinator
+    from .config import load_module_config
+
+    console = getattr(ctx, "console", None)
+    mon_cfg = load_module_config("board_health") or {}
+    monitor = BoardHealthMonitor({**mon_cfg, **hm_cfg})
+    monitor.start()
+    if console is not None:
+        console.add_listener(monitor.on_rx)
+    ctx.board_health_monitor = monitor
+
+    # recovery.enabled 时创建 Coordinator（策略来自 scenario 的 recovery 段）
+    rc_cfg = getattr(ctx, "recovery", None) or {}
+    if rc_cfg.get("enabled", False):
+        coord = RecoveryCoordinator(policy=rc_cfg, ctx=ctx, console=console, monitor=monitor)
+        ctx.recovery_coordinator = coord
+        logger.info("板卡健康监测 + 恢复机制已启用（monitor + recovery）")
+    else:
+        logger.info("板卡健康监测已启用（仅 monitor，不自动恢复）")
+
+
 # ---------------------------------------------------------------------------
 # cleanup 动作
 # ---------------------------------------------------------------------------
+
+@cleanup_action("health_monitor_stop")
+def _action_health_monitor_stop(ctx, system_cfg):
+    """停止板卡健康监测器（ADR-016）。幂等：无实例则直接 return。
+
+    cleanup 首先执行本动作（见场景 cleanup 顺序），防止正常清理被误判为死机。
+    """
+    monitor = getattr(ctx, "board_health_monitor", None)
+    console = getattr(ctx, "console", None)
+    if monitor is None:
+        return
+    if console is not None:
+        try:
+            console.remove_listener(monitor.on_rx)
+        except Exception:
+            pass
+    monitor.stop()
+    ctx.board_health_monitor = None
+
 
 @cleanup_action("stop_stream")
 def _action_stop_stream(ctx, system_cfg):
@@ -379,6 +449,9 @@ class ScenarioManager:
         ctx.no_interactive_wifi = no_interactive_wifi
         ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
         ctx.serial_fingerprint = scenario.serial_fingerprint   # ADR-013
+        ctx.health_monitor = scenario.health_monitor            # ADR-016（策略透传给 action）
+        ctx.recovery = scenario.recovery                        # ADR-016
+        ctx.scenario_name = scenario.name
         self.ctx = ctx
 
         results = []
@@ -437,6 +510,8 @@ class ScenarioManager:
             cleanup=list(sc.get("cleanup", [])),
             loop=loop,
             serial_fingerprint=sc.get("serial_fingerprint", "default"),
+            health_monitor=dict(sc.get("health_monitor") or {}),   # ADR-016
+            recovery=dict(sc.get("recovery") or {}),               # ADR-016
         )
 
     def _apply_module_overrides(self, scenario: Scenario, module_overrides: dict):

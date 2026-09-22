@@ -1,0 +1,7 @@
+# 板卡健康监测器参数（ADR-016，Scenario 生命周期能力，非 Task）
+# Monitor 只监测，不认识 PowerSwitch；主动 probe 由 Runner 在安全点执行。
+# 开关在 scenario 的 health_monitor.enabled（本文件只存监测参数，不含策略）。
+check_interval: 2.0        # 后台检查周期(秒)（当前实现为按需查询，保留语义）
+inactivity_timeout: 60.0   # 超该秒数无串口活动 → SUSPECTED（待真机 stress 日志校准）
+confirm_failures: 3        # 主动健康确认连续失败次数 → UNRESPONSIVE
+confirm_interval: 3.0      # 主动健康确认间隔(秒)

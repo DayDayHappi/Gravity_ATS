@@ -103,14 +103,29 @@ class TestRunner:
 
             repeat_total = max(1, int(task.repeat or 1))
             for rep in range(repeat_total):
-                self._run_module(task.module, cls, module_defaults, params,
-                                 cycle, rep, repeat_total)
+                outcome = self._run_module(task.module, cls, module_defaults, params,
+                                           cycle, rep, repeat_total)
+                # ADR-016 recovery checkpoint：模块执行后检查恢复结论
+                if outcome is not None:
+                    if outcome.action == "abort_scenario":
+                        logger.error("恢复策略 on_exhausted/abort_scenario，中止本轮 tasks")
+                        return
+                    # retry_current_task：重跑当前 task（rep 不推进），仅一次
+                    if outcome.action == "retry_current_task":
+                        logger.info(f"恢复策略 retry_current_task：重跑模块 {task.module}")
+                        self._run_module(task.module, cls, module_defaults, params,
+                                         cycle, rep, repeat_total)
 
     def _run_module(self, name, cls, config, params, cycle, rep_index, repeat_total):
-        """执行单次模块：实例化 -> setup -> run(带重试) -> teardown。"""
+        """执行单次模块：实例化 -> setup -> run(带重试) -> teardown -> recovery checkpoint。
+
+        Returns:
+            RecoveryOutcome（ADR-016）或 None（无 recovery / 未触发）。
+        """
         label = name if repeat_total <= 1 else f"{name}[{rep_index + 1}/{repeat_total}]"
         mod_start = time.monotonic()
         logger.step(f">>> 模块 [{label}] 开始执行 (cycle {cycle})")
+        outcome = None
         try:
             module = cls(config)
 
@@ -122,7 +137,7 @@ class TestRunner:
                     name=name, module=name, status=ERROR,
                     message=f"setup 异常: {e}"), cycle, rep_index)
                 self.module_status[name] = ERROR
-                return
+                return None
 
             result = None
             last_err = None
@@ -154,10 +169,51 @@ class TestRunner:
             else:
                 st = FAILED
             self.module_status[name] = st
+
+            # ADR-016 recovery checkpoint：模块完成后检查板卡健康
+            outcome = self._recovery_checkpoint(cycle, name, rep_index)
         finally:
             elapsed = time.monotonic() - mod_start
             status = self.module_status.get(name, "?")
             logger.step(f"<<< 模块 [{label}] 结束，耗时 {elapsed:.1f}s（结果 {status}）")
+        return outcome
+
+    def _recovery_checkpoint(self, cycle, task, rep_index):
+        """ADR-016 Runner 接入点：Task 完成后检查健康，SUSPECTED 主动 probe，
+        UNRESPONSIVE 交给 RecoveryCoordinator。Runner 不认识具体硬件。
+
+        Returns:
+            RecoveryOutcome；无 monitor/recovery 配置或状态健康时返回 None。
+        """
+        monitor = getattr(self.ctx, "board_health_monitor", None)
+        if monitor is None:
+            return None
+
+        state = monitor.current_state()
+
+        # SUSPECTED：在安全点（无并发命令事务）主动 probe
+        if state == "SUSPECTED":
+            from ..application.board_health_monitor import SUSPECTED, UNRESPONSIVE
+            logger.warn(f"板卡疑似无响应（SUSPECTED），在安全点主动健康确认...")
+            ok = monitor.probe(self.console)
+            if ok:
+                logger.info("健康确认通过，继续测试")
+                return None
+            state = monitor.current_state()
+            if state != UNRESPONSIVE:
+                return None   # 尚未达失败阈值，继续观察
+
+        # UNRESPONSIVE：交给 Coordinator（若未启用 recovery 则只记录不动作）
+        if state == "UNRESPONSIVE":
+            coord = getattr(self.ctx, "recovery_coordinator", None)
+            reason = monitor.get_status().get("reason", "")
+            if coord is None:
+                logger.error(f"板卡无响应（UNRESPONSIVE: {reason}），但未启用 recovery，仅记录")
+                return None
+            return coord.handle_unresponsive(
+                cycle, task, rep_index + 1, state, reason)
+
+        return None
 
     def _record_results(self, name, result, last_err, cycle, rep_index):
         """把模块返回的结果（单条或多条）记录进 self.results 并打印。"""
