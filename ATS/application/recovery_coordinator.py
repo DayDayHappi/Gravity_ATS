@@ -254,14 +254,18 @@ class RecoveryCoordinator:
                 f"power_switch 未启用/探测失败（禁止静默 fallback）"
             )
 
-        # 3. restore action 前置校验（P1-04）
+        # 3. restore action 前置校验（P1-04）+ 顺序校验（NEW-P0-06）
         for name in self.restore:
-            if name == "board_ready":
-                continue
             if PREPARE_ACTIONS.get(name) is None:
                 raise ValueError(
                     f"recovery.restore 含未注册动作 {name!r}（已注册: "
                     f"{sorted(PREPARE_ACTIONS.keys())}）"
+                )
+        # serial_reconnect 必须先于 board_ready（PowerCycle 后 transport 恢复在前）
+        if "serial_reconnect" in self.restore and "board_ready" in self.restore:
+            if self.restore.index("serial_reconnect") > self.restore.index("board_ready"):
+                raise ValueError(
+                    "recovery.restore 中 serial_reconnect 必须在 board_ready 之前"
                 )
         return True
 
@@ -285,13 +289,17 @@ class RecoveryCoordinator:
                 logger.warn(f"记录 fresh-ready 游标异常(可忽略): {e}")
 
     def _restore_environment(self) -> str:
-        """复用现有 prepare action 重新收敛环境（board_ready 必做，restore 按声明）。
+        """复用现有 prepare action 重新收敛环境（严格按 YAML restore 声明顺序）。
+
+        NEW-P0-06（设计文档 §19）：不再隐式 prepend ``board_ready``——PowerCycle 后
+        必须先 serial_reconnect（transport 恢复）再 board_ready（msh ready），
+        隐式 prepend 会导致 board_ready 先于 serial_reconnect，顺序错误。
 
         fail-closed（P1-04）：未知 restore action 直接判 restore failed，不得
         静默跳过后返回 ok。
         """
         system_cfg = getattr(self.ctx, "system_config", None) or {}
-        actions = ["board_ready"] + [a for a in self.restore if a != "board_ready"]
+        actions = list(self.restore)   # 严格按 YAML 顺序，不自动插入
         for name in actions:
             fn = PREPARE_ACTIONS.get(name)
             if fn is None:

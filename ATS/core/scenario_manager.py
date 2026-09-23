@@ -36,23 +36,51 @@ def _action_serial_init(ctx, system_cfg):
     """串口探测 + 打开 + 就绪 + 自检，console 存入 ctx.console。
 
     按 ctx.serial_fingerprint（ADR-013）选择指纹集/就绪正则；默认 default（旧固件）。
+
+    NEW-P0-05：若 PowerSwitch 已先行上电（ctx.power_switch 存在，冷启动场景），
+    在 ``power_on_detect_timeout`` 内循环等待 EVB UART 枚举出现（bounded polling），
+    避免「上电后 UART 尚未枚举完成，单次探测失败」的 race。
     """
     ser_cfg = system_cfg.get("serial", {})
     port = ser_cfg.get("port", "auto")
     baudrate = ser_cfg.get("baudrate", 2000000)
     fingerprint_set = getattr(ctx, "serial_fingerprint", "default")
 
+    # 排除已识别的 PowerSwitch 串口（避免把控制器误当 EVB）
+    power_port = None
+    ps = getattr(ctx, "power_switch", None)
+    if ps is not None:
+        power_port = getattr(ps, "port", None)
+
     if port in ("auto", "", None):
-        port, detected_baud = detect_port(
-            baudrate=baudrate,
-            baud_candidates=ser_cfg.get("baudrate_candidates"),
-            interactive=True,
-            detect_timeout=ser_cfg.get("detect_timeout", 2.0),
-            fingerprint_set=fingerprint_set,
-        )
-        if port is None:
-            raise ScenarioError("无法确定 EVB 串口，测试中止")
-        baudrate = detected_baud
+        # 冷启动（PowerSwitch 先行上电）：在超时内循环等待 EVB UART 出现
+        if ps is not None:
+            port, detected_baud = _detect_evb_with_wait(
+                baudrate=baudrate,
+                baud_candidates=ser_cfg.get("baudrate_candidates"),
+                fingerprint_set=fingerprint_set,
+                exclude_port=power_port,
+                timeout=ser_cfg.get("power_on_detect_timeout", 30.0),
+                interval=ser_cfg.get("power_on_detect_interval", 0.5),
+            )
+            if port is None:
+                raise ScenarioError(
+                    "PowerSwitch 已上电，但 EVB UART 在规定时间内未出现"
+                )
+        else:
+            port, detected_baud = detect_port(
+                baudrate=baudrate,
+                baud_candidates=ser_cfg.get("baudrate_candidates"),
+                interactive=True,
+                detect_timeout=ser_cfg.get("detect_timeout", 2.0),
+                fingerprint_set=fingerprint_set,
+            )
+            if port is None:
+                raise ScenarioError("无法确定 EVB 串口，测试中止")
+            baudrate = detected_baud
+    else:
+        # 显式端口：直接使用
+        pass
 
     console = SerialConsole(
         port=port, baudrate=baudrate,
@@ -76,36 +104,163 @@ def _action_serial_init(ctx, system_cfg):
     ctx.console = console
 
 
+def _detect_evb_with_wait(baudrate, baud_candidates, fingerprint_set,
+                          exclude_port, timeout, interval):
+    """冷启动：在 timeout 内循环等待 EVB UART 枚举并识别（bounded polling）。
+
+    复用 ``detect_port`` 的指纹探测，但把「单次扫描」改为「循环等待」；每轮排除
+    PowerSwitch 端口，避免把控制器误当 EVB。返回 (port, baud) 或 (None, None)。
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        from ..core.serial_console import _list_candidate_ports
+        ports = [p for p in _list_candidate_ports() if p != exclude_port]
+        if ports:
+            for p in ports:
+                for baud in ([baudrate] + [b for b in (baud_candidates or []) if b != baudrate]):
+                    if _probe_evb_fingerprint(p, baud, fingerprint_set):
+                        return p, baud
+        time.sleep(interval)
+    return None, None
+
+
+def _probe_evb_fingerprint(port, baud, fingerprint_set):
+    """用指定端口+波特率探测 EVB 指纹（复用 serial_console._probe_port_baud）。"""
+    from ..core.serial_console import _probe_port_baud
+    try:
+        return _probe_port_baud(port, baud, detect_timeout=2.0,
+                                fingerprint_set=fingerprint_set)
+    except Exception:
+        return False
+
+
 @prepare_action("power_switch_init")
 def _action_power_switch_init(ctx, system_cfg):
-    """探测上下电控制模块（ADR-015）：enabled 时对候选串口发上电帧探测控制器。
+    """探测上下电控制模块（ADR-015）+ 冷启动上电（NEW-P0-05）。
 
-    - 幂等：``power_switch.enabled`` 为 false 时直接 return，零副作用。
-    - 候选端口 = 全部可访问串口 减去已确定 EVB 的端口（ctx.console.port），
-      防止把 EVB 误当控制器（控制器 115200 / EVB 2000000，帧协议也互斥）。
-    - 探测成功后控制器保持长连接，存 ctx.power_switch，由 cleanup 关闭。
+    - 幂等：``power_switch.enabled`` 为 false 且非 recovery 必需时直接 return。
+    - recovery.enabled=true + backend=power_cycle 时 fail-closed：power_switch 未启用、
+      无候选、探测失败、POWER_STATE_ON 未确认均抛 ScenarioError（禁止 WARN+skip）。
+    - 显式 ``power_switch.port`` 优先；auto 时按协议帧识别（排除已配置的 serial.port）。
+    - 探测成功后发 POWER ON 确认 POWER_STATE_ON，长连接存 ctx.power_switch。
     """
-    ps_cfg = system_cfg.get("power_switch", {}) or {}
-    if not ps_cfg.get("enabled", False):
-        return
-
+    from ..drivers import power_commands as pcmds
     from ..drivers.power_switch import detect_power_switch, _accessible_ports
 
-    console = getattr(ctx, "console", None)
-    evb_port = getattr(console, "port", None)
-    candidates = [p for p in _accessible_ports() if p != evb_port]
-    if not candidates:
-        logger.warn("power_switch_init: 无候选串口（可能未插控制器），跳过")
+    ps_cfg = system_cfg.get("power_switch", {}) or {}
+    enabled = bool(ps_cfg.get("enabled", False))
+
+    # 是否 recovery 必需（fail-closed）
+    rc_cfg = getattr(ctx, "recovery", None) or {}
+    required = bool(rc_cfg.get("enabled", False)) and rc_cfg.get("backend") == "power_cycle"
+
+    if not enabled:
+        if required:
+            raise ScenarioError(
+                "配置错误：recovery.backend=power_cycle 要求 power_switch.enabled=true"
+            )
         return
 
+    port = ps_cfg.get("port", "auto")
     baudrate = ps_cfg.get("baudrate", 115200)
     reboot_delay = ps_cfg.get("reboot_delay")
-    ps = detect_power_switch(candidate_ports=candidates, baudrate=baudrate,
-                             reboot_delay=reboot_delay)
+
+    # 候选端口：排除已配置的 EVB 串口（即使 ctx.console 尚未创建）
+    exclude = []
+    if port in ("auto", "", None):
+        ser_cfg = system_cfg.get("serial", {}) or {}
+        evb_port = ser_cfg.get("port", "auto")
+        if evb_port not in ("auto", "", None):
+            exclude.append(evb_port)
+        candidates = [p for p in _accessible_ports() if p not in exclude]
+        if not candidates:
+            if required:
+                raise ScenarioError("无候选串口，无法探测上下电控制模块")
+            logger.warn("power_switch_init: 无候选串口（可能未插控制器），跳过")
+            return
+        ps = detect_power_switch(candidate_ports=candidates, baudrate=baudrate,
+                                 reboot_delay=reboot_delay)
+    else:
+        # 显式端口：直接在该端口验证
+        candidates = [port]
+        ps = detect_power_switch(candidate_ports=candidates, baudrate=baudrate,
+                                 reboot_delay=reboot_delay)
+
     if ps is None:
+        if required:
+            raise ScenarioError("未探测到上下电控制模块（POWER_STATE_ON 未确认）")
         logger.warn("power_switch_init: 未探测到上下电控制模块，跳过（后续 reboot 不可用）")
         return
+
+    # NEW-P0-05：确认 POWER ON 已发送且 POWER_STATE_ON 已回（冷启动前置）
+    on_resp = ps.power_on()
+    if on_resp != pcmds.POWER_STATE_ON:
+        if required:
+            raise ScenarioError(
+                f"上下电控制上电确认失败（回帧 {on_resp.hex(' ').upper() if on_resp else '<空>'}）"
+            )
+        logger.warn("power_switch_init: 上电确认失败，但非 recovery 必需，继续")
     ctx.power_switch = ps
+
+
+@prepare_action("serial_reconnect")
+def _action_serial_reconnect(ctx, system_cfg):
+    """重建 EVB UART transport（ADR-016 NEW-P0-06 + BUG-006），只负责 transport 恢复。
+
+    - 只恢复底层 pyserial transport（保持 SerialConsole 对象身份不变），不负责
+      board_ready（msh ready + health_check 由 board_ready 单独做）。
+    - 职责边界：不碰 PowerSwitch、WiFi、FTP、health policy、Task retry。
+
+    BUG-006 修复要点（两个句柄抢同一端口 → multiple access on port）：
+    1. 先记录 old_port，**先 ``console.close()`` 释放旧 reader + 旧 pyserial 句柄**，
+       再谈端口探测（否则探测 open 同一端口与旧 reader 冲突）。
+    2. 若 old_port 仍在可访问列表（USB-UART 桥独立供电、端口未消失）→ 直接
+       ``console.reconnect(old_port)``，不探测（省掉无谓的 30s 空等）；
+       仅 old_port 消失（真重枚举到新设备名）才走 ``_detect_evb_with_wait`` 找新端口。
+    """
+    console = getattr(ctx, "console", None)
+    if console is None:
+        raise ScenarioError("serial_reconnect: 无 console，无法重建 transport")
+
+    ps = getattr(ctx, "power_switch", None)
+    power_port = getattr(ps, "port", None) if ps is not None else None
+
+    system_cfg = system_cfg or {}
+    ser_cfg = system_cfg.get("serial", {}) or {}
+    baudrate = ser_cfg.get("baudrate", 2000000)
+    fingerprint_set = getattr(ctx, "serial_fingerprint", "default")
+
+    old_port = getattr(console, "port", None)
+
+    # BUG-006：先关旧 transport（释放端口），避免探测时与旧 reader 抢同一端口
+    console.close()
+
+    new_port = ser_cfg.get("port", "auto")
+    if new_port in ("auto", "", None):
+        # 判断原端口是否仍存在（可访问且非 PowerSwitch 端口）
+        from ..core.serial_console import _list_candidate_ports
+        accessible = [p for p in _list_candidate_ports() if p != power_port]
+        if old_port is not None and old_port in accessible:
+            # 原端口未消失：直接沿用，不探测（BUG-006 主场景）
+            logger.info(f"serial_reconnect: 原端口 {old_port} 仍在，直接重连（不探测）")
+            new_port = old_port
+        else:
+            # 原端口消失（真重枚举）：才走 bounded wait 探测（旧句柄已 close，无冲突）
+            logger.info(f"serial_reconnect: 原端口 {old_port} 已消失，探测新 EVB UART ...")
+            new_port, detected_baud = _detect_evb_with_wait(
+                baudrate=baudrate,
+                baud_candidates=ser_cfg.get("baudrate_candidates"),
+                fingerprint_set=fingerprint_set,
+                exclude_port=power_port,
+                timeout=ser_cfg.get("power_on_detect_timeout", 30.0),
+                interval=ser_cfg.get("power_on_detect_interval", 0.5),
+            )
+            if new_port is None:
+                raise ScenarioError("serial_reconnect: PowerCycle 后 EVB UART 未重新枚举")
+            baudrate = detected_baud
+
+    # 同一对象 reconnect（保持 Runner/Coordinator/listener 引用不分裂）
+    console.reconnect(port=new_port, baudrate=baudrate)
 
 
 @prepare_action("board_ready")
@@ -481,7 +636,7 @@ class ScenarioManager:
         if module_overrides:
             self._apply_module_overrides(scenario, module_overrides)
         # NEW-P1-01：Scenario 生命周期接线前置校验（enabled 必须真实接线，fail-closed）
-        self.validate_scenario(scenario)
+        self.validate_scenario(scenario, self.system_cfg)
 
         ctx = Context()
         ctx.system_config = self.system_cfg
@@ -561,12 +716,28 @@ class ScenarioManager:
             if task.module in module_overrides:
                 task.override = {**task.override, **module_overrides[task.module]}
 
-    def validate_scenario(self, scenario: Scenario):
-        """公开入口（NEW-P1-03）：静态校验 Scenario runtime contract。
+    def validate_scenario(self, scenario: Scenario, system_cfg: dict = None):
+        """公开入口（NEW-P1-03）：静态校验 Scenario runtime contract + system capability。
 
         供 ``run()`` 与 ``--dry-run`` 共用；dry-run 只做静态校验（不做串口/网络探测）。
+
+        NEW-P0-05（设计文档 §22）：recovery.backend=power_cycle 时校验
+        system.power_switch.enabled 必须 true（fail-closed，不得等到 serial_init 才暴露）。
         """
         self._validate_scenario_runtime_contract(scenario)
+        self._validate_system_capability(scenario, system_cfg)
+
+    def _validate_system_capability(self, scenario: Scenario, system_cfg: dict):
+        """NEW-P0-05：system 硬件能力在硬件动作前校验（dry-run/run 共用）。"""
+        rc = scenario.recovery or {}
+        if rc.get("enabled", False) and rc.get("backend") == "power_cycle":
+            if system_cfg is None:
+                return   # dry-run 未传 system_cfg 时跳过（run 前会再查）
+            ps_cfg = system_cfg.get("power_switch", {}) or {}
+            if not ps_cfg.get("enabled", False):
+                raise ScenarioError(
+                    "配置错误：recovery.backend=power_cycle 要求 system.power_switch.enabled=true"
+                )
 
     def _validate_scenario_runtime_contract(self, scenario: Scenario):
         """NEW-P1-01：校验 Scenario 声明与生命周期 action 接线一致，fail-closed。
@@ -613,11 +784,15 @@ class ScenarioManager:
                     raise ScenarioError(
                         "配置错误：recovery.backend=power_cycle 但 prepare 缺 power_switch_init"
                     )
-                if "health_monitor_start" in prepare and "power_switch_init" in prepare:
-                    if prepare.index("power_switch_init") > prepare.index("health_monitor_start"):
-                        raise ScenarioError(
-                            "配置错误：power_switch_init 必须在 health_monitor_start 之前"
-                        )
+                # NEW-P0-05（设计文档 §21）：power_switch_init < serial_init < health_monitor_start
+                for a, b, name in (("power_switch_init", "serial_init", "serial_init"),
+                                   ("power_switch_init", "health_monitor_start", "health_monitor_start"),
+                                   ("serial_init", "health_monitor_start", "health_monitor_start")):
+                    if a in prepare and b in prepare:
+                        if prepare.index(a) > prepare.index(b):
+                            raise ScenarioError(
+                                f"配置错误：{a} 必须在 {b} 之前（冷启动依赖顺序）"
+                            )
 
         # cleanup 顺序：health_monitor_stop 必须早于 power_switch_close / close_serial
         if "health_monitor_stop" in cleanup:

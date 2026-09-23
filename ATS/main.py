@@ -231,8 +231,8 @@ def main(argv=None) -> int:
     manager = ScenarioManager(config_dir)
     try:
         scenario = manager.load(args.scenario)
-        # NEW-P1-03：静态 Scenario runtime contract 校验（与 run 前同款，dry-run 也走）
-        manager.validate_scenario(scenario)
+        # NEW-P1-03 + NEW-P0-05：静态 Scenario runtime contract + system capability 校验
+        manager.validate_scenario(scenario, system_cfg)
     except (ConfigError, ScenarioError) as e:
         logger.error(f"加载场景失败: {e}")
         logger.close()

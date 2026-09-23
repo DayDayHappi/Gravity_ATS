@@ -28,15 +28,14 @@ class PowerCycleBackend(RecoveryBackend):
         """执行 power cycle：``ctx.power_switch.reboot_checked()``（NEW-P0-04）。
 
         用严格接口验证 OFF/ON 控制器回帧，避免「板子根本没断电重启却被判恢复成功」。
-        旧 PowerSwitch 无 reboot_checked 时退回普通 reboot（兼容）。
+        设计文档 §23：Recovery 路径禁止静默退化到非严格 reboot()。
         """
         ps = getattr(ctx, "power_switch", None)
         if ps is None:
             raise RuntimeError("power_switch 未就绪，无法 power cycle")
+        if not hasattr(ps, "reboot_checked"):
+            raise RuntimeError("PowerSwitch 不支持 reboot_checked，禁止非严格 PowerCycle recovery")
         logger.info("PowerCycleBackend: 执行 power cycle（下电→延时→上电，严格校验回帧）...")
-        if hasattr(ps, "reboot_checked"):
-            ps.reboot_checked()
-        else:
-            ps.reboot()
+        ps.reboot_checked()
         logger.info("PowerCycleBackend: power cycle 完成")
         return f"power cycle via {ps.port}"

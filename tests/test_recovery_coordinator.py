@@ -16,6 +16,8 @@ class _FakePS:
     port = "/dev/ttyUSB1"
     def reboot(self):
         pass
+    def reboot_checked(self):
+        pass
 
 
 class _GoodConsole:

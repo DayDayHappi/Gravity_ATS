@@ -1,11 +1,12 @@
 # 板卡健康监测与可插拔恢复机制 专用真机验收场景（ADR-016，QA-GAP-01）
 # 用途：正式执行 TC-BH-001~003 + TC-RCV-001~005 的官方入口。
-# 不修改 normal/stress/aging——现有稳定场景保持向后兼容不受影响。
-# 首轮验证建议用单次短录像 task，不要直接拿 stress 200 loop 做真机。
+# tasks 全部照搬 stress.yaml（photo×10 + video×12 + video_integrity + rtmp），
+# loop/preview/rtmp duration 也照搬 stress 原文；但 prepare 保持 recovery 冷启动顺序
+# （power_switch_init → serial_init，不能照搬 stress 旧顺序，契约校验会强制）。
 scenario:
   name: recovery_validation
   preview:
-    enabled: false          # 验收聚焦恢复机制，关闭画面观察
+    enabled: true           # 照搬 stress（开启画面观察）
 
   health_monitor:
     enabled: true           # 启用板卡健康监测（watchdog + active probe）
@@ -16,29 +17,171 @@ scenario:
     max_attempts: 2         # 最多自动恢复 2 次，超过 abort
     after_recovery: retry_current_task
     on_exhausted: abort_scenario
-    restore:                # PowerCycle 后环境重新收敛（复用 prepare action）
+    restore:                # PowerCycle 后环境重新收敛（严格按顺序）
+      - serial_reconnect    # 先重建 EVB UART transport（NEW-P0-06）
       - board_ready
       - wifi_connect
       - preclean
       - ftp_ready
 
   prepare:
-    - serial_init
-    - power_switch_init     # 必须先于 health_monitor_start（场景契约校验）
+    - power_switch_init     # NEW-P0-05：先识别控制器并上电 EVB（冷启动前置）
+    - serial_init           # 再等 EVB UART 枚举 + 打开
     - wifi_connect
     - preclean
     - ftp_ready
+    - preview_start         # preview.enabled=true 需要挂 preview_start
     - health_monitor_start
 
+  loop:
+    enable: true
+    count: 200
+
   tasks:
-    # 单次 180s 录像：足够长以触发「长 Task 中途死机」路径，又不至于过久。
+    # photo 按模式拆成 10 个 task，每个模式单元素 photo_modes + 独立 repeat，
+    # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 10 模式等价）。
+    # TODO-CONFIRM：10 个模式名需真机核实是否为固件支持的合法 cam_set photo <mode> 参数。
+    # 依据 photo.yaml 注释 + 需求文档；注意 archive 软件需求文档 L483 记为
+    # "cam_set photo hdr <0-3>"（hdr 带参数），与这里的 hdr_0~3 独立命名可能不一致，
+    # 真机核实时需确认 hdr 到底用独立模式名还是参数形式。
+    # single 1080p/720p/480p 三个含空格模式名同样需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [auto]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 1080p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 720p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 480p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [mfnr]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_0]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_1]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_2]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr_3]
+    # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
-      duration: 180
+      repeat: 1
+      duration: 20
       override:
         video_resolution: "sd1080p_0"
 
+    # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "sd1080p_1"
+
+    # sd1080p_2: 预期 2016x1034 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "sd1080p_2"
+
+    # hd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "hd1080p_1"
+
+    # hd1080p_2: 预期 1296x2304 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "hd1080p_2"
+
+    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "3k_2"
+
+    # 720p_0: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_0"
+
+    # 720p_1: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_1"
+
+    # 720p_2: 预期 1600x900 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_2"
+
+    # 480p_0: 预期 640x480 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_0"
+
+    # 480p_1: 预期 640x480 横屏（用户口述估计，TODO-CONFIRM 待真机 ffprobe 校准）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_1"
+
+    # 480p_2: 预期 800x600 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_2"
+
+    # 录像完成后统一做 H265 完整性检测：检本轮全部未检文件，跨 loop 靠 manifest 去重不重复检。
+    # 不能用 latest_unchecked（只检最新 1 个，会漏掉 sd1080p_0/1 的 repeat:10 其余 9 个）。
+    - module: video_integrity
+      override:
+        input:
+          source: "current_run"
+          selection: "all_unchecked"   # 检本轮全部未检文件；跨 loop 靠 manifest 去重不重复检
+          empty_input_policy: "skip"   # 某 size 录像失败/未下载时不判 FAIL，跳过而非双重惩罚
+    - module: rtmp
+      duration: 600
   cleanup:
-    - health_monitor_stop   # 必须先于 power_switch_close/close_serial（防误判）
+    - health_monitor_stop   # 必须先于 close_serial/power_switch_close（防误判）
     - stop_stream
-    - power_switch_close
+    - preview_stop          # preview 开启后需关闭 ffplay 窗口
     - close_serial
+    - power_switch_close

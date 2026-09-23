@@ -2,41 +2,36 @@
 
 > 只保留未完成任务，按优先级。
 
-## 🔴 P0 — 板卡健康监测与可插拔恢复机制（ADR-016，第三轮验收问题待修复）
+## 🟡 P1 — 板卡健康监测与可插拔恢复机制（ADR-016，恢复链真机通过·边界用例待补）
 
-设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），第一轮 7 P0 + 6 P1 已修复（devlog `20260922_1330`），第二轮 2 P0 + 2 P1 + 1 P2 + QA-GAP-01 已落地（含 `recovery_validation.yaml`、23 个 unittest、`board_recovery ERROR`）。**2026-09-22 第三轮验收确认主架构成熟，但剩余 3 个软件修复点 + 1 真机门槛 + 1 QA 缺口，完成后应停止扩功能、直接进真机**。
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），三轮验收闭环修复（devlog `20260922_1330`/`1404`/`1423`）+ 冷启动/串口生命周期修复（devlog `20260922_1603`）+ BUG-006 修复（devlog `20260923_1110`）已完成，37 个 unittest 全过。
 
-**权威修复依据**：[ADR016 第三轮验收问题与修复建议](../03_development/archive/ADR016_第三轮验收问题与修复建议.md)。
+### ✅ 真机已验证（2026-09-23）
 
-### 本轮剩余问题
+| 项 | 结果 | 证据 |
+|----|------|------|
+| 冷启动 | ✅ | `20260923_101525`：`power_switch_init → serial_init` 顺序生效，先上电再等串口 |
+| 死机检测 + 主动确认不误判（TC-BH-003） | ✅ | FTP 下载静默 60s → SUSPECTED → probe 成功 → HEALTHY |
+| 完整 PowerCycle 恢复链（拔电源复现） | ✅ | `20260923_111113`：UNRESPONSIVE → OFF/ON → serial_reconnect（直接重连）→ board_ready（fresh-ready）→ health_check → WiFi → FTP → retry_current_task，video 重跑 |
 
-| 编号 | 优先级 | 问题 | 一句话 |
-|------|--------|------|--------|
-| NEW-P0-03 | P0 | `after_recovery=continue` 被 Coordinator 判合法，但 Runner 当成 unknown action | 恢复成功反而被记 ERROR 并中止 Scenario |
-| NEW-P0-04 | P0 | PowerCycle 未严格验证 OFF/ON 控制器回帧 | 板子可能没真正断电，却被判恢复成功 |
-| NEW-P1-03 | P1 | `--dry-run` 不执行 Scenario runtime contract 校验 | dry-run 可能错误提示「配置通过」 |
-| HW-RISK-01 | 真机门槛 | PowerCycle 后 EVB UART 是否 USB 重枚举未知 | 原 SerialConsole 句柄可能失效 |
-| QA-GAP-02 | QA | tests/ 被 `.gitignore` 忽略，未进源码快照 | 无法源码级验收 23 个 unittest |
+### 待续真机（边界用例，不阻塞核心恢复能力）
 
-### 修复顺序（验收报告 §10 Stage 1~5）
+1. **TC-BH-001/002**：monitor/recovery 全关回归；仅 Monitor（UNRESPONSIVE 留痕不 PowerCycle）。
+2. **TC-RCV-002~005**：PowerSwitch 不存在报 BackendUnavailable；RTMP 单模块故障不误升级 PowerCycle；max_attempts 耗尽真正 abort；Context 失效重建。
+3. **真重枚举探测路径**：拔 EVB USB-UART 线再插回（端口真消失），验证 `_detect_evb_with_wait` 探测分支仍正确（当前真机只验证了「端口未消失直接重连」分支）。
+4. **真机校准**：`inactivity_timeout`（当前 60s 对 FTP 大文件下载静默偏敏感，已观测到无害 SUSPECTED）/ `reboot_delay` / `power_on_detect_timeout`；`power_switch.port` / `serial.port` 稳定 by-id 路径。
 
-Stage 1 统一 `continue` 语义（NEW-P0-03）→ Stage 2 PowerCycle 严格回帧（NEW-P0-04，`reboot_checked()`）→ Stage 3 dry-run 静态契约校验（NEW-P1-03）→ Stage 4 源码快照纳入 tests（QA-GAP-02）→ Stage 5 真机（先验 HW-RISK-01 再跑 TC-BH/TC-RCV）。
+### 真机观察命令（设计文档 §30）
 
-### QA-GAP-02 根因（Document Agent 复核确认）
-
-`tests/` 被 `.gitignore` 第 38 行 `/tests/` 明确忽略，导致 4 个测试文件（23 个 unittest）**未被 git 跟踪**，故第三轮源码快照（只扫 git 跟踪文件）不含 tests。修复需在 `.gitignore` 放行 `tests/`（类似已放行的 `.claude/agents/`），否则测试永远进不了快照与 CI。
-
-### 架构红线（验收报告 §11，修复时必守）
-
-Runner 负责 `RecoveryOutcome → retry/continue/abort/framework TestResult`，不认识具体硬件；`RecoveryCoordinator` 只返回 Outcome 不生成 TestResult；`PowerSwitch` 只负责上下电（可新增 `reboot_checked()`，不感知 health/Scenario/policy）；`ScenarioManager` 负责生命周期静态契约校验，但不偷偷自动补 action。
-
-### 真机前配置注意（验收报告 §9）
-
-执行 `python -m ATS.main --scenario recovery_validation` 前，须在测试机将 `system.yaml` 的 `power_switch.enabled` 改为 `true`（否则 `power_switch_init` 跳过、backend validate 失败——这是配置设计，非 bug）。
+`dmesg -w` / `udevadm monitor` / `watch -n 0.2 'ls -l /dev/ttyUSB* /dev/ttyACM* /dev/serial/by-id/*'`；ATS 日志 `serial.log`/`power_switch.log`/`recovery.log`/`run.log`。
 
 ### 能力边界（不变，已同步 known_issue）
 
-当前只识别「串口静默型整板无响应」；PowerCycle 后串口是否重枚举是当前最大真机未知项（HW-RISK-01）。
+当前只识别「串口静默型整板无响应」；`reboot_checked` 的 OFF 判据目前只要求合法状态帧；若真机确认 EVB UART 不重枚举，`serial_reconnect` 退化为幂等 reopen（仍正确）。
+
+### 权威依据（历史留档）
+
+[第一轮验收](../03_development/archive/ADR016_实现验收问题清单与修复建议.md) · [第二轮验收](../03_development/archive/ADR016_第二轮验收新增问题与修改建议.md) · [第三轮验收](../03_development/archive/ADR016_第三轮验收问题与修复建议.md) · [冷启动/串口生命周期修复设计](../03_development/archive/ADR016_电源控制冷启动与串口生命周期修复设计.md) · [BUG-006](../03_development/bugfix/BUG-006-serial_reconnect探测与旧句柄冲突致恢复失败.md)。
 
 ---
 

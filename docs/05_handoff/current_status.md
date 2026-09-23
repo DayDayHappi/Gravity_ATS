@@ -24,7 +24,7 @@
 
 场景驱动的分层执行模型：config（三层）→ ScenarioManager（编排）→ Runner（调度）→ Module（动作）→ Driver（通信）。
 WiFi 属 prepare 环境准备（wifi_connect 收敛器 + wifi_check 状态检测器），不作 task（ADR-008 已实施）。
-ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / RecoveryCoordinator / RecoveryBackend，跨模块系统级协调，已实施（devlog `20260921_1820`），运行时闭环已修复（devlog `20260922_1330`），第三轮验收问题待修复（2026-09-22）。
+ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / RecoveryCoordinator / RecoveryBackend，跨模块系统级协调，已实施（devlog `20260921_1820`），三轮验收闭环修复（devlog `20260922_1330`/`1404`/`1423`）+ 冷启动/串口生命周期修复（devlog `20260922_1603`）+ BUG-006 修复（devlog `20260923_1110`）完成，恢复链真机验证通过（2026-09-23）。
 
 ## Completed
 
@@ -56,11 +56,11 @@ ADR-016 引入应用服务层（Application Service）：BoardHealthMonitor / Re
 - 检测关键字符串集中化（ADR-014）：`drivers/detect_strings.py` 唯一来源 + `string_hit_monitor.py` 泛化 + video/rtmp 改读 `detect_strings`（devlog `20260918_0010`，待真机）
 - 新增检测串 `imu fmq overflow f=`：`detect_strings.py` 追加 + video/rtmp.yaml 选择键加 `imu_fmq_overflow`（devlog `20260918_0030`，纯数据改动，待真机）
 - video 新增录像组合 `4k_0`：`video_commands.py` 补 profile（`cam_set video 4k 0`，预期 size 占位 0x0 待真机 ffprobe 校准，不接场景；devlog `20260918_0100`）
-- 板卡健康监测与可插拔恢复机制（ADR-016）已实施（devlog `20260921_1820`）：`ATS/application/`（board_health_monitor + recovery_coordinator + recovery_backends + runtime_control）+ `core/` 接线（context/logger/scenario/scenario_manager/runner/reporter/main）+ `config/modules/board_health.yaml`；**运行时闭环已修复**（devlog `20260922_1330`，7 P0 + 6 P1 全过），第二轮问题已落地（`board_recovery ERROR`/policy 校验/契约校验/`recovery_validation.yaml`/23 unittest），**第三轮验收问题待修复**（[第三轮验收](../03_development/archive/ADR016_第三轮验收问题与修复建议.md)：`continue` 语义冲突 + PowerCycle 严格回帧 + dry-run 契约校验 + tests 被 .gitignore 忽略）
+- 板卡健康监测与可插拔恢复机制（ADR-016）已实施（devlog `20260921_1820`）：`ATS/application/`（board_health_monitor + recovery_coordinator + recovery_backends + runtime_control）+ `core/` 接线（context/logger/scenario/scenario_manager/runner/reporter/main）+ `config/modules/board_health.yaml`；**三轮验收闭环修复 + 冷启动/串口生命周期修复 + BUG-006 修复完成**（devlog `20260922_1330`/`1404`/`1423`/`1603` + `20260923_1110`）；37 个 unittest 全过；**恢复链真机验证通过**（2026-09-23：冷启动 + SUSPECTED 检测 + 完整 PowerCycle 恢复 + video 重跑）
 
 ## Working On
 
-- **板卡健康监测与可插拔恢复机制（ADR-016，主体已实施·第三轮验收问题待修复）**：Document Agent 2026-09-21 定稿，Code Agent 实施主体（devlog `20260921_1820`）+ 修复第一轮 7 P0 + 6 P1（devlog `20260922_1330`）+ 第二轮 2 P0 + 2 P1 + 1 P2 + QA-GAP-01 落地。2026-09-22 第三轮验收（[新增问题](../03_development/archive/ADR016_第三轮验收问题与修复建议.md)）确认主架构成熟，剩余 2 P0（`after_recovery=continue` 与 Runner 冲突、PowerCycle 未严格验证 OFF/ON 回帧）+ 1 P1（dry-run 不执行契约校验）+ HW-RISK-01（串口重枚举）+ QA-GAP-02（tests 被 .gitignore 忽略），待 Code Agent 按 Stage 1~4 修复后进真机。
+- **板卡健康监测与可插拔恢复机制（ADR-016，已实施·恢复链真机验证通过）**：Document Agent 2026-09-21 定稿，Code Agent 实施主体（devlog `20260921_1820`）+ 三轮验收闭环修复（devlog `20260922_1330`/`1404`/`1423`）+ 冷启动/串口生命周期修复（devlog `20260922_1603`）+ BUG-006 修复（devlog `20260923_1110`）。**2026-09-23 真机验证**：冷启动 ✓、SUSPECTED 检测+主动确认 ✓（TC-BH-003）、完整 PowerCycle 恢复链 ✓（拔电源 → UNRESPONSIVE → OFF/ON → serial_reconnect → board_ready → WiFi → FTP → retry_current_task，video 重跑）。**待续真机**：TC-BH-001/002、TC-RCV-002~005 边界用例 + `inactivity_timeout`/`reboot_delay` 校准。
 - **待真机验证**：Scenario 层重构 + 第四次交接 4 项改动 + 20260824 改动 + ADR-010（20260825 源码已实施）+ 20260826 改动（video 判据修复 + stress_traverse_photo_mode 场景）+ 20260827 改动（video 启动判据 f_index 兜底）+ 20260831 改动（日志目录三级分层）+ 20260907/08 改动（cam_set 恢复 + RTMP heartbeat 裸 f_index + video_integrity 接线）+ 20260909 改动（video_commands 命令表 + video_size_traverse 场景 + 3k 场景迁移 3k_2 + video_size_traverse 接入检测）+ 20260917 改动（photo 单拍 3 个分辨率变体 + photo task 1→10 拆分）全部未跑真机。
 
 ## 固件行为快照（当前版本，未来可能变动）

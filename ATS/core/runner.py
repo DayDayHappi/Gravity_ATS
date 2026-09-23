@@ -135,7 +135,12 @@ class TestRunner:
                                                    params, cycle, rep, repeat_total)
                         continue   # 二次 Outcome 继续进入本循环处理（P1-01）
                     if outcome.action == "continue":
-                        # NEW-P0-03：恢复成功，不重跑当前 Task，继续下一个 Task
+                        # NEW-P0-03：恢复成功，不重跑当前 Task，继续下一个 Task。
+                        # 设计文档 §24：continue 必须 success==True，失败则 abort。
+                        if not outcome.success:
+                            logger.error("continue 但恢复失败，记录错误并中止")
+                            self._record_framework_recovery_error(outcome, cycle)
+                            raise ScenarioAbort("continue with failed recovery")
                         logger.info("恢复策略 after_recovery=continue：恢复成功，继续下一个 Task")
                         break
                     # NEW-P0-02 兜底：未知 Outcome.action fail-closed，禁止静默 break 继续

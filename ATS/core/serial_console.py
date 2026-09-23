@@ -163,6 +163,48 @@ class SerialConsole:
             self._ser = None
         logger.debug("串口已关闭")
 
+    def reconnect(self, port=None, baudrate=None):
+        """重建底层 pyserial transport（ADR-016 NEW-P0-06），保持对象身份不变。
+
+        运行中 PowerCycle 后 EVB UART 可能消失并重枚举，旧 pyserial 句柄失效。
+        本方法关闭旧 transport 后重新 open，**不**创建第二个 SerialConsole——
+        避免 Runner/Coordinator/listener 持有旧引用形成引用分裂。
+
+        实施要求（设计文档 §15）：
+        1. listener 集合不清空（reconnect 后继续收 RX）；
+        2. ``_buffer_seq`` 保持单调递增（fresh-ready 游标跨 reconnect 继续有效）；
+        3. 旧 reader thread 正确停止；
+        4. 旧 pyserial handle 释放；
+        5. 新 reader thread 正确启动；
+        6. 不清空日志系统；
+        7. 不创建第二个 SerialConsole。
+
+        Args:
+            port: 新端口；None 则沿用 self.port。
+            baudrate: 新波特率；None 则沿用 self.baudrate。
+        """
+        if port is not None:
+            self.port = port
+        if baudrate is not None:
+            self.baudrate = baudrate
+
+        # 停旧 reader + 关旧 handle（不清 _buffer/_buffer_seq/_listeners）
+        self._stop_event.set()
+        self._notify_all()
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=2.0)
+        if self._ser:
+            try:
+                self._ser.close()
+            except Exception:
+                pass
+            self._ser = None
+
+        # 重新 open（open() 会 reset stop_event 并启动新 reader）
+        self.open()
+        logger.info(f"SerialConsole 已重连: {self.port} @ {self.baudrate} bps（对象身份不变，"
+                    f"buffer seq 继续单调）")
+
     # ---------- 常驻读线程 ----------
 
     def _reader_loop(self):
