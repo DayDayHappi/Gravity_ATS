@@ -124,17 +124,44 @@ class PhotoModule(TestModule):
         if not jpgs:
             return self._mk(name, "PASS", f"{msg_base}（未列出 jpg 辅助验证）", r.clean[-200:], timer)
 
-        jpg0 = jpgs[0]
-        remote = f"{save_dir}/{jpg0}"
-        local = os.path.join(tmp_dir, f"{mode}_{new_dir}_{jpg0}")
-        if not ftp2.download(remote, local, timeout=30, retries=2):
+        # 下载整个时间戳目录下的全部 jpg（不只第一张）。
+        # 本地建子目录 {safe_mode}_{new_dir}/，避免 mode 名含空格 / 多张同名冲撞。
+        import re
+        safe_mode = re.sub(r"[^A-Za-z0-9_.-]", "_", mode)
+        dl_dir = os.path.join(tmp_dir, f"{safe_mode}_{new_dir}")
+        os.makedirs(dl_dir, exist_ok=True)
+
+        # 辅助判据：FTP 下载失败降级不判 FAIL（test_strategy 红线）；
+        # 但「已成功下载的 jpg」逐张 JPEG 头+大小校验，任一失败判 FAIL
+        # （与历史单张语义一致，只是覆盖范围从第一张扩展到全部）。
+        downloaded = []         # 成功下载且校验通过的本地路径
+        verify_failed = None    # (jpg, vmsg)：第一张已下载但校验失败的
+        for jpg in jpgs:
+            remote = f"{save_dir}/{jpg}"
+            local = os.path.join(dl_dir, jpg)
+            # download() 内部每次 connect() 重建连接，循环下载多张安全
+            if not ftp2.download(remote, local, timeout=30, retries=2):
+                continue   # 单张下载失败：辅助降级，继续下一张
+            ok, vmsg = self._verify_jpeg(local, min_kb)
+            if ok:
+                downloaded.append(local)
+            elif verify_failed is None:
+                verify_failed = (jpg, vmsg)
+
+        if not downloaded and verify_failed is None:
+            # 一张都没下载成功 → 辅助降级 PASS（保持现状「下载验证失败」语义）
             return self._mk(name, "PASS", f"{msg_base}（下载验证失败）", r.clean[-200:], timer)
 
-        ok, vmsg = self._verify_jpeg(local, min_kb)
-        status = "PASS" if ok else "FAIL"
-        # message 含本地存储路径，便于用户找到下载的照片
-        msg = f"{vmsg} | {msg_base} | 已下载到 {local}"
-        return self._mk(name, status, msg, f"含 {len(jpgs)} 个 jpg", timer)
+        if verify_failed is not None:
+            # 存在已下载但 JPEG 校验失败的 jpg → FAIL（与现状单张语义一致）
+            jpg, vmsg = verify_failed
+            return self._mk(name, "FAIL", f"{vmsg} | {msg_base} | {jpg} 校验失败",
+                            f"含 {len(jpgs)} 个 jpg，已下载 {len(downloaded)} 张", timer)
+
+        # 全部下载成功且校验通过 → PASS，message 含本地目录便于用户找到照片
+        msg = (f"全部 {len(downloaded)} 张 jpg 校验通过 | {msg_base} | "
+               f"已下载到 {dl_dir}/")
+        return self._mk(name, "PASS", msg, f"含 {len(jpgs)} 个 jpg", timer)
 
     def _list_pic_dirs(self, ftp):
         """列 /emmc/PIC 下的时间戳目录（仅目录名）。"""
