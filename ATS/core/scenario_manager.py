@@ -136,16 +136,19 @@ def _probe_evb_fingerprint(port, baud, fingerprint_set):
 
 @prepare_action("power_switch_init")
 def _action_power_switch_init(ctx, system_cfg):
-    """探测上下电控制模块（ADR-015）+ 冷启动上电（NEW-P0-05）。
+    """探测上下电控制模块（ADR-015）+ 冷启动先下电再上电（NEW-P0-05）。
 
     - 幂等：``power_switch.enabled`` 为 false 且非 recovery 必需时直接 return。
     - recovery.enabled=true + backend=power_cycle 时 fail-closed：power_switch 未启用、
-      无候选、探测失败、POWER_STATE_ON 未确认均抛 ScenarioError（禁止 WARN+skip）。
+      无候选、探测失败、上电确认失败均抛 ScenarioError（禁止 WARN+skip）。
     - 显式 ``power_switch.port`` 优先；auto 时按协议帧识别（排除已配置的 serial.port）。
-    - 探测成功后发 POWER ON 确认 POWER_STATE_ON，长连接存 ctx.power_switch。
+    - 探测成功后执行「先下电 → 延时 → 上电」使板子从确定下电状态启动，长连接存
+      ctx.power_switch。
     """
     from ..drivers import power_commands as pcmds
-    from ..drivers.power_switch import detect_power_switch, _accessible_ports
+    from ..drivers.power_switch import (
+        PowerSwitchError, detect_power_switch, _accessible_ports,
+    )
 
     ps_cfg = system_cfg.get("power_switch", {}) or {}
     enabled = bool(ps_cfg.get("enabled", False))
@@ -165,13 +168,21 @@ def _action_power_switch_init(ctx, system_cfg):
     baudrate = ps_cfg.get("baudrate", 115200)
     reboot_delay = ps_cfg.get("reboot_delay")
 
-    # 候选端口：排除已配置的 EVB 串口（即使 ctx.console 尚未创建）
+    # 候选端口：排除已打开的 EVB 串口（serial_init 已探测出的 ctx.console.port）
+    # 与显式配置的 serial.port（即使 ctx.console 尚未创建，冷启动场景）。
+    # P0 修复（2026-09-30）：serial_init → power_switch_init 顺序下，ctx.console 已打开
+    # EVB 串口；若不排除，探测会以 115200 发二进制帧误改 EVB 串口波特率（termios 设备级
+    # 持久状态，句柄 close 后不回退），致后续 WiFi 零响应。
     exclude = []
     if port in ("auto", "", None):
         ser_cfg = system_cfg.get("serial", {}) or {}
         evb_port = ser_cfg.get("port", "auto")
         if evb_port not in ("auto", "", None):
             exclude.append(evb_port)
+        # serial_init 已探测出的 EVB 端口（getattr 兼容冷启动 console=None）
+        console_port = getattr(getattr(ctx, "console", None), "port", None)
+        if console_port and console_port not in exclude:
+            exclude.append(console_port)
         candidates = [p for p in _accessible_ports() if p not in exclude]
         if not candidates:
             if required:
@@ -192,14 +203,15 @@ def _action_power_switch_init(ctx, system_cfg):
         logger.warn("power_switch_init: 未探测到上下电控制模块，跳过（后续 reboot 不可用）")
         return
 
-    # NEW-P0-05：确认 POWER ON 已发送且 POWER_STATE_ON 已回（冷启动前置）
-    on_resp = ps.power_on()
-    if on_resp != pcmds.POWER_STATE_ON:
+    # 冷启动语义（2026-09-30 变更）：识别控制器后，从「只发上电」改为
+    # 「先下电 → 延时 → 上电」，使板子从确定下电状态启动（复用 reboot_checked，
+    # 下电验合法帧、上电严格验 ON）。探测阶段（detect_power_switch 发上电帧识别）不动。
+    try:
+        ps.reboot_checked(delay=reboot_delay)
+    except PowerSwitchError as e:
         if required:
-            raise ScenarioError(
-                f"上下电控制上电确认失败（回帧 {on_resp.hex(' ').upper() if on_resp else '<空>'}）"
-            )
-        logger.warn("power_switch_init: 上电确认失败，但非 recovery 必需，继续")
+            raise ScenarioError(f"上下电控制冷启动失败（先下电再上电）: {e}")
+        logger.warn(f"power_switch_init: 冷启动失败，但非 recovery 必需，继续: {e}")
     ctx.power_switch = ps
 
 

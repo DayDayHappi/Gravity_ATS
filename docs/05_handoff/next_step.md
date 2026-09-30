@@ -2,6 +2,46 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 P0 — recovery 冷启动改「先下电 → 再上电」（待实施）
+
+**需求（用户 2026-09-30）**：recovery 模式下每次脚本第一次运行时，串口控制器当前是「先发上电命令」，调整为「先发下电命令，再发上电命令」，使板子从确定的下电状态启动（而非假设已带电、直接上电可能是空操作）。
+
+**现状**：`ATS/core/scenario_manager.py` `_action_power_switch_init` 中，冷启动帧序列 = `detect_power_switch()`（发上电帧识别控制器）+ `ps.power_on()`（再发上电确认），全程只有上电、无下电。
+
+**方案（已定稿·严格校验）**：
+- 识别控制器后，把 `ps.power_on()` 改为复用 `ps.reboot_checked()`：`下电验合法帧 → 延时(reboot_delay 电容放电) → 上电严格验 ON`。
+- **探测阶段不动**（`detect_power_switch` 发上电帧回 ON 是识别判据，改先下电就识别不了控制器）。
+- 保留 `required` 的 fail-closed 语义：recovery 必需时失败抛 `ScenarioError`；非必需时只 warn 继续。
+- 需在 `_action_power_switch_init` 顶部 import `PowerSwitchError`（当前只 import `detect_power_switch, _accessible_ports`）。
+
+**验证**：
+1. recovery_validation 首次运行：`power_switch.log` 帧序列应为 `下电 A0 01 02 A3 → 延时 → 上电 A0 01 03 A4`，且下电回合法帧、上电严格回 ON。
+2. 冷启动后 `serial_init` 能正常等待 EVB UART 枚举（下电再上电后板子重新 boot）。
+3. `power_switch.enabled=true` 但非 recovery 场景（如 stress）回归：失败只 warn 不影响流程。
+
+---
+
+## 🔴 P0 — power_switch_init 误改 EVB 串口波特率致 WiFi 零响应（已修复·待真机）
+
+**现象（真机 stress，2026-09-30 日志 `logs/stress/20260930/20260930_134705`、`20260930_134522`）**：`power_switch.enabled=true` + `serial.port=auto` 时，`power_switch_init` 在 `serial_init` 之后跑，把**已打开的 EVB 串口**（如 `/dev/ttyUSB2`）误当上下电控制器候选，以 115200 发二进制帧 `A0 01 03 A4`。Linux tty 波特率是设备级（termios）持久状态，探测句柄 close 后波特率不回退 → EVB 串口实际变 115200，而 `SerialConsole` 仍自认 2000000 → 后续 `wifi join` 零响应 30s 超时，WiFi/FTP 全挂。
+
+**触发条件**：① `serial.port=auto`；② `power_switch.enabled=true`；③ prepare 顺序 `serial_init → power_switch_init`（stress/normal/aging）；④ 候选串口含 EVB（控制器未接、只剩 EVB 一个串口时必中）。
+
+**临时规避**：关 `power_switch.enabled`（false）或显式写死 `serial.port`，两者皆可。
+
+**根因（脚本侧，非固件）**：`ATS/core/scenario_manager.py` `_action_power_switch_init` 的 `exclude` 只排除显式配置的 `serial.port`，未排除 `serial_init` 已实际探测出的 `ctx.console.port`。
+
+**修复方案（Code Agent）**：在 `exclude` 里补上 `getattr(getattr(ctx, "console", None), "port", None)`，用 `getattr(..., None)` 保证冷启动（`power_switch_init` 先于 `serial_init`，console 为 None）零影响；并保留显式 `serial.port` 排除逻辑（去重）。
+
+**验证**：
+1. 离线：mock `ctx.console.port="/dev/ttyUSB2"` + `_accessible_ports()=["/dev/ttyUSB2"]`，断言 `detect_power_switch` 收到空 candidates（不再对该端口探测）。
+2. 真机：只接 EVB、不接控制器，`power_switch.enabled=true` + `serial.port=auto` 跑 stress，确认 `wifi_connect` 正常拿到 `Got IP address`。
+3. 回归：recovery_validation（冷启动顺序 `power_switch_init → serial_init`）仍能正常探测控制器。
+
+详见 [known_issue.md](known_issue.md)「脚本侧已知问题」表。
+
+---
+
 ## 🟡 P1 — 板卡健康监测与可插拔恢复机制（ADR-016，恢复链真机通过·边界用例待补）
 
 设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），三轮验收闭环修复（devlog `20260922_1330`/`1404`/`1423`）+ 冷启动/串口生命周期修复（devlog `20260922_1603`）+ BUG-006 修复（devlog `20260923_1110`）已完成，37 个 unittest 全过。

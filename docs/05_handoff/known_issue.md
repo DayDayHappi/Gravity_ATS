@@ -27,6 +27,7 @@
 | ADR-016 NEW-P0-06 PowerCycle 后 EVB 串口未重建（复用旧 `SerialConsole._ser`，UART 掉电重枚举后句柄失效） | 运行中恢复时 fresh-ready 收不到新 RX | **已修复**（devlog `20260922_1603`：`SerialConsole.reconnect()` 保持对象身份 + 新增 `serial_reconnect` 恢复 action + restore 顺序 `serial_reconnect → board_ready`） |
 | ADR-016 BUG-006：`serial_reconnect` 端口探测与旧串口句柄冲突（先探测再 reconnect，探测时旧 reader 仍持原端口 → pyserial `multiple access on port` → 30s 超时误判「未重新枚举」） | 真机拔电源后 PowerCycle 成功但 restore 失败 → abort，task 未重跑 | **已修复 + 真机验证通过**（devlog `20260923_1110`：探测前先 close 旧句柄；端口未消失时直接 reconnect 原端口；日志 `20260923_111113` 完整恢复链走通 + video 重跑） |
 | ADR-017 上传失败信息不入日志（`main.py` 顺序为 `logger.close()` 后才执行上传，此时 `_RUN_FP=None`，`upload_run` 的 `logger.warn` 只打到 stdout、不写 run.log） | 上传失败（如 token 未配置）时事后查 run.log 无任何痕迹，只能靠终端输出定位 | **待修复**（实现：新增懒加载 `upload.log` 独立留痕，上传失败可写；文档：本条记录） |
+| `power_switch_init` 探测候选未排除「已探测的 EVB 串口」→ 对 EVB 串口以 115200 发二进制帧，把设备波特率从 2000000 改成 115200（termios 设备级，close 后仍持久）→ 后续 `wifi join` 等串口通信零响应 30s 超时 | `serial.port=auto` + `power_switch.enabled=true` + prepare 顺序 `serial_init→power_switch_init`（stress/normal/aging）+ 候选串口含 EVB（如控制器未接、只剩 EVB 一个串口）时，WiFi/FTP 全挂；关 `power_switch.enabled` 或显式配 `serial.port` 可规避 | **已修复（离线验证通过，待真机）**（devlog `20260930_1425`：`exclude` 补充 `ctx.console.port`，`getattr(..., None)` 兼容冷启动；新增 3 单测，45 全过；真机复现+recovery 回归待跑） |
 
 ## ADR-016 真机门槛（待真机确认）
 

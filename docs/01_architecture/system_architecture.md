@@ -73,7 +73,7 @@
 - **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前三个场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。
 - 模块按 `scenario.tasks` **声明顺序**执行（不再拓扑排序）。
 - **WiFi 属环境准备（prepare）而非测试项（task）**：`wifi_connect` 收敛器先检测、未连才 join（见 ADR-008）。
-- **上下电控制生命周期（ADR-015）**：探测与串口长连接挂 `prepare`/`cleanup`（探测成功保持打开、存 ctx，cleanup 关闭），**不随单次 task 开关**；`enabled: false`（默认关）时零影响。
+- **上下电控制生命周期（ADR-015）**：探测与串口长连接挂 `prepare`/`cleanup`（探测成功保持打开、存 ctx，cleanup 关闭），**不随单次 task 开关**；`enabled: false`（默认关）时零影响。冷启动（`power_switch_init`）识别控制器后执行「先下电 → 延时 → 上电」使板子从确定下电状态启动（2026-09-30 变更）。
 - **板卡健康监测生命周期（ADR-016）**：`health_monitor_start` 挂 prepare（推荐顺序 `serial_init → power_switch_init → wifi_connect → preclean → ftp_ready → preview_start → health_monitor_start`）；cleanup 首先执行 `health_monitor_stop` 再 `stop_stream → preview_stop → power_switch_close → close_serial`，防止正常清理被误判为死机。已实施（详见 ADR-016 当前状态）。
 
 ## 4. 数据流概览

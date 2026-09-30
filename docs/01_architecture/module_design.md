@@ -159,7 +159,7 @@
 - **Dependency**：逻辑依赖独立串口已探测成功；代码单向被 import，**禁止反向 import 触发模块**（触发时机由另一独立模块决策）。
 - **Forbidden Dependency**：**不感知「何时触发重启」**（只提供 `power_on/power_off/reboot` 被动接口）；**不写协议字节**（唯一来源 `drivers/power_commands.py`，ADR-011）；**不复用 `detect_port`/`serial_init` 顺带识别控制器**（探测完全独立）。
 - **端口区分**：启用时对候选串口按 115200 发上电帧，回 `A0 01 01 A2` 者 = 控制器，另一 = EVB（防接反）；`detect_port` 仍按 EVB 指纹找板子，互不干扰。
-- **Lifecycle**：prepare `power_switch_init` 探测（enabled 时，候选端口 = 全部可访问串口 减去 EVB 端口），成功保持打开存 `ctx.power_switch`；cleanup `power_switch_close` 关闭；`enabled: false`（默认）时不探测、零影响。已实施（devlog `20260921_1104`），真机通过（TC-PS-001 压测 PASS）。
+- **Lifecycle**：prepare `power_switch_init` 探测（enabled 时，候选端口 = 全部可访问串口 减去 EVB 端口），成功保持打开存 `ctx.power_switch`；cleanup `power_switch_close` 关闭；`enabled: false`（默认）时不探测、零影响。**冷启动语义（2026-09-30 变更）**：识别控制器后执行「先下电 → 延时(reboot_delay) → 上电」（复用 `reboot_checked`，下电验合法帧、上电严格验 ON），使板子从确定下电状态启动；探测阶段（发上电帧识别）不动。已实施（devlog `20260921_1104` 基础 + `20260930_1447` 冷启动变更），真机通过（TC-PS-001 压测 PASS；冷启动先下电再上电待真机）。
 
 ## board_health_monitor（ADR-016，Scenario 生命周期级健康监测，已实施）
 
