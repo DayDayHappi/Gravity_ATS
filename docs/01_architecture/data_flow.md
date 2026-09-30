@@ -90,3 +90,32 @@ EVB 串口活动 ──> BoardHealthMonitor（观察 + 状态判定，不调 Pow
 - **Context 失效**：PowerCycle 后 `evb_ip`/`wifi_ready`/`skip_wifi`/`ftp_client`/`ftp_server_started` 失效（`invalidate_board_runtime_state()`，不调 `ctx.cleanup()`）；`system_config`/`power_switch`/`recovery_coordinator`/`board_health_monitor`/`pc_ip` 保持。
 - **事件留痕**：`ctx.recovery_history` + 报告 `recovery_events` 区；恢复事件不被后续 PASS 覆盖；日志 `recovery.log` 独立于 `serial.log`。
 - **红线**：Monitor 不认识 PowerSwitch；Module 不认识 Recovery；Runner 不认识具体硬件；RTMP heartbeat timeout 但 shell health_check PASS 只判 RTMP FAIL，禁止 PowerCycle。
+
+## 7. 结果上报流（ATS Portal，ADR-017）
+
+```
+测试运行结束（logger.close 之后）
+     │
+     ▼
+读取系统配置 upload.enabled（默认 false，零请求）
+     │ enabled=true
+     ▼
+登记清单  POST /api/v1/runs
+     │  schema_version=1 + run_id(ats-uuid) + mode + 起止时间 + execution_state
+     │  + artifacts（每个文件 size + sha256）
+     ▼
+逐文件上传  PUT /api/v1/runs/{run_id}/artifacts/{quote(name)}
+     │  Content-Type: application/octet-stream，请求体=文件原始字节
+     ▼
+确认归档  POST /api/v1/runs/{run_id}/finalize
+     │  检查 upload_state == "complete" 才算成功
+     ▼
+上传失败 → 仅告警留痕，不改写测试结论、不影响退出码（协议 §9.2）
+```
+
+- 三步顺序固定：登记 → 上传全部文件 → finalize；仅 PUT 成功不算归档成功。
+- 文件双重校验：size + SHA-256，两者均符合清单才落盘。
+- 清单文件不存在时跳过（`power_switch.log`/`recovery.log` 为懒加载，未触发则不存在）。
+- `result.json` 标 `kind: report` 复用现有 `_result_to_dict` 字段，使网站展示用例 PASS/FAIL。
+- token 读取：`ATS_PORTAL_TOKEN` → `ATS_PORTAL_TOKEN_FILE` → `token_file` → `~/.config/ats-portal/token`；不写日志、不进仓库。
+- 默认 `upload.enabled=false`，向后兼容所有现有场景（零网络请求）。

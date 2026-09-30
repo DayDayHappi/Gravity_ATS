@@ -47,6 +47,7 @@ class TestRunner:
         runner_cfg = system_cfg.get("runner", {}) or {}
         self.retry = int(runner_cfg.get("retry_on_fail", 1))
         self.fail_fast = bool(runner_cfg.get("fail_fast", True))
+        self.scenario_aborted = False   # ADR-017：ScenarioAbort 中止标记（供 main 设 execution_state）
 
     def run(self) -> list:
         """执行场景的全部 cycle，返回 TestResult 列表。"""
@@ -77,6 +78,7 @@ class TestRunner:
                     logger.info(f"loop 无限循环，cycle {cycle} 完成，继续...（Ctrl+C 中断）")
         except ScenarioAbort:
             # P0-04：abort_scenario 中止整个 Scenario（退出 while loop），不再进下一 cycle
+            self.scenario_aborted = True
             logger.error("Scenario 已中止（abort_scenario / monitor-only UNRESPONSIVE），停止后续 cycle")
         except KeyboardInterrupt:
             logger.warn("用户中断循环")

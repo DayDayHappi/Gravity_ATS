@@ -22,6 +22,7 @@ _SERIAL_FP = None       # serial.log 文件句柄
 _RUN_FP = None          # run.log 文件句柄
 _PWR_FP = None          # power_switch.log 文件句柄（懒加载，首次写才创建）
 _RECOVERY_FP = None     # recovery.log 文件句柄（懒加载，恢复控制流独立留痕）
+_UPLOAD_FP = None       # upload.log 文件句柄（懒加载，上传控制流独立留痕，ADR-017）
 _VERBOSE = False        # 详细模式
 
 
@@ -126,6 +127,27 @@ def log_recovery(msg: str):
     _RECOVERY_FP.flush()
 
 
+def log_upload(msg: str):
+    """写一行上传控制流日志（upload.log，懒加载，ADR-017）。
+
+    上传发生在常规日志 close 之后（协议 §2 先落盘再算摘要），因此 upload 阶段
+    需要一条**独立于 run.log** 的留痕通道——否则上传成功/失败只打 stdout 不入文件，
+    事后无法排查（真机 20260929_160736 已暴露）。
+
+    懒加载：首次调用才创建 ``upload.log``；``_LOG_DIR`` 为 None 时静默 return。
+    注意：``close_run_logs()`` 只关 serial/run/pwr/recovery，**不关** upload 通道；
+    最终由 ``close()`` 关闭 ``_UPLOAD_FP``。
+    """
+    global _UPLOAD_FP
+    if _LOG_DIR is None:
+        return
+    if _UPLOAD_FP is None:
+        _UPLOAD_FP = open(os.path.join(_LOG_DIR, "upload.log"), "w",
+                           encoding="utf-8", errors="replace")
+    _UPLOAD_FP.write(f"[{_now()}] {msg}\n")
+    _UPLOAD_FP.flush()
+
+
 def _write_run(level: str, msg: str, to_console: bool):
     if _RUN_FP is not None:
         _RUN_FP.write(f"[{_now()}] [{level}] {msg}\n")
@@ -178,7 +200,12 @@ def result_line(status: str, name: str, elapsed_ms: int, msg: str = ""):
     print(line, flush=True)
 
 
-def close():
+def close_run_logs():
+    """关闭常规日志文件（serial/run/power_switch/recovery），**保留 upload 通道**。
+
+    ADR-017：上传发生在常规日志 close 之后（协议 §2 先落盘再算摘要），但 upload.log
+    仍需要在后续上传阶段可写。故拆两段：本函数关常规四日志，``close()`` 最后关 upload。
+    """
     global _SERIAL_FP, _RUN_FP, _PWR_FP, _RECOVERY_FP
     if _SERIAL_FP:
         _SERIAL_FP.close()
@@ -192,6 +219,15 @@ def close():
     if _RECOVERY_FP:
         _RECOVERY_FP.close()
         _RECOVERY_FP = None
+
+
+def close():
+    """关闭所有日志文件（含 upload.log）。"""
+    close_run_logs()
+    global _UPLOAD_FP
+    if _UPLOAD_FP:
+        _UPLOAD_FP.close()
+        _UPLOAD_FP = None
 
 
 def log_dir() -> str:

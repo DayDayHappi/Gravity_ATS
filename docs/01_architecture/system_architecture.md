@@ -20,6 +20,8 @@
 应用服务层  BoardHealthMonitor / RecoveryCoordinator / RecoveryBackend（跨模块系统级协调，ADR-016）
              │
 硬件层    EVB 板（msh shell / FTP 服务 / RTMP 推流）+ 上下电控制模块（独立串口 115200）
+             │
+结果上报    ATS Portal（本机 HTTP 127.0.0.1:8080，运行结束后三步归档，ADR-017）
 ```
 
 - **上下电控制模块（ADR-015）**：新增一条与 EVB 主链路平行的系统边界 `PC →（串口 115200）→ 上下电控制模块 →（电源线）→ EVB`，提供「断电重启」能力。PowerSwitch 为 driver 能力（非测试模块），暴露 `power_on()/power_off()/reboot()` 被动接口，**不感知触发时机**（由独立模块 import 调用，单向依赖）。与 EVB 串口（2000000）靠「上电帧探测」区分防接反。已实施（devlog `20260921_1104`），真机压测 PASS（TC-PS-001，30 周期 60 次切换）；**遗留** `reboot_delay` 电容放电值待接 EVB 板实测（TODO-CONFIRM）。
@@ -27,6 +29,8 @@
 - **PreviewManager**（ADR-010）是驱动层的观察能力，生命周期挂在 `prepare.preview_start`/`cleanup.preview_stop`（跨整个 Scenario，含 loop 多轮），不属任一 Task，不影响判据。
 
 - **板卡健康监测与恢复（ADR-016）**：新增「应用服务层」（Application Service，`ATS/application/`），只承担跨模块系统级协调，不改变 Scenario/Runner/Module/Driver 既有职责。三层分离：`BoardHealthMonitor`（只监测 EVB 健康，输出 `HEALTHY/SUSPECTED/UNRESPONSIVE` 状态，**不调用 PowerSwitch**）→ `RecoveryCoordinator`（只协调恢复策略/次数限制/Context 失效/环境收敛）→ `RecoveryBackend`（适配恢复能力，首实现 `PowerCycleBackend` 复用 ADR-015 的 PowerSwitch）。属 Scenario 生命周期能力（非 Task），挂 `prepare.health_monitor_start`/`cleanup.health_monitor_stop`。已实施（详见 ADR-016 当前状态）。
+
+- **测试结果上报（ADR-017）**：新增系统边界 `PC 脚本 →（HTTP/Bearer，本机明文）→ ATS Portal`。运行结束后三步归档：`登记清单（POST /api/v1/runs）→ 逐文件 PUT（/artifacts/{name}）→ finalize`，文件以 size+SHA-256 双重校验；配置在 `system.yaml` 的 `upload` 段（`enabled`/`server`/`token_file`/`timeout`/`artifacts` 清单，默认关）。上传失败不影响测试结论与退出码。定稿待实施（详见 ADR-017）。
 
 ## 1.5 协议与判据分离（ADR-011，稳定约定）
 
@@ -63,6 +67,7 @@
  → 按 loop 循环执行 tasks（每个 task 交给 Runner 调度到对应 Module）
  → 执行 cleanup 动作（停推流、关串口、preview 停止）
  → 生成报告，返回退出码
+ → （可选）运行结束后上传结果到 ATS Portal（ADR-017）
 ```
 
 - **依赖关系（ADR-009）**：`depends` 字段只表达「运行时 task 间 fail-fast」（某 task FAIL/ERROR 时依赖它的 task SKIP）；**SKIP 不阻断依赖**（主动跳过不算失败）。当前三个场景均无 task 间依赖，模块代码 `depends` 已清空为 `[]`，逻辑依赖（如 photo 需 FTP、rtmp 需 WiFi）由 prepare 编排 + `module_design.md` 文档表达。

@@ -614,6 +614,7 @@ class ScenarioManager:
         self.ctx = None
         self.preview_cfg = {}   # scenario 层 preview 开关（ADR-010），load 时解析
         self.recovery_history = []   # ADR-016 P0-05：ctx.cleanup 前保存，供报告读取
+        self.scenario_aborted = False   # ADR-017：ScenarioAbort 中止标记（供 main 设 execution_state）
 
     def load(self, name: str) -> Scenario:
         """加载场景名 -> Scenario 对象（含参数合并前的原始 task）。"""
@@ -658,6 +659,7 @@ class ScenarioManager:
             from .runner import TestRunner
             runner = TestRunner(self.system_cfg, ctx, scenario)
             results = runner.run()
+            self.scenario_aborted = bool(getattr(runner, "scenario_aborted", False))
         finally:
             # cleanup 始终执行
             for action in scenario.cleanup:

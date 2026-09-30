@@ -24,6 +24,13 @@ migrate.sh
 all_source.txt
 auto.crt
 auto.key
+token
+upload.token
+
+# 含明文 token + 自签名证书，本地敏感，不入 git
+ubuntu-upload-setup.sh
+# 误产生的空文件，不入 git
+rtmp_video_start
 
 # Python 字节码
 __pycache__/

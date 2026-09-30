@@ -224,6 +224,7 @@ def main(argv=None) -> int:
     log_root, report_root, problem_root = _resolve_output_dirs(
         system_cfg, args.scenario, output_dir_override=args.output_dir)
     run_ts = logger.init_logger(log_root, verbose=args.verbose)
+    started_at = _dt.datetime.now().astimezone().isoformat()   # ADR-017：运行开始时刻
     logger.info(f"VX100 EVB 自动化测试启动，运行时间戳: {run_ts}")
     logger.info(f"日志目录: {log_root}  报告目录: {report_root}")
 
@@ -290,6 +291,47 @@ def main(argv=None) -> int:
     # 7.5 询问本次测试问题
     _record_test_problem(run_ts, problem_root)
 
+    # 记录结束时刻 + 运行目录（close 前取，供上传使用）
+    ended_at = _dt.datetime.now().astimezone().isoformat()
+    upload_log_dir = os.path.join(log_root, run_ts)
+    upload_report_dir = os.path.join(report_root, run_ts)
+
+    # ADR-017：先关常规日志（serial/run/pwr/recovery）让待上传文件落盘，
+    # 但保留 upload.log 通道供上传阶段留痕（close_run_logs 不关 _UPLOAD_FP）。
+    logger.close_run_logs()
+
+    # 8. 结果上报 ATS Portal（ADR-017）：常规日志落盘后执行（协议 §2 先落盘再算摘要）。
+    # 失败只留痕，不改写测试结论、不影响退出码（红线）；token 值不写日志。
+    upload_cfg = system_cfg.get("upload", {}) or {}
+    if upload_cfg.get("enabled", False):
+        from ATS.application.portal_upload import PortalUploadError, upload_run
+        execution_state = "aborted" if (env_error or manager.scenario_aborted) else "completed"
+        logger.log_upload(f"开始上报 ATS Portal | scenario={scenario.name} "
+                          f"execution_state={execution_state} artifacts_dir={upload_log_dir}")
+        try:
+            ok = upload_run(
+                upload_cfg,
+                scenario_name=scenario.name,
+                log_dir=upload_log_dir,
+                report_dir=upload_report_dir,
+                started_at=started_at,
+                ended_at=ended_at,
+                execution_state=execution_state,
+            )
+            if ok:
+                logger.log_upload("上报成功（upload_state=complete）")
+                logger.info("结果已上报 ATS Portal（upload_state=complete）")
+            else:
+                logger.log_upload("上报未完成（upload_state != complete）")
+                logger.warn("结果上报未完成（upload_state != complete）")
+        except PortalUploadError as e:
+            logger.log_upload(f"上报失败（不影响测试结论）: {e}")
+            logger.warn(f"结果上报失败（不影响测试结论）: {e}")
+        except Exception as e:
+            logger.log_upload(f"上报异常（不影响测试结论）: {e}")
+            logger.warn(f"结果上报异常（不影响测试结论）: {e}")
+
+    # 最后关闭所有日志（含 upload.log）
     logger.close()
 
     # 退出码：2 环境错 / 1 有失败 / 0 全过
