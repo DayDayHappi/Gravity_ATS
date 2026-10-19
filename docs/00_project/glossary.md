@@ -65,3 +65,27 @@ ffmpeg 工具链：ffprobe 实时探测流（主判据），ffplay 可选画面�
 ## IDR（关键帧）
 
 视频编码中的关键帧。板子编码慢会导致 IDR 稀疏，影响 ffprobe 探测速度。
+
+## BoardHealthMonitor（板卡健康监测器，ADR-016）
+
+Scenario 生命周期级 EVB 健康监测组件，只观察串口活动并输出 `HEALTHY / SUSPECTED / UNRESPONSIVE` 状态事件，**不调用 PowerSwitch、不执行恢复**。属应用服务层。
+
+## HealthEvent（健康事件）
+
+BoardHealthMonitor 输出的状态事件（含 health_state、reason、证据），由 RecoveryCoordinator 消费。
+
+## RecoveryCoordinator（恢复协调器，ADR-016）
+
+应用服务层组件，消费 HealthEvent，决策恢复策略（次数限制、Context 失效、环境收敛、Runner 流程协调），只通过 RecoveryBackend 统一接口执行恢复，不直接依赖具体电源硬件。
+
+## RecoveryBackend（恢复后端，ADR-016）
+
+恢复能力抽象接口（`name`/`available(ctx)`/`recover(ctx)`），把统一恢复请求映射到具体恢复能力。首实现 `PowerCycleBackend` 复用 ADR-015 的 PowerSwitch。
+
+## Application Service（应用服务层，ADR-016）
+
+架构中新增的跨模块系统级协调层（`ATS/application/`），承接死机检测、恢复策略、硬件控制、测试调度等系统级行为，避免耦合进既有 Scenario/Runner/Module/Driver 任一单层。
+
+## PowerCycle（下电上电循环，ADR-016）
+
+恢复动作之一：PowerSwitch 执行 OFF→ON（复用 ADR-015），用于板子运行期无响应时的硬件级恢复。

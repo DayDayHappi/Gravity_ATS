@@ -24,6 +24,13 @@ migrate.sh
 all_source.txt
 auto.crt
 auto.key
+token
+upload.token
+
+# 含明文 token + 自签名证书，本地敏感，不入 git
+ubuntu-upload-setup.sh
+# 误产生的空文件，不入 git
+rtmp_video_start
 
 # Python 字节码
 __pycache__/
@@ -35,4 +42,5 @@ __pycache__/
 *~
 .DS_Store
 
-/tests/
+# tests/（单元测试源码，属 Code Agent 交付物，跟踪进 git；与 .claude/agents/ 同类放行）
+# 注：曾有 "/tests/" 忽略规则致测试源码未入 git（ADR-016 QA-GAP-02），已移除。

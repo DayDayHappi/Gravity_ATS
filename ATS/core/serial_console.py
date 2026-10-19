@@ -161,6 +161,48 @@ class SerialConsole:
             self._ser = None
         logger.debug("串口已关闭")
 
+    def reconnect(self, port=None, baudrate=None):
+        """重建底层 pyserial transport（ADR-016 NEW-P0-06），保持对象身份不变。
+
+        运行中 PowerCycle 后 EVB UART 可能消失并重枚举，旧 pyserial 句柄失效。
+        本方法关闭旧 transport 后重新 open，**不**创建第二个 SerialConsole——
+        避免 Runner/Coordinator/listener 持有旧引用形成引用分裂。
+
+        实施要求（设计文档 §15）：
+        1. listener 集合不清空（reconnect 后继续收 RX）；
+        2. ``_buffer_seq`` 保持单调递增（fresh-ready 游标跨 reconnect 继续有效）；
+        3. 旧 reader thread 正确停止；
+        4. 旧 pyserial handle 释放；
+        5. 新 reader thread 正确启动；
+        6. 不清空日志系统；
+        7. 不创建第二个 SerialConsole。
+
+        Args:
+            port: 新端口；None 则沿用 self.port。
+            baudrate: 新波特率；None 则沿用 self.baudrate。
+        """
+        if port is not None:
+            self.port = port
+        if baudrate is not None:
+            self.baudrate = baudrate
+
+        # 停旧 reader + 关旧 handle（不清 _buffer/_buffer_seq/_listeners）
+        self._stop_event.set()
+        self._notify_all()
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._reader_thread.join(timeout=2.0)
+        if self._ser:
+            try:
+                self._ser.close()
+            except Exception:
+                pass
+            self._ser = None
+
+        # 重新 open（open() 会 reset stop_event 并启动新 reader）
+        self.open()
+        logger.info(f"SerialConsole 已重连: {self.port} @ {self.baudrate} bps（对象身份不变，"
+                    f"buffer seq 继续单调）")
+
     # ---------- 常驻读线程 ----------
 
     def _reader_loop(self):
@@ -209,6 +251,14 @@ class SerialConsole:
         """记录发命令前的序号游标（线程安全）。"""
         with self._buffer_lock:
             return self._buffer_seq
+
+    def snapshot_rx_cursor(self) -> int:
+        """记录当前 RX 序号游标（ADR-016 P0-06：PowerCycle 前的 fresh-ready 起点）。
+
+        Recovery 流程在 PowerCycle 前记录游标，之后 ``wait_for_ready_since``
+        只匹配 ``seq > cursor`` 的新 RX，避免命中 reboot 前的旧 msh 缓冲。
+        """
+        return self._snapshot_seq()
 
     def _buffer_text_since(self, start_seq: int) -> str:
         """返回 ``seq > start_seq`` 的 chunk 拼接文本（命令响应的增量定位）。
@@ -477,6 +527,37 @@ class SerialConsole:
             except Exception:
                 pass
         logger.error(f"等待 EVB 就绪超时({timeout}s)")
+        return False
+
+    def wait_for_ready_since(self, cursor: int, timeout: float = None) -> bool:
+        """等待「cursor 之后」出现新的就绪标志（ADR-016 P0-06：fresh-ready）。
+
+        与 ``wait_for_ready`` 不同：本方法**不检查历史缓冲**，只匹配
+        ``seq > cursor`` 的新 RX。供 PowerCycle 后判断「新板已真正 boot 到 msh」，
+        避免命中 reboot 前残留的旧 ``msh />`` 缓冲。
+
+        Args:
+            cursor: ``snapshot_rx_cursor()`` 在 PowerCycle 前记录的序号游标。
+            timeout: 超时（秒）；None 用 ready_timeout。
+        """
+        timeout = timeout or self.ready_timeout
+        # 主动发回车唤醒 shell（新板 boot 后可能不再主动打印提示符）
+        try:
+            self.send_raw("\n")
+        except Exception:
+            pass
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            # 只匹配 cursor 之后的新 RX（_wait_regex 内部按游标取增量）
+            matched, _, _ = self._wait_regex(self._ready_re.pattern, 1.0, cursor)
+            if matched:
+                logger.info("EVB 已就绪（fresh-ready，仅认 reboot 后新 RX）")
+                return True
+            try:
+                self.send_raw("\n")
+            except Exception:
+                pass
+        logger.error(f"等待 EVB 重启后就绪超时({timeout}s，未发现新 boot 证据)")
         return False
 
     # ---------- 自检 ----------

@@ -3,13 +3,21 @@
 # 模块能力参数在 config/modules/，测试策略在 config/scenarios/
 
 serial:
-  port: "auto"             # auto=自动探测；或填 /dev/ttyUSB0
+  port: "auto"             # auto=自动探测；或填 /dev/ttyUSB0 或 /dev/serial/by-id/<id>
   baudrate: 2000000        # 默认 2000000；自动探测时回退候选
   baudrate_candidates: [2000000, 250000, 115200, 921600]
   timeout: 2.0
   ready_timeout: 60        # 等 msh 就绪
   sentinel_timeout: 5      # 哨兵下发确认超时
   detect_timeout: 2.0      # 自动探测每端口读响应超时
+  power_on_detect_timeout: 30     # 冷启动：PowerSwitch 上电后等待 EVB UART 枚举的总超时（秒）
+  power_on_detect_interval: 0.5   # 冷启动：UART 枚举轮询间隔（秒）
+
+power_switch:              # 上下电控制模块（ADR-015），环境级硬件
+  enabled: true           # 默认关；false 时不探测、不 open 串口，零影响
+  port: "auto"             # auto=自动探测；生产机推荐 /dev/serial/by-id/<controller-id>
+  baudrate: 115200         # 控制器串口波特率（与 EVB 的 2000000 不同）
+  reboot_delay: 3.0        # 断电→上电间隔（秒）；暂定值，TODO-CONFIRM 待真机确定
 
 wifi:                      # 网络环境（连接目标，非 wifi 模块测试参数）
   default_ssid: "sw_test_24g"
@@ -38,3 +46,15 @@ report:
   log_dir: "logs"          # 日志根目录；日志统一 logs/<场景>/<日期>/，报告 normal->reports/<日期>/、非 normal->logs/<场景>/report/<日期>/
   junit: true
   html: true
+
+upload:                    # 结果上报 ATS Portal（ADR-017），环境级能力
+  enabled: true           # 上传开关，默认关（向后兼容，零影响）
+  server: "https://10.1.64.183:8443"   # 服务地址（本机）
+  token_file: "upload.token"   # 指向工程根目录纯 token 文件（本地敏感文件，已 .gitignore，不入 git）
+  timeout: 60              # 单请求超时(秒)
+  artifacts:               # 上传清单（可配置；懒加载缺失文件自动跳过）
+    - { name: "run.log", kind: "log" }
+    - { name: "serial.log", kind: "log" }
+    - { name: "power_switch.log", kind: "log" }
+    - { name: "recovery.log", kind: "log" }
+    - { name: "result.json", kind: "report" }   # 结构化报告，使网站展示用例 PASS/FAIL

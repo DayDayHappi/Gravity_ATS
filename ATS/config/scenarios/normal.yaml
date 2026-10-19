@@ -5,6 +5,7 @@ scenario:
     enabled: true
   prepare:
     - serial_init
+    - power_switch_init
     - wifi_connect
     - preclean
     - ftp_ready
@@ -17,4 +18,5 @@ scenario:
   cleanup:
     - stop_stream
     - preview_stop
+    - power_switch_close
     - close_serial

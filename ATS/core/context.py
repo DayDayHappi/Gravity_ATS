@@ -24,6 +24,10 @@ class Context:
     # wifi_ssid:     str     实际连接的 SSID
     # skip_wifi:     bool    WiFi 已交互连上，跳过 wifi 用例
     # console:       SerialConsole  串口控制台（由 runner 注入）
+    # power_switch:  PowerSwitch  串口上下电控制器（ADR-015，prepare 探测）
+    # board_health_monitor:  BoardHealthMonitor（ADR-016，prepare 启动）
+    # recovery_coordinator:  RecoveryCoordinator（ADR-016）
+    # recovery_history:      list[dict]  恢复事件留痕（ADR-016）
 
     def __init__(self):
         self._data = {}
@@ -51,6 +55,26 @@ class Context:
 
     def as_dict(self) -> dict:
         return dict(self._data)
+
+    def invalidate_board_runtime_state(self):
+        """失效板端运行实例绑定的状态（ADR-016：Power Cycle 后调用）。
+
+        只清理「板端 reboot 后失效」的状态，保留仍有效的对象：
+        - 失效：evb_ip / wifi_ready / skip_wifi / ftp_client / ftp_server_started /
+          scan_results 等与板端运行实例绑定的状态。
+        - 保留：system_config / console / power_switch / recovery_coordinator /
+          board_health_monitor / pc_ip / preview_manager（PC 侧生命周期能力）。
+        """
+        # 关闭旧 FTP 客户端（避免复用已断开的连接）
+        ftp = self._data.get("ftp_client")
+        if ftp is not None:
+            try:
+                ftp.close()
+            except Exception:
+                pass
+        for key in ("ftp_client", "ftp_server_started", "evb_ip", "wifi_ready",
+                    "skip_wifi", "wifi_ssid", "wifi_password", "scan_results"):
+            self._data.pop(key, None)
 
     def cleanup(self):
         """清理上下文持有的资源（如 FTP 连接）。由 runner 在结束时调用。"""

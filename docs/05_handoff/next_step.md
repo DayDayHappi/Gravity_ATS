@@ -2,6 +2,95 @@
 
 > 只保留未完成任务，按优先级。
 
+## 🔴 P0 — recovery 冷启动改「先下电 → 再上电」（待实施）
+
+**需求（用户 2026-09-30）**：recovery 模式下每次脚本第一次运行时，串口控制器当前是「先发上电命令」，调整为「先发下电命令，再发上电命令」，使板子从确定的下电状态启动（而非假设已带电、直接上电可能是空操作）。
+
+**现状**：`ATS/core/scenario_manager.py` `_action_power_switch_init` 中，冷启动帧序列 = `detect_power_switch()`（发上电帧识别控制器）+ `ps.power_on()`（再发上电确认），全程只有上电、无下电。
+
+**方案（已定稿·严格校验）**：
+- 识别控制器后，把 `ps.power_on()` 改为复用 `ps.reboot_checked()`：`下电验合法帧 → 延时(reboot_delay 电容放电) → 上电严格验 ON`。
+- **探测阶段不动**（`detect_power_switch` 发上电帧回 ON 是识别判据，改先下电就识别不了控制器）。
+- 保留 `required` 的 fail-closed 语义：recovery 必需时失败抛 `ScenarioError`；非必需时只 warn 继续。
+- 需在 `_action_power_switch_init` 顶部 import `PowerSwitchError`（当前只 import `detect_power_switch, _accessible_ports`）。
+
+**验证**：
+1. recovery_validation 首次运行：`power_switch.log` 帧序列应为 `下电 A0 01 02 A3 → 延时 → 上电 A0 01 03 A4`，且下电回合法帧、上电严格回 ON。
+2. 冷启动后 `serial_init` 能正常等待 EVB UART 枚举（下电再上电后板子重新 boot）。
+3. `power_switch.enabled=true` 但非 recovery 场景（如 stress）回归：失败只 warn 不影响流程。
+
+---
+
+## 🔴 P0 — power_switch_init 误改 EVB 串口波特率致 WiFi 零响应（已修复·待真机）
+
+**现象（真机 stress，2026-09-30 日志 `logs/stress/20260930/20260930_134705`、`20260930_134522`）**：`power_switch.enabled=true` + `serial.port=auto` 时，`power_switch_init` 在 `serial_init` 之后跑，把**已打开的 EVB 串口**（如 `/dev/ttyUSB2`）误当上下电控制器候选，以 115200 发二进制帧 `A0 01 03 A4`。Linux tty 波特率是设备级（termios）持久状态，探测句柄 close 后波特率不回退 → EVB 串口实际变 115200，而 `SerialConsole` 仍自认 2000000 → 后续 `wifi join` 零响应 30s 超时，WiFi/FTP 全挂。
+
+**触发条件**：① `serial.port=auto`；② `power_switch.enabled=true`；③ prepare 顺序 `serial_init → power_switch_init`（stress/normal/aging）；④ 候选串口含 EVB（控制器未接、只剩 EVB 一个串口时必中）。
+
+**临时规避**：关 `power_switch.enabled`（false）或显式写死 `serial.port`，两者皆可。
+
+**根因（脚本侧，非固件）**：`ATS/core/scenario_manager.py` `_action_power_switch_init` 的 `exclude` 只排除显式配置的 `serial.port`，未排除 `serial_init` 已实际探测出的 `ctx.console.port`。
+
+**修复方案（Code Agent）**：在 `exclude` 里补上 `getattr(getattr(ctx, "console", None), "port", None)`，用 `getattr(..., None)` 保证冷启动（`power_switch_init` 先于 `serial_init`，console 为 None）零影响；并保留显式 `serial.port` 排除逻辑（去重）。
+
+**验证**：
+1. 离线：mock `ctx.console.port="/dev/ttyUSB2"` + `_accessible_ports()=["/dev/ttyUSB2"]`，断言 `detect_power_switch` 收到空 candidates（不再对该端口探测）。
+2. 真机：只接 EVB、不接控制器，`power_switch.enabled=true` + `serial.port=auto` 跑 stress，确认 `wifi_connect` 正常拿到 `Got IP address`。
+3. 回归：recovery_validation（冷启动顺序 `power_switch_init → serial_init`）仍能正常探测控制器。
+
+详见 [known_issue.md](known_issue.md)「脚本侧已知问题」表。
+
+---
+
+## 🟡 P1 — 板卡健康监测与可插拔恢复机制（ADR-016，恢复链真机通过·边界用例待补）
+
+设计：[ADR-016](../02_design/decision_record/ADR-016-板卡健康监测与可插拔恢复机制.md)（Document Agent，2026-09-21 定稿）。主体代码已实施（devlog `20260921_1820`），三轮验收闭环修复（devlog `20260922_1330`/`1404`/`1423`）+ 冷启动/串口生命周期修复（devlog `20260922_1603`）+ BUG-006 修复（devlog `20260923_1110`）已完成，37 个 unittest 全过。
+
+### ✅ 真机已验证（2026-09-23）
+
+| 项 | 结果 | 证据 |
+|----|------|------|
+| 冷启动 | ✅ | `20260923_101525`：`power_switch_init → serial_init` 顺序生效，先上电再等串口 |
+| 死机检测 + 主动确认不误判（TC-BH-003） | ✅ | FTP 下载静默 60s → SUSPECTED → probe 成功 → HEALTHY |
+| 完整 PowerCycle 恢复链（拔电源复现） | ✅ | `20260923_111113`：UNRESPONSIVE → OFF/ON → serial_reconnect（直接重连）→ board_ready（fresh-ready）→ health_check → WiFi → FTP → retry_current_task，video 重跑 |
+
+### 待续真机（边界用例，不阻塞核心恢复能力）
+
+1. **TC-BH-001/002**：monitor/recovery 全关回归；仅 Monitor（UNRESPONSIVE 留痕不 PowerCycle）。
+2. **TC-RCV-002~005**：PowerSwitch 不存在报 BackendUnavailable；RTMP 单模块故障不误升级 PowerCycle；max_attempts 耗尽真正 abort；Context 失效重建。
+3. **真重枚举探测路径**：拔 EVB USB-UART 线再插回（端口真消失），验证 `_detect_evb_with_wait` 探测分支仍正确（当前真机只验证了「端口未消失直接重连」分支）。
+4. **真机校准**：`inactivity_timeout`（当前 60s 对 FTP 大文件下载静默偏敏感，已观测到无害 SUSPECTED）/ `reboot_delay` / `power_on_detect_timeout`；`power_switch.port` / `serial.port` 稳定 by-id 路径。
+
+### 真机观察命令（设计文档 §30）
+
+`dmesg -w` / `udevadm monitor` / `watch -n 0.2 'ls -l /dev/ttyUSB* /dev/ttyACM* /dev/serial/by-id/*'`；ATS 日志 `serial.log`/`power_switch.log`/`recovery.log`/`run.log`。
+
+### 能力边界（不变，已同步 known_issue）
+
+当前只识别「串口静默型整板无响应」；`reboot_checked` 的 OFF 判据目前只要求合法状态帧；若真机确认 EVB UART 不重枚举，`serial_reconnect` 退化为幂等 reopen（仍正确）。
+
+### 权威依据（历史留档）
+
+[第一轮验收](../03_development/archive/ADR016_实现验收问题清单与修复建议.md) · [第二轮验收](../03_development/archive/ADR016_第二轮验收新增问题与修改建议.md) · [第三轮验收](../03_development/archive/ADR016_第三轮验收问题与修复建议.md) · [冷启动/串口生命周期修复设计](../03_development/archive/ADR016_电源控制冷启动与串口生命周期修复设计.md) · [BUG-006](../03_development/bugfix/BUG-006-serial_reconnect探测与旧句柄冲突致恢复失败.md)。
+
+---
+
+## 🟡 P1 — 健康监测 FTP 盲区致录像启动即被打断（BUG-007，待修复）
+
+**现象（真机 2026-10-08，日志 `logs/recovery_validation/20261008/20261008_164543` cycle 37）**：video[hd1080p_2]（duration 20s）在 `dfs_video_start` 后录像只跑约 54ms（0 帧，`Record Stop Success: total frames = -1`），被补发 `dfs_video_stop` 终止，产物 0KB → `文件过小 0KB < 100KB` FAIL。板子本身健康：任务返回后安全点自检 `串口自检通过 / 健康确认通过`，且上一视频 hd1080p_1 刚录满 22.5s。
+
+**根因（脚本侧，两缺陷叠加）**：
+1. **FTP 盲区**：健康监测只订阅串口 RX，而 video 发 `cam_set` 前先 `_list_video_dirs(ftp)`（WiFi/TCP 无串口输出）；cycle 37 `/emmc/VIDEO` 已约 440 目录，FTP LIST 阻塞 ~50s 超 `inactivity_timeout:60` 剩余窗口 → watchdog 误判 SUSPECTED 并 `request_recovery()`。
+2. **恢复标志未清**：`clear_recovery()` 只在安全点触发，SUSPECTED 置位后直到模块返回前无清除机会；`cam_set`/`dfs_video_start` 成功回显（事实已健康）但标志仍在 → `runtime_control.wait(20)` 第一轮即返回 → 录像被打断。
+
+**修复方向（Code Agent，详见 BUG-007）**：① 成功回显处（`dfs_video_start` 成功到 `wait()` 前）清一次已事实失效的恢复标志；② 让 Monitor 感知 FTP/网络事务活跃也算有响应（消除盲区）；③ `inactivity_timeout` 与 FTP LIST 时长解耦后再校准阈值。
+
+**红线**：业务模块仍不得直接执行 recovery，只可「提前结束等待 / 清已失效标志」，恢复决策与执行归 Runner/RecoveryCoordinator；listener 内禁 IO。
+
+详见 [BUG-007](../03_development/bugfix/BUG-007-健康监测FTP盲区致录像启动即被打断.md) · [known_issue](known_issue.md)「脚本侧已知问题」表。
+
+---
+
 ## 🔴 P0 — serial_console.exec_sync 长时压测误判（已实施·待真机）
 
 **现象（真机 stress 压测，2026-09-18 日志 `logs/stress/20260918/20260918_163736`）**：压测约第 26 轮起（06:48，RTMP 推流 10 分钟结束后回到 photo），photo/video 的所有 `cam_set photo|video <mode>` 全判 `[FAIL] 设置模式/设置录像组合 失败`，此后每轮持续 FAIL；photo 因第一步 cam_set 失败提前 return，**不再发 `dfs_capture_start`**（用户观察到的「06:09:52 后只发 cam_set photo 不再发 capture」即此）。
@@ -23,16 +112,19 @@ new = full[len(start_snapshot):] if full.startswith(start_snapshot) else full
 
 **待真机**：`python3 -m ATS.main --scenario stress --no-interactive-wifi` 跑至 26 轮以上（越过 RTMP 10min），确认 photo/video 不再「设置模式/设置录像组合 失败」。详见 [排查报告](../03_development/archive/串口环形缓冲满导致cam_set误判_排查报告.md)、[BUG-005](../03_development/bugfix/BUG-005-exec_sync环形缓冲滚满快照失效.md)。
 
-## 🔴 P0 — 串口上下电控制模块（ADR-015，设计已定·待 Code Agent 实施）
+## ✅ 已完成 — 串口上下电控制模块（ADR-015，已实施·真机通过）
 
-设计已定：[ADR-015](../02_design/decision_record/ADR-015-串口上下电控制模块.md)（Document Agent，2026-09-18，Status=Accepted，待实施）。
+设计已定：[ADR-015](../02_design/decision_record/ADR-015-串口上下电控制模块.md)（Document Agent，2026-09-18，Status=Accepted）。**已实施并真机通过**（devlog `20260921_1104` 实施 + `20260921_1330` 发帧读响应 + `20260921_1402` 独立日志 + `20260921_1436` 首轮误判修复；Code Agent，2026-09-21）：
 
-- 新增系统边界 PC→控制模块→电源→EVB，封装 driver 能力 `ATS/drivers/power_switch.py`（`power_on()`/`power_off()`/`reboot()` 被动接口，不感知触发时机）。
-- 协议唯一来源 `ATS/drivers/power_commands.py`（ADR-011）：上电 `A0 01 03 A4`、下电 `A0 01 02 A3`、返回帧 `A0 01 <state> <sum>`（`01`=ON/`00`=OFF），波特率 115200。
-- 端口区分：启用时对候选串口发上电帧，回 `A0 01 01 A2` 者=控制器，另一=板子；探测独立，`serial_init` 仍走 `detect_port` 找板子。
+- 新增系统边界 PC→控制模块→电源→EVB，封装 driver 能力 `ATS/drivers/power_switch.py`（`power_on()`/`power_off()`/`reboot()` 被动接口，不感知触发时机；读空响应自动重试一次）。
+- 协议唯一来源 `ATS/drivers/power_commands.py`（ADR-011）：上电 `A0 01 03 A4`、下电 `A0 01 02 A3`、返回帧 `A0 01 <state> <sum>`（`01`=ON/`00`=OFF），波特率 115200，4 字节二进制帧；含 `is_valid_state_frame`/`frame_state` 判据。
+- 端口区分：启用时对候选串口发上电帧，回 `A0 01 01 A2` 者=控制器，另一=板子；探测独立，`serial_init` 仍走 `detect_port` 找板子；候选端口排除 EVB 端口。
 - 配置：`config/system.yaml` 增 `power_switch` 段（`enabled: false` 默认关，未启用零影响）。
+- 生命周期：prepare `power_switch_init`（探测 + 长连接存 `ctx.power_switch`）/ cleanup `power_switch_close`（幂等关闭），normal/stress 已挂接。
+- 通信独立留痕：`power_switch.log`（懒加载，仅启用时产生），与板子 `serial.log` 分离。
 - 触发时机由另一独立模块 import 调用实现（本次不接，禁止耦合）。
-- **待 Code Agent 实施**；`reboot_delay`（断电-上电间隔）默认值待真机确定（TODO-CONFIRM）。
+- **真机已通过**：TC-PS-001 压测（30 周期 60 次切换）PASS，首轮误判已修复。
+- **仍遗留（TODO-CONFIRM）**：`reboot_delay`（断电-上电间隔）默认值待接 EVB 板实测电容放电时间确定。
 
 ## 🔴 P0 — 新增录像组合 4k_0（已实施·待真机）
 
