@@ -95,10 +95,7 @@ class VideoModule(TestModule):
                     f"预期 {profile.width}x{profile.height} {profile.orientation}")
         logger.info(f"录像 size 设置命令: {profile.command}")
 
-        # 1. 旧目录
-        before = set(self._list_video_dirs(ftp))
-
-        # 2. 设置分辨率
+        # 1. 设置分辨率
         r = console.exec_sync(profile.command, timeout=commands.VIDEO_SET_TIMEOUT)
         if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
             return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
@@ -106,7 +103,7 @@ class VideoModule(TestModule):
         # 关键字符串检测（录像窗口）：命中不判 FAIL，仅 detail 标注（cycle/rep 由 runner 填）。
         self._attach_hit_listener(console, cfg)
 
-        # 3. 开始录像。启动成功判据保持 Record Start 或编码心跳 f_index。
+        # 2. 开始录像。启动成功判据保持 Record Start 或编码心跳 f_index。
         logger.info(f"拍摄开始（{resolution} / {duration}s）...")
         rec_start = time.monotonic()
         self._recording_active = True  # 发起后即使超时，也可能已半启动。
@@ -120,10 +117,15 @@ class VideoModule(TestModule):
         # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
         # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
         from ..application import runtime_control
+        # BUG-007：走到这里说明 dfs_video_start 已成功回显（r.success），控制链路事实健康；
+        # 清掉可能残留的 SUSPECTED 恢复标志（如录像前 FTP/网络静默被 watchdog 误置的）。
+        # 安全性：只清「进入等待前」的残留标志，不影响 wait() 内部实时检测——
+        # watchdog 按 1s 步长持续监测，真死机会重新置位，wait() 照样提前返回，不掩盖真恢复。
+        runtime_control.clear_recovery()
         if runtime_control.wait(duration):
             logger.warn("录像等待期间收到板卡恢复请求，提前结束录像等待")
 
-        # 4. 等录像全流程的最终完成标志，不把 Save Video Successful 当成完成。
+        # 3. 等录像全流程的最终完成标志，不把 Save Video Successful 当成完成。
         r = console.exec_async(commands.VIDEO_STOP_COMMAND,
                                expect=commands.VIDEO_STOP_EXPECT,
                                result_timeout=commands.VIDEO_STOP_TIMEOUT)
@@ -135,7 +137,7 @@ class VideoModule(TestModule):
             return self._mk("FAIL", "停止录像失败", r.clean[-300:], timer)
         logger.info(f"拍摄结束，耗时 {rec_elapsed:.1f}s")
 
-        # 5. 完成后从累积缓冲扫描完整视频路径，FTP 校验维持辅助性质。
+        # 4. 完成后从累积缓冲扫描完整视频路径，FTP 校验维持辅助性质。
         m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
         video_path = m2.group(0) if m2 else ""
         msg_base = "录像成功"
@@ -206,6 +208,11 @@ class VideoModule(TestModule):
         # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
         # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
         from ..application import runtime_control
+        # BUG-007：走到这里说明 dfs_video_start 已成功回显（r.success），控制链路事实健康；
+        # 清掉可能残留的 SUSPECTED 恢复标志（如录像前 FTP/网络静默被 watchdog 误置的）。
+        # 安全性：只清「进入等待前」的残留标志，不影响 wait() 内部实时检测——
+        # watchdog 按 1s 步长持续监测，真死机会重新置位，wait() 照样提前返回，不掩盖真恢复。
+        runtime_control.clear_recovery()
         if runtime_control.wait(duration):
             logger.warn("录像等待期间收到板卡恢复请求，提前结束录像等待")
 
@@ -226,23 +233,6 @@ class VideoModule(TestModule):
         if video_path:
             msg += f"，文件 {video_path}"
         return self._mk("PASS", msg, video_path, timer)
-
-    def _list_video_dirs(self, ftp):
-        try:
-            entries = ftp._list_entries(_VIDEO_DIR)
-            return [name for name, is_dir, _ in entries if is_dir]
-        except Exception:
-            return []
-
-    def _wait_new_dir(self, ftp, before, timeout):
-        deadline = time.monotonic() + timeout
-        while time.monotonic() < deadline:
-            now = set(self._list_video_dirs(ftp))
-            new = now - before
-            if new:
-                return next(iter(new))
-            time.sleep(0.5)
-        return None
 
     def _mk(self, status, msg, detail, timer):
         self._detach_hit_listener()

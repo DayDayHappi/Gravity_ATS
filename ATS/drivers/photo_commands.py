@@ -7,8 +7,10 @@ from typing import Mapping
 
 # 合法拍照模式名（唯一来源文档）。业务从 config/modules/photo.yaml 的 photo_modes
 # 读取模式名后，用 PHOTO_SET_COMMAND.format(mode=...) 拼命令（不在此处校验 mode 合法性）。
-# TODO-CONFIRM：hdr_0~3 是否为固件合法模式名待真机核实（与场景文件注释同源）；
-# single 1080p/720p/480p 三个含空格模式名同样需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
+# hdr 0~3 已真机核实为「带参数形式」（cam_set photo hdr <0-3>），非下划线独立名 hdr_0~3；
+# single 1080p/720p/480p 三个含空格模式名同样需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）；
+# heif 是否为固件合法模式名待真机核实——可能是独立模式名 cam_set photo heif，
+# 也可能带参数（如 cam_set photo hdr <0-3> 同源疑问，见 archive 软件需求文档 L483）。
 PHOTO_MODES: Mapping[str, str] = MappingProxyType({
     "auto": "cam_set photo auto",
     "single": "cam_set photo single",
@@ -16,10 +18,11 @@ PHOTO_MODES: Mapping[str, str] = MappingProxyType({
     "single 720p": "cam_set photo single 720p",
     "single 480p": "cam_set photo single 480p",
     "mfnr": "cam_set photo mfnr",
-    "hdr_0": "cam_set photo hdr_0",
-    "hdr_1": "cam_set photo hdr_1",
-    "hdr_2": "cam_set photo hdr_2",
-    "hdr_3": "cam_set photo hdr_3",
+    "hdr 0": "cam_set photo hdr 0",
+    "hdr 1": "cam_set photo hdr 1",
+    "hdr 2": "cam_set photo hdr 2",
+    "hdr 3": "cam_set photo hdr 3",
+    "heif": "cam_set photo heif",
 })
 
 # 命令模板（保持对任意 mode 的兼容，由固件自行拒绝非法模式名）。

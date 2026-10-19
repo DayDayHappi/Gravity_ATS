@@ -28,6 +28,10 @@ from ..drivers import photo_commands as commands
 # JPEG magic number（文件格式校验，非固件协议，保留在业务侧）
 _JPEG_MAGIC = b"\xff\xd8\xff"
 
+# HEIF（ISO BMFF）顶盒 box type：文件头前 4 字节为 box size（大端 u32），
+# 随后 4 字节应为 "ftyp"。heif 拍照固件产出 .heic/.heif，不能套 JPEG 魔数校验。
+_HEIF_FTYP = b"ftyp"
+
 
 @register("photo")
 class PhotoModule(TestModule):
@@ -153,15 +157,15 @@ class PhotoModule(TestModule):
             return self._mk(name, "PASS", f"{msg_base}（下载验证失败）", r.clean[-200:], timer)
 
         if verify_failed is not None:
-            # 存在已下载但 JPEG 校验失败的 jpg → FAIL（与现状单张语义一致）
+            # 存在已下载但校验失败的图片 → FAIL（与现状单张语义一致）
             jpg, vmsg = verify_failed
             return self._mk(name, "FAIL", f"{vmsg} | {msg_base} | {jpg} 校验失败",
-                            f"含 {len(jpgs)} 个 jpg，已下载 {len(downloaded)} 张", timer)
+                            f"含 {len(jpgs)} 张图片，已下载 {len(downloaded)} 张", timer)
 
         # 全部下载成功且校验通过 → PASS，message 含本地目录便于用户找到照片
-        msg = (f"全部 {len(downloaded)} 张 jpg 校验通过 | {msg_base} | "
+        msg = (f"全部 {len(downloaded)} 张图片校验通过 | {msg_base} | "
                f"已下载到 {dl_dir}/")
-        return self._mk(name, "PASS", msg, f"含 {len(jpgs)} 个 jpg", timer)
+        return self._mk(name, "PASS", msg, f"含 {len(jpgs)} 张图片", timer)
 
     def _list_pic_dirs(self, ftp):
         """列 /emmc/PIC 下的时间戳目录（仅目录名）。"""
@@ -174,9 +178,14 @@ class PhotoModule(TestModule):
             return []
 
     def _list_jpgs(self, ftp, dir_path):
-        """列指定目录下的 jpg 文件名。"""
+        """列指定目录下的图片文件名（.jpg / .heic / .heif）。
+
+        heif 拍照固件产出 .heic（日志 `...heic saved` / `Save Heif Successful`），
+        若只认 .jpg 会漏掉 heif 模式产物，导致「未列出 jpg 辅助验证」降级 PASS。
+        """
         try:
-            return [n for n in ftp.list_files(dir_path) if n.lower().endswith(".jpg")]
+            return [n for n in ftp.list_files(dir_path)
+                    if n.lower().endswith((".jpg", ".heic", ".heif"))]
         except Exception:
             return []
 
@@ -194,8 +203,14 @@ class PhotoModule(TestModule):
         size = os.path.getsize(local)
         if size < min_kb * 1024:
             return False, f"文件过小 {size}B < {min_kb}KB"
+        lower = local.lower()
         with open(local, "rb") as f:
-            head = f.read(3)
+            head = f.read(12)
+        if lower.endswith((".heic", ".heif")):
+            # HEIF（ISO BMFF）：前 4 字节 box size + 随后 4 字节 "ftyp"。
+            if head[4:8] != _HEIF_FTYP:
+                return False, f"HEIF 头校验失败 {head[:8]!r}"
+            return True, f"HEIF OK {size//1024}KB"
         if head[:3] != _JPEG_MAGIC:
             return False, f"JPEG 头校验失败 {head!r}"
         return True, f"JPEG OK {size//1024}KB"

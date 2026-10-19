@@ -75,6 +75,22 @@
 
 ---
 
+## 🟡 P1 — 健康监测 FTP 盲区致录像启动即被打断（BUG-007，待修复）
+
+**现象（真机 2026-10-08，日志 `logs/recovery_validation/20261008/20261008_164543` cycle 37）**：video[hd1080p_2]（duration 20s）在 `dfs_video_start` 后录像只跑约 54ms（0 帧，`Record Stop Success: total frames = -1`），被补发 `dfs_video_stop` 终止，产物 0KB → `文件过小 0KB < 100KB` FAIL。板子本身健康：任务返回后安全点自检 `串口自检通过 / 健康确认通过`，且上一视频 hd1080p_1 刚录满 22.5s。
+
+**根因（脚本侧，两缺陷叠加）**：
+1. **FTP 盲区**：健康监测只订阅串口 RX，而 video 发 `cam_set` 前先 `_list_video_dirs(ftp)`（WiFi/TCP 无串口输出）；cycle 37 `/emmc/VIDEO` 已约 440 目录，FTP LIST 阻塞 ~50s 超 `inactivity_timeout:60` 剩余窗口 → watchdog 误判 SUSPECTED 并 `request_recovery()`。
+2. **恢复标志未清**：`clear_recovery()` 只在安全点触发，SUSPECTED 置位后直到模块返回前无清除机会；`cam_set`/`dfs_video_start` 成功回显（事实已健康）但标志仍在 → `runtime_control.wait(20)` 第一轮即返回 → 录像被打断。
+
+**修复方向（Code Agent，详见 BUG-007）**：① 成功回显处（`dfs_video_start` 成功到 `wait()` 前）清一次已事实失效的恢复标志；② 让 Monitor 感知 FTP/网络事务活跃也算有响应（消除盲区）；③ `inactivity_timeout` 与 FTP LIST 时长解耦后再校准阈值。
+
+**红线**：业务模块仍不得直接执行 recovery，只可「提前结束等待 / 清已失效标志」，恢复决策与执行归 Runner/RecoveryCoordinator；listener 内禁 IO。
+
+详见 [BUG-007](../03_development/bugfix/BUG-007-健康监测FTP盲区致录像启动即被打断.md) · [known_issue](known_issue.md)「脚本侧已知问题」表。
+
+---
+
 ## 🔴 P0 — serial_console.exec_sync 长时压测误判（已实施·待真机）
 
 **现象（真机 stress 压测，2026-09-18 日志 `logs/stress/20260918/20260918_163736`）**：压测约第 26 轮起（06:48，RTMP 推流 10 分钟结束后回到 photo），photo/video 的所有 `cam_set photo|video <mode>` 全判 `[FAIL] 设置模式/设置录像组合 失败`，此后每轮持续 FAIL；photo 因第一步 cam_set 失败提前 return，**不再发 `dfs_capture_start`**（用户观察到的「06:09:52 后只发 cam_set photo 不再发 capture」即此）。
