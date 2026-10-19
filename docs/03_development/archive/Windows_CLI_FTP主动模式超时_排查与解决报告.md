@@ -254,3 +254,60 @@ LIST OK, 2 entries, 耗时 0.21s
 - devlog：`20260920_1600_windows_cli真机FTP超时防火墙错配修复.md`
 - 交接文档（Document Agent 维护）：`docs/05_handoff/windows_cli_status.md`（「真机已知问题」表，待回填为已解决）
 - 相关源码：`ATS/drivers/ftp_client.py`（主动模式封装，本问题**未改**此文件）
+
+---
+
+## 十一、后续复发（2026-10-19）—— EVB IP 由 DHCP 漂移
+
+### 现象
+
+同一类问题复发：photo 每项 ~68s、`FTP list 失败: timed out` × 3 次重试、最终 `（未列出 jpg 辅助验证）` 降级 PASS，`logs/stress/20261019/20261019_103300/photos/` 目录为空（无任何 jpg 下载）。
+
+### 根因变化
+
+本次**不是三字段错配**（那是 9-20 的根因，已修对），而是 **EVB IP 漂移**：
+
+| 项 | 规则里的值 | 本次实际值 |
+|----|-----------|-----------|
+| RemoteAddress | `192.168.1.100` | EVB = `192.168.1.103` |
+| LocalAddress | `Any` | PC = `192.168.1.101` |
+
+- serial.log 铁证：`Got IP address : 192.168.1.103`
+- ipconfig 实测 PC 测试网卡 = `192.168.1.101`
+- 规则 `RemoteAddress` 仍锁在 `.100`（9-20 修复时 EVB 确实是 .100），而 EVB 本次被 DHCP 分配成 `.103` → 主动模式数据回连（.103→PC 高位端口）不在放行范围，SYN 被静默丢弃 → LIST 每次 10s 超时。
+
+### 教训与根治
+
+EVB IP 是路由器 DHCP 动态分配的，**会随板子重启/重连漂移**。写死单 IP 必然再次踩坑。根治方案：`RemoteAddress` 用**网段**而非单 IP。
+
+### 修复命令（需管理员 PowerShell）
+
+普通 shell 执行会报 `Windows System Error 5`（拒绝访问），需用 UAC 提权：
+
+```powershell
+# 方式一：管理员 PowerShell 直接执行
+Set-NetFirewallRule -DisplayName "Gravity ATS CLI FTP - Board101" `
+  -RemoteAddress "192.168.1.0/24"
+
+# 方式二：普通 shell 里用 Start-Process 触发 UAC（会弹窗确认）
+Start-Process powershell -Verb RunAs -Wait -ArgumentList `
+  '-NoProfile','-Command',
+  'Set-NetFirewallRule -DisplayName ''Gravity ATS CLI FTP - Board101'' -RemoteAddress ''192.168.1.0/24'''
+```
+
+> 注意：`Set-NetFirewallAddressFilter` 不支持从 `Get-NetFirewallRule` 管道直接喂对象（PSTypeName 不匹配），
+> 需用 `Set-NetFirewallRule -RemoteAddress` 参数形式。
+
+### 验证
+
+```powershell
+(Get-NetFirewallRule -DisplayName "Gravity ATS CLI FTP - Board101" |
+  Get-NetFirewallAddressFilter).RemoteAddress
+# 期望输出：192.168.1.0/255.255.255.0
+```
+
+### 更新复用价值清单
+
+在第九节「复用价值」基础上补充一条：
+
+5. **`RemoteAddress` 禁用单 IP**：EVB IP 由 DHCP 漂移，防火墙放行地址必须用网段 `192.168.1.0/24`（或根据实际测试网段调整），否则每次板子换 IP 都会复发。

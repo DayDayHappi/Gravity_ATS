@@ -58,9 +58,12 @@
 | # | 现象 | 根因 | 状态 |
 |---|------|------|------|
 | 1 | FTP LIST 反复超时（`FTP list 失败: timed out`），photo 每项耗时 ~68s，压测缓慢如卡死 | Windows 防火墙规则 `Gravity ATS CLI FTP - Board101` **三字段错配**：`RemoteAddress=.101`（EVB 实为 .100）、`LocalAddress=.100`（把 EVB 当本机，本机实为 .103）、`Program=系统python`（实际用 venv python）→ 规则与实际流量（.100 回连 .103 高位端口）方向完全相反，放行从未生效 | ✅ **已修复并真机复验通过**（规则改为 `RemoteAddress=.100`/`LocalAddress=Any`/`Program=Any`/`LocalPort=1024-65535`，真实 FTP LIST 恢复 0.21s，完整 stress 复验无问题） |
+| 2 | 同上现象复发（2026-10-19）：photo 每项 ~68s、`FTP list 失败: timed out` × 3 次、`未列出 jpg 辅助验证` 降级 PASS、`photos/` 空 | 与 #1 同源，但根因变为 **EVB IP 由 DHCP 漂移**：规则 `RemoteAddress` 仍锁在 `.100`，而 EVB 本次被分配为 `.103`（PC 本机 `.101`，见 serial.log `Got IP address : 192.168.1.103`）→ 主动模式数据回连（.103→PC 高位端口）不在放行范围，SYN 被丢 | ✅ **已修复**（2026-10-19）：`RemoteAddress` 改为**网段** `192.168.1.0/24`（而非单 IP），一次根治 IP 漂移问题 |
 
 > 详细排查见 [archive/Windows_CLI_FTP主动模式超时_排查与解决报告.md](../03_development/archive/Windows_CLI_FTP主动模式超时_排查与解决报告.md)、devlog `20260920_1600`。
 > 主线 `build_environment.md` 早已提示「防火墙放行 1024-65535 高端口（FTP 主动模式 + RTMP 1935）」，本分支在 Windows 上未落实此条，现已修复。
+>
+> ⚠️ **环境红线**：EVB IP 由路由器 DHCP 分配，会随重连/重启漂移。防火墙 `Gravity ATS CLI FTP - Board101` 的 `RemoteAddress` **必须用网段 `192.168.1.0/24`，禁止写死单 IP**。改规则需管理员 PowerShell（普通 shell 报 Windows 系统错误 5），命令见排查报告「后续复发」一节。
 
 ## 待办（Code Agent）
 
