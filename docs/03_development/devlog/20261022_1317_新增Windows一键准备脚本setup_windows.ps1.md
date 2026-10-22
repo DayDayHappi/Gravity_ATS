@@ -39,6 +39,10 @@
 - `System.Management.Automation.Language.Parser::ParseFile` 语法解析通过（SYNTAX OK）。
 - 本机 `-CheckOnly -SkipAdmin` 只读冒烟跑通：Python 3.13.15 / venv 已存在 / ffmpeg 三件套 PATH 命中 / 防火墙规则已存在 / RTMP 1935 未监听(WARN) / token 存在、portal.crt 缺失(提示) / system.yaml 语法有效 / `--dry-run` 通过，最终退出码 `2`（有 RTMP 警告），符合设计。
 
+## 增量（同日）
+
+- `Step-Ffmpeg` 增加内置目录识别：优先识别 `tools\ffmpeg\ffmpeg.exe` / `ffprobe.exe` / `ffplay.exe`，识别到即免 winget 下载（与 `drivers/resources.py` 的 `tools/ffmpeg` 搜索路径一致）；内置目录已存在但缺个别 exe 时提示补齐而非 winget 重装，避免重复下载。可用 `-NoFfmpeg` 完全跳过该步。
+
 ## Known limitation
 
 - ffmpeg 经 winget 安装后 PATH 需重开终端才生效；`-CheckOnly` 模式首跑若 venv 尚不存在，本脚本也会建（幂等，实际无副作用）。

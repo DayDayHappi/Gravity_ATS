@@ -184,14 +184,22 @@ function Step-Venv {
     }
 }
 
-# 3) ffmpeg 套件
+# 3) ffmpeg 套件（优先使用内置 tools\ffmpeg\，免下载）
 function Step-Ffmpeg {
     if ($NoFfmpeg) { Write-Warn '-NoFfmpeg 指定，跳过 ffmpeg 检查/安装。'; return }
     Write-Step '检查 ffmpeg / ffprobe / ffplay'
+    # 与 drivers/resources.py 的 app_root/tools/ffmpeg 内置搜索路径一致
+    $bundledDir = Resolve-PathRelative 'tools\ffmpeg'
     $missing = @()
     foreach ($t in @('ffmpeg','ffprobe','ffplay')) {
-        if (Test-CommandExists $t) { Write-Ok ("{0} 已在 PATH" -f $t) }
-        else { $missing += $t }
+        $bundled = Join-Path $bundledDir "$t.exe"
+        if (Test-CommandExists $t) {
+            Write-Ok ("{0} 已在 PATH" -f $t)
+        } elseif (Test-Path $bundled) {
+            Write-Ok ("{0} 已内置（tools\ffmpeg\{1}.exe，免下载）" -f $t, $t)
+        } else {
+            $missing += $t
+        }
     }
     if ($missing.Count -eq 0) { return }
     Write-Warn ("缺少：{0}" -f ($missing -join ', '))
@@ -199,17 +207,24 @@ function Step-Ffmpeg {
         $script:Problems += ("缺少 ffmpeg 套件：{0}" -f ($missing -join ', '))
         return
     }
+    # 内置目录已存在但缺个别 exe：提示补齐，而非 winget 重装（避免与内置冲突/重复下载）
+    $anyBundled = @('ffmpeg.exe','ffprobe.exe','ffplay.exe') | ForEach-Object { Test-Path (Join-Path $bundledDir $_) } | Where-Object { $_ }
+    if ($anyBundled) {
+        Write-Fail ("tools\ffmpeg\ 已存在但缺：{0}。请从原机补齐同名 .exe（及所需 DLL）后重跑，或删掉该目录改用 winget 安装。" -f ($missing -join ', '))
+        $script:Problems += ("内置 ffmpeg 不完整，缺：{0}" -f ($missing -join ', '))
+        return
+    }
     $wingetId = Get-CfgString $config.ffmpeg 'winget_id' 'Gyan.FFmpeg'
     if (-not (Test-CommandExists 'winget')) {
         Write-Fail '未找到 winget，无法自动安装 ffmpeg。'
-        $script:Problems += 'ffmpeg 缺失且无 winget（请手动安装 Gyan.FFmpeg 或放入 tools\ffmpeg）'
+        $script:Problems += 'ffmpeg 缺失且无 winget（请手动安装，或放入 tools\ffmpeg）'
         return
     }
     Write-Info ("通过 winget 安装 {0} ..." -f $wingetId)
     & winget install -e --id $wingetId --accept-source-agreements --accept-package-agreements
     if ($LASTEXITCODE -ne 0) {
         Write-Fail 'winget 安装 ffmpeg 失败。'
-        $script:Problems += 'ffmpeg 安装失败（需手动安装）'
+        $script:Problems += 'ffmpeg 安装失败（需手动安装，或放入 tools\ffmpeg）'
     } else {
         Write-Warn 'ffmpeg 已安装，但可能需重开终端才在 PATH 生效。'
     }
