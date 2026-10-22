@@ -30,7 +30,8 @@ class PortalUploadTest(unittest.TestCase):
                 os.environ[k] = v
 
     def _mock_request(self, calls):
-        def fake(method, url, token, data=None, headers=None, timeout=60.0):
+        def fake(method, url, token, data=None, headers=None, timeout=60.0,
+                 context=None):
             calls.append((method, url, data))
             if method == "POST" and url.endswith("/runs"):
                 return 201, json.dumps({"run_id": "x", "upload_state": "receiving"}).encode()
@@ -93,6 +94,39 @@ class PortalUploadTest(unittest.TestCase):
         sha, size = _sha256_size(p)
         self.assertEqual(size, len(data))
         self.assertEqual(len(sha), 64)
+
+    def test_ssl_context_uses_cert_file_when_present(self):
+        """自签名证书存在时，SSLContext 以 cafile 加载该证书。"""
+        import ssl
+        cert = os.path.join(self.tmp, "cert.pem")
+        with open(cert, "w", encoding="utf-8") as f:
+            f.write("-----BEGIN CERTIFICATE-----\nfake\n-----END CERTIFICATE-----\n")
+        orig = ssl.create_default_context
+        seen = {}
+        def fake_create(**kwargs):
+            seen.update(kwargs)
+            return object()
+        ssl.create_default_context = fake_create
+        try:
+            ctx = pu._ssl_context({"cert_file": cert})
+            self.assertEqual(seen.get("cafile"), cert)
+        finally:
+            ssl.create_default_context = orig
+
+    def test_ssl_context_falls_back_when_cert_missing(self):
+        """证书文件缺失时回退系统默认上下文（不抛异常，不传 cafile）。"""
+        import ssl
+        orig = ssl.create_default_context
+        seen = {}
+        def fake_create(**kwargs):
+            seen.update(kwargs)
+            return object()
+        ssl.create_default_context = fake_create
+        try:
+            pu._ssl_context({"cert_file": os.path.join(self.tmp, "no-such.pem")})
+            self.assertNotIn("cafile", seen)
+        finally:
+            ssl.create_default_context = orig
 
 
 class UploadLogTest(unittest.TestCase):

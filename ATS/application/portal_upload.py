@@ -18,11 +18,14 @@
 - token 不写日志、不进仓库（协议 §2）。
 - 懒加载文件（power_switch.log / recovery.log）不存在时跳过，登记时只登记实际存在的文件。
 - 临时错误（网络超时/5xx/408/429）有限退避重试，复用同一 run_id 与清单。
+- 自签名 HTTPS：``upload.cert_file`` 配置（或 ``ATS_PORTAL_CA_CERT`` 环境变量）指定
+  证书后，用 ``ssl.create_default_context(cafile=...)`` 传入 ``urlopen``；http:// 不受影响。
 """
 import datetime
 import hashlib
 import json
 import os
+import ssl
 import time
 import urllib.error
 import urllib.parse
@@ -33,6 +36,10 @@ from ..core import logger
 
 # token 默认路径（协议 §2）
 _DEFAULT_TOKEN_FILE = os.path.expanduser("~/.config/ats-portal/token")
+
+# 证书文件默认路径（环境级配置 upload.cert_file 未配置时回退；与
+# ubuntu-upload-setup.sh 生成的 ~/ats/cert.pem 对齐）
+_DEFAULT_CERT_FILE = os.path.expanduser("~/ats/cert.pem")
 
 # API 前缀（协议 §1）
 _API_PREFIX = "/api/v1"
@@ -77,18 +84,40 @@ def _sha256_size(path: str) -> tuple:
     return digest.hexdigest(), size
 
 
+def _ssl_context(upload_cfg: dict) -> ssl.SSLContext:
+    """按配置构造上传用的 SSLContext，仅对 https:// 生效。
+
+    优先级：ATS_PORTAL_CA_CERT 环境变量 → upload.cert_file 配置 →
+    默认 ~/ats/cert.pem → 系统默认（create_default_context 无 cafile）。
+    证书文件缺失或读取失败时回退系统默认上下文（保持向后兼容，且不影响
+    http:// 明文路径）。
+    """
+    env_cert = os.environ.get("ATS_PORTAL_CA_CERT", "").strip()
+    cert_file = (env_cert
+                 or upload_cfg.get("cert_file", "").strip()
+                 or _DEFAULT_CERT_FILE)
+    if cert_file:
+        cert_file = os.path.expanduser(cert_file)
+    if cert_file and os.path.isfile(cert_file):
+        return ssl.create_default_context(cafile=cert_file)
+    return ssl.create_default_context()
+
+
 def _request(method: str, url: str, token: str, data: bytes = None,
-             headers: dict = None, timeout: float = 60.0) -> tuple:
+             headers: dict = None, timeout: float = 60.0,
+             context: ssl.SSLContext = None) -> tuple:
     """发一个带 Bearer 的 HTTP 请求，返回 (status, body_bytes)。
 
     data 为 None 时不带请求体（GET / finalize 用 Content-Length: 0 时传 b""）。
+    context 非空时传入 urlopen（自签名 HTTPS 场景用 create_default_context(cafile=...)
+    信任指定证书）；否则走 urllib 默认行为（系统默认 CA 信任链）。
     """
     req_headers = {"Authorization": f"Bearer {token}"}
     if headers:
         req_headers.update(headers)
     req = urllib.request.Request(url, data=data, method=method, headers=req_headers)
     try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout, context=context) as resp:
             return resp.status, resp.read()
     except urllib.error.HTTPError as e:
         body = e.read() if hasattr(e, "read") else b""
@@ -102,7 +131,7 @@ def _is_retryable(status: int) -> bool:
 
 
 def _post_json_with_retry(url: str, token: str, payload: dict,
-                          timeout: float) -> dict:
+                          timeout: float, context: ssl.SSLContext = None) -> dict:
     """POST JSON（登记清单），临时错误退避重试并复用原清单。返回解析后的响应 dict。"""
     data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     headers = {"Content-Type": "application/json"}
@@ -110,7 +139,8 @@ def _post_json_with_retry(url: str, token: str, payload: dict,
     for attempt in range(1, _RETRY_MAX + 1):
         try:
             status, body = _request("POST", url, token, data=data,
-                                    headers=headers, timeout=timeout)
+                                    headers=headers, timeout=timeout,
+                                    context=context)
         except PortalUploadError as e:
             last_err = e
             status = -1
@@ -132,7 +162,7 @@ def _post_json_with_retry(url: str, token: str, payload: dict,
 
 
 def _put_file_with_retry(url: str, token: str, path: str, size: int,
-                         timeout: float) -> None:
+                         timeout: float, context: ssl.SSLContext = None) -> None:
     """PUT 单个文件（原始字节），临时错误退避重试（完整重发同一 PUT）。"""
     headers = {
         "Content-Type": "application/octet-stream",
@@ -145,7 +175,8 @@ def _put_file_with_retry(url: str, token: str, path: str, size: int,
     for attempt in range(1, _RETRY_MAX + 1):
         try:
             status, body = _request("PUT", url, token, data=file_bytes,
-                                    headers=headers, timeout=timeout)
+                                    headers=headers, timeout=timeout,
+                                    context=context)
         except PortalUploadError as e:
             last_err = e
             status = -1
@@ -162,12 +193,14 @@ def _put_file_with_retry(url: str, token: str, path: str, size: int,
     raise PortalUploadError(f"上传文件失败: {last_err}")
 
 
-def _finalize_with_retry(url: str, token: str, timeout: float) -> dict:
+def _finalize_with_retry(url: str, token: str, timeout: float,
+                         context: ssl.SSLContext = None) -> dict:
     """POST finalize（无请求体），临时错误退避重试。返回解析后的响应 dict。"""
     last_err = None
     for attempt in range(1, _RETRY_MAX + 1):
         try:
-            status, body = _request("POST", url, token, data=b"", timeout=timeout)
+            status, body = _request("POST", url, token, data=b"", timeout=timeout,
+                                    context=context)
         except PortalUploadError as e:
             last_err = e
             status = -1
@@ -213,6 +246,9 @@ def upload_run(upload_cfg: dict, scenario_name: str, log_dir: str, report_dir: s
     timeout = float(upload_cfg.get("timeout", 60))
     artifacts_cfg = upload_cfg.get("artifacts", [])
 
+    # 自签名 HTTPS 场景：按配置构造 SSLContext（http:// 下不影响行为）
+    context = _ssl_context(upload_cfg)
+
     token = _read_token(upload_cfg)
     if not token:
         raise PortalUploadError("未读取到上传 token（检查 ATS_PORTAL_TOKEN / token_file）")
@@ -251,7 +287,8 @@ def upload_run(upload_cfg: dict, scenario_name: str, log_dir: str, report_dir: s
     }
 
     # 1. 登记清单
-    _post_json_with_retry(f"{server}{_API_PREFIX}/runs", token, manifest, timeout)
+    _post_json_with_retry(f"{server}{_API_PREFIX}/runs", token, manifest, timeout,
+                          context)
     logger.log_upload("登记清单成功（POST /runs）")
 
     # 2. 逐个上传文件
@@ -260,12 +297,12 @@ def upload_run(upload_cfg: dict, scenario_name: str, log_dir: str, report_dir: s
         path = _resolve_artifact_path(name, art["kind"], log_dir, report_dir)
         encoded_name = urllib.parse.quote(name, safe="")
         put_url = f"{server}{_API_PREFIX}/runs/{run_id}/artifacts/{encoded_name}"
-        _put_file_with_retry(put_url, token, path, art["size"], timeout)
+        _put_file_with_retry(put_url, token, path, art["size"], timeout, context)
         logger.log_upload(f"已上传: {name}（{art['size']} bytes）")
 
     # 3. finalize，确认 upload_state == complete
     resp = _finalize_with_retry(f"{server}{_API_PREFIX}/runs/{run_id}/finalize",
-                                token, timeout)
+                                token, timeout, context)
     state = resp.get("upload_state")
     logger.log_upload(f"finalize 响应 upload_state={state}")
     return state == "complete"

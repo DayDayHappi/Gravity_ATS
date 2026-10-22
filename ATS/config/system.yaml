@@ -51,6 +51,7 @@ upload:                    # 结果上报 ATS Portal（ADR-017），环境级能
   enabled: true           # 上传开关，默认关（向后兼容，零影响）
   server: "https://10.1.64.183:8443"   # 服务地址（本机）
   token_file: "upload.token"   # 指向工程根目录纯 token 文件（本地敏感文件，已 .gitignore，不入 git）
+  cert_file: "~/ats/cert.pem"   # 自签名 HTTPS 证书（SSLContext cafile）；http:// 忽略。可被 ATS_PORTAL_CA_CERT 环境变量覆盖
   timeout: 60              # 单请求超时(秒)
   artifacts:               # 上传清单（可配置；懒加载缺失文件自动跳过）
     - { name: "run.log", kind: "log" }
