@@ -12,6 +12,29 @@ from urllib.parse import quote
 from ATS.application import portal_upload as pu
 from ATS.application.portal_upload import PortalUploadError, _sha256_size
 
+# 内嵌自签名测试证书（仅测试用，CN=ats-portal-test，与任何生产证书无关）。
+# 用于 _build_ssl_context 的 cafile 用例，避免测试运行时依赖 openssl/外部文件。
+_SELF_SIGNED_CERT_PEM = """-----BEGIN CERTIFICATE-----
+MIIDFTCCAf2gAwIBAgIUYpMRSODTyMZoYrPJIAFytIwhgucwDQYJKoZIhvcNAQEL
+BQAwGjEYMBYGA1UEAwwPYXRzLXBvcnRhbC10ZXN0MB4XDTI2MTAxOTA1MTUzN1oX
+DTI2MTExODA1MTUzN1owGjEYMBYGA1UEAwwPYXRzLXBvcnRhbC10ZXN0MIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA49jHSm6qPPxUHhWsW8ddPTzWSQjp
+WkRg4xV8X94OLmg0N3KLe3/4826es147DKYlIc3aaopdbSOQ+SWtGjb3MrofEe8I
+RcT+MGDFdXKTHQP3mD/tbg7sZiXsm4yqzEqgfgAGKas9eYANleiJ3l/6H+5F33RA
++lWY9+XaW5E0y/pX9tlLk0JwOKW4Kpu2oifEa0zFwtBUVKp3mrej4hMP68G0iAg5
+Ui19uD7JQcteFKt1w0fJmi8ONW6vEXVIvy3SQW/mUthxD2Rs7vpa8fAsoSrRyWbI
+XzAimFrs0mSr0RfGzNpLtvywZjUfM0BHeb5eSGI2iYnENSVyOC85mqgkswIDAQAB
+o1MwUTAdBgNVHQ4EFgQU3N/Z8Z0pFPbmpFVyQySelzhEfW8wHwYDVR0jBBgwFoAU
+3N/Z8Z0pFPbmpFVyQySelzhEfW8wDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0B
+AQsFAAOCAQEAI5JJjxv9dDiIaGC1hXf5k2o3KA/oiOUOXZgrRxWMekhMrcCRdVd3
+91CGmns8rqX7rOnGQDnW/jtLqzl4L1ikYloj/Aqlg5sWjyh5gSubu37ZGameJuss
+/4r+h1lEEyfu7L5/Z6VD75uVnmytc1kl97Hxb612U4A2+91fwJIz0rGYIwBgRlVg
+qdwdvx700lc23aQ6x4ChFPdyplkOBr8kS1Ph8zgtFB3kYi6VIbWeP3JKvayiOfT6
+1XF4+autdCGzTR0KxouGo1FtAfl0keKStHLr9Cx2kdXhjgx72taXnhenAO86pkOe
+f0/6qNuliIuSrBAIfA3vTxfNnMSIj3OKsQ==
+-----END CERTIFICATE-----
+"""
+
 
 class PortalUploadTest(unittest.TestCase):
 
@@ -30,8 +53,8 @@ class PortalUploadTest(unittest.TestCase):
                 os.environ[k] = v
 
     def _mock_request(self, calls):
-        def fake(method, url, token, data=None, headers=None, timeout=60.0):
-            calls.append((method, url, data))
+        def fake(method, url, token, data=None, headers=None, timeout=60.0, ssl_ctx=None):
+            calls.append((method, url, data, ssl_ctx))
             if method == "POST" and url.endswith("/runs"):
                 return 201, json.dumps({"run_id": "x", "upload_state": "receiving"}).encode()
             if method == "PUT":
@@ -93,6 +116,92 @@ class PortalUploadTest(unittest.TestCase):
         sha, size = _sha256_size(p)
         self.assertEqual(size, len(data))
         self.assertEqual(len(sha), 64)
+
+
+class SslContextTest(unittest.TestCase):
+    """方案 2-b：upload.ca_cert 构建 SSL context（空→None；有→cafile 断言）。"""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+
+    def test_build_ssl_context_empty_returns_none(self):
+        self.assertIsNone(pu._build_ssl_context({}))
+        self.assertIsNone(pu._build_ssl_context({"ca_cert": ""}))
+        self.assertIsNone(pu._build_ssl_context({"ca_cert": "   "}))
+
+    def test_build_ssl_context_with_cert(self):
+        cert_path = os.path.join(self.tmp, "portal.crt")
+        with open(cert_path, "w", encoding="utf-8") as f:
+            f.write(_SELF_SIGNED_CERT_PEM)
+        ctx = pu._build_ssl_context({"ca_cert": cert_path})
+        self.assertIsNotNone(ctx)
+        # Python 3.12 的 SSLContext 无 .cafile 属性，用 get_ca_certs 断言证书已加载
+        self.assertGreater(len(ctx.get_ca_certs()), 0)
+
+    def test_build_ssl_context_relative_path_anchored_to_project_root(self):
+        # 相对路径应归一化到工程根目录（_PROJECT_ROOT），而非当前 cwd。
+        # mock ssl.create_default_context 捕获 cafile，避免依赖工程根实际存在该文件。
+        import ssl as ssl_mod
+        import unittest.mock as mock
+        rel = "portal.crt"
+        with mock.patch.object(ssl_mod, "create_default_context", return_value="CTX") as m:
+            ctx = pu._build_ssl_context({"ca_cert": rel})
+        self.assertEqual(ctx, "CTX")
+        m.assert_called_once_with(cafile=os.path.join(pu._PROJECT_ROOT, rel))
+
+    def test_resolve_from_project_root(self):
+        self.assertEqual(pu._resolve_from_project_root(""), "")
+        self.assertEqual(pu._resolve_from_project_root(None), None)
+        abs_path = os.path.abspath("x.txt")
+        self.assertEqual(pu._resolve_from_project_root(abs_path), abs_path)
+        self.assertEqual(
+            pu._resolve_from_project_root("upload.token"),
+            os.path.join(pu._PROJECT_ROOT, "upload.token"))
+
+    def test_resolve_from_project_root_expands_tilde(self):
+        # ~ 应展开为用户主目录（跨机器可移植，不暴露具体用户名）。
+        # Windows 下 expanduser 可能返回混合分隔符，用 normpath 归一化比较。
+        resolved = pu._resolve_from_project_root("~/.config/ats-portal/portal.crt")
+        expected = os.path.normpath(
+            os.path.join(os.path.expanduser("~"), ".config", "ats-portal", "portal.crt"))
+        self.assertEqual(os.path.normpath(resolved), expected)
+        self.assertTrue(os.path.isabs(resolved))
+
+    def test_upload_run_passes_ssl_ctx_through(self):
+        # ssl_ctx 应被透传到 _request 的每次调用（此处不真正请求，仅断言透传）
+        os.environ["ATS_PORTAL_TOKEN"] = "test-token"
+        open(os.path.join(self.tmp, "run.log"), "w").write("hello log\n")
+        cert_path = os.path.join(self.tmp, "portal.crt")
+        with open(cert_path, "w", encoding="utf-8") as f:
+            f.write(_SELF_SIGNED_CERT_PEM)
+
+        received = []
+        orig = pu._request
+
+        def fake(method, url, token, data=None, headers=None, timeout=60.0, ssl_ctx=None):
+            received.append((method, url, ssl_ctx))
+            if method == "POST" and url.endswith("/runs"):
+                return 201, json.dumps({"run_id": "x", "upload_state": "receiving"}).encode()
+            if method == "PUT":
+                return 200, b"{}"
+            if method == "POST" and url.endswith("/finalize"):
+                return 200, json.dumps({"upload_state": "complete"}).encode()
+            return 200, b"{}"
+
+        pu._request = fake
+        try:
+            cfg = {"server": "http://127.0.0.1:8080", "timeout": 60,
+                   "ca_cert": cert_path,
+                   "artifacts": [{"name": "run.log", "kind": "log"}]}
+            ok = pu.upload_run(cfg, "n", self.tmp, self.tmp, "a", "b", "completed")
+        finally:
+            pu._request = orig
+
+        self.assertTrue(ok)
+        self.assertTrue(received)
+        for _, _, ssl_ctx in received:
+            self.assertIsNotNone(ssl_ctx)
+            self.assertGreater(len(ssl_ctx.get_ca_certs()), 0)
 
 
 class UploadLogTest(unittest.TestCase):

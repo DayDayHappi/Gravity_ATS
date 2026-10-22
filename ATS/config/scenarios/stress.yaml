@@ -157,8 +157,8 @@ scenario:
           source: "current_run"
           selection: "all_unchecked"   # 检本轮全部未检文件；跨 loop 靠 manifest 去重不重复检
           empty_input_policy: "skip"   # 某 size 录像失败/未下载时不判 FAIL，跳过而非双重惩罚
-#    - module: rtmp
-#      duration: 600
+    - module: rtmp
+      duration: 600
   cleanup:
     - stop_stream
     - preview_stop

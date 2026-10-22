@@ -68,3 +68,5 @@
 ## 待办（Code Agent）
 
 - **preview 窗口尺寸可配置（方案 A）**：Windows 下 ffplay 画面窗口过大（跟随视频原始分辨率）且无法 resize/移动。方案 A：`preview_manager.py` 的 `_argv()` 加 `-x/-y`（值从 `preview.yaml` 的 `window_width`/`window_height` 读，默认 960/540）。详见 [windows_cli_next_step.md](windows_cli_next_step.md)。
+
+- **portal 上传自签名证书 SSL 校验失败（方案 2-b，已定案）**：`portal_upload.py` 用默认 `urlopen` 走系统 SSL 校验，Portal 自签证书（`CN=ats-portal-local`，SAN 含 10.1.64.183）不被信任 → `登记清单失败 HTTP -1`。修复：新增 `upload.ca_cert` 配置，`_request` 透传 `ssl.create_default_context(cafile=...)`。完整规格见 [排查与修复方案](../03_development/archive/Windows_CLI_portal上传自签名证书SSL校验_排查与修复方案.md)。附带隐患：`token_file` 相对路径未归一化到工程根目录，随 cwd 漂移 + 短路默认路径，建议一并修。
