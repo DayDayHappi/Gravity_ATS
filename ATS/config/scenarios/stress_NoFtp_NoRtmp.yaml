@@ -1,0 +1,174 @@
+# 压测场景：photo 50 次 + video 3min + rtmp 10min，整轮循环 3 次
+scenario:
+  name: stress_NoFtp_NoRtmp
+  preview:
+    enabled: true
+  prepare:
+    - serial_init
+    - power_switch_init
+    - preclean
+  loop:
+    enable: true
+    count: 200
+  tasks:
+    # photo 按模式拆成 11 个 task，每个模式单元素 photo_modes + 独立 repeat，
+    # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 11 模式等价）。
+    # hdr 0~3 已真机核实为「带参数形式」（cam_set photo hdr <0-3>），非下划线独立名 hdr_0~3。
+    # single 1080p/720p/480p 三个含空格模式名仍需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
+    # heif 可能是独立模式名（cam_set photo heif），也可能带参数，待真机核实。
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [auto]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 1080p]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 720p]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 480p]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [mfnr]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 0]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 1]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 2]
+        ftp_download: false
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 3]
+        ftp_download: false
+    # TODO-CONFIRM：heif 可能是独立模式名 cam_set photo heif，也可能带参数
+    # （类似 cam_set photo hdr <0-3>），真机核实时需确认；若带参数需改 photo_modes: ["heif <参数>"]。
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [heif]
+        ftp_download: false
+    # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "sd1080p_0"
+        ftp_download: false
+
+    # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "sd1080p_1"
+        ftp_download: false
+
+    # sd1080p_2: 预期 2016x1034 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "sd1080p_2"
+        ftp_download: false
+
+    # hd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "hd1080p_1"
+        ftp_download: false
+
+    # hd1080p_2: 预期 1296x2304 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "hd1080p_2"
+        ftp_download: false
+
+    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "3k_2"
+        ftp_download: false
+
+    # 720p_0: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_0"
+        ftp_download: false
+
+    # 720p_1: 预期 1280x720 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_1"
+        ftp_download: false
+
+    # 720p_2: 预期 1600x900 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "720p_2"
+        ftp_download: false
+
+    # 480p_0: 预期 640x480 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_0"
+        ftp_download: false
+
+    # 480p_1: 预期 640x480 横屏（用户口述估计，TODO-CONFIRM 待真机 ffprobe 校准）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_1"
+        ftp_download: false
+
+    # 480p_2: 预期 800x600 横屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "480p_2"
+        ftp_download: false
+
+  cleanup:
+    - power_switch_close
+    - close_serial
