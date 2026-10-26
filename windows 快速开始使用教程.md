@@ -219,6 +219,8 @@ cd D:\prj\Gravity_ATS
 powershell -ExecutionPolicy Bypass -File scripts\setup_windows.ps1
 # 改好 ATS\config\system.yaml 里的 WiFi / 串口 / 电源开关
 .\.venv-cli\Scripts\python.exe -m ATS.main --scenario normal --no-interactive-wifi
+#如果你没有路由器使用
+.\.venv-cli\Scripts\python.exe -m ATS.main --scenario stress_NoFtp_NoRtmp
 ```
 
 三条命令 + 改一个文件，搞定。
