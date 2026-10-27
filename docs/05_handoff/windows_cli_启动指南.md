@@ -101,7 +101,46 @@ cd .\dist\AtsCli
 - RTMP 需 nginx-rtmp 监听 1935（未就绪只跳过 preview，不影响 photo/video 判据）。
 - USB-UART 驱动、EVB 上电另备（exe 不包含）。
 
-## 6. 关联文档
+## 6. 打包发布（生成 exe）
+
+> 打包源码是 `AtsCli.spec` + `scripts/build_windows_exe.py`；产物在 `dist/`（已被 `.gitignore` 忽略，不进 git）。
+
+### 6.1 打包命令（在仓库根目录执行）
+
+```powershell
+# 1. 首次：给打包机 venv 装 PyInstaller（只需装一次；目标机永远不需要）
+.\.venv-cli\Scripts\python.exe -m pip install pyinstaller
+
+# 2. 打包 + 组装发布目录 + 打 zip
+#    必须用 .venv-cli 的 Python（含 pyyaml）；系统 Python 缺 pyyaml 会 fail-closed 报错退出
+.\.venv-cli\Scripts\python.exe scripts\build_windows_exe.py
+
+# 变体：不打 zip，只留 dist/AtsCli/ 目录
+.\.venv-cli\Scripts\python.exe scripts\build_windows_exe.py --skip-zip
+```
+
+### 6.2 产物位置
+
+| 产物 | 路径 |
+|------|------|
+| 发布目录 | `dist/AtsCli/`（含 AtsCli.exe、config/、tools/ffmpeg/、5 个 run_*.bat、使用说明.txt） |
+| 交付压缩包 | `dist/AtsCli_release.zip` |
+
+### 6.3 打包前检查
+
+1. **PyInstaller**：`.venv-cli` 已装（`-m pip install pyinstaller`）。
+2. **ffmpeg 三件套**：优先取 `tools/ffmpeg/*.exe`，否则回退 PATH（本机 winget 已装，会从 PATH 拷入）。
+3. **打包机必须用含 pyyaml 的解释器**（`.venv-cli`），否则收敛失败直接报错退出——这是防敏感项泄漏的 fail-closed 红线。
+4. 打包后 `config/system.yaml` 与 `_internal/ATS/config/system.yaml` 都应 `upload.enabled: false` 且无 `server/token_file/ca_cert`。
+
+### 6.4 打包后验收
+
+```powershell
+.\dist\AtsCli\AtsCli.exe --dry-run            # 配置/依赖校验（应退出码 0）
+.\dist\AtsCli\AtsCli.exe --list-scenarios     # 应列出 exe 同级 config/scenarios/ 的场景
+```
+
+## 7. 关联文档
 
 - 分支状态：[windows_cli_status.md](windows_cli_status.md)
 - 分支待办：[windows_cli_next_step.md](windows_cli_next_step.md)
