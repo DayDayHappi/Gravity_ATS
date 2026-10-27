@@ -65,6 +65,13 @@
 >
 > ⚠️ **环境红线**：EVB IP 由路由器 DHCP 分配，会随重连/重启漂移。防火墙 `Gravity ATS CLI FTP - Board101` 的 `RemoteAddress` **必须用网段 `192.168.1.0/24`，禁止写死单 IP**。改规则需管理员 PowerShell（普通 shell 报 Windows 系统错误 5），命令见排查报告「后续复发」一节。
 
+## 已完成（feature/windows-cli 打包发布，devlog `20261027_1112`）
+
+- 新增 `AtsCli.spec` + `scripts/build_windows_exe.py`：onedir 控制台 exe 打包 + 发布目录组装（config/ + tools/ffmpeg + 5 个启动器 bat + 使用说明.txt + zip）。
+- `ATS/core/config.py` 的 `CONFIG_DIR` 改 frozen 感知（exe 同级 `config/` 优先，缺 `system.yaml` 回退 `_MEIPASS` 内置备份）；`config_dir` 透传缺口修复（runner/scenario_manager×3/ftp 四处）；`portal_upload._PROJECT_ROOT` frozen 感知。
+- 发布版 `system.yaml` 收敛（`upload.enabled=false` + 去 `server/token_file/ca_cert`），且 fail-closed（无 pyyaml 直接报错，不静默产出含敏感项产物）。
+- 目标机依赖边界：Python/pip/venv/ffmpeg 均免装（ffmpeg 随包）；nginx-rtmp、USB-UART 驱动另备。
+
 ## 待办（Code Agent）
 
 - **preview 窗口尺寸可配置（方案 A）**：Windows 下 ffplay 画面窗口过大（跟随视频原始分辨率）且无法 resize/移动。方案 A：`preview_manager.py` 的 `_argv()` 加 `-x/-y`（值从 `preview.yaml` 的 `window_width`/`window_height` 读，默认 960/540）。详见 [windows_cli_next_step.md](windows_cli_next_step.md)。

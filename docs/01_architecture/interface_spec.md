@@ -84,7 +84,7 @@ python3 -m ATS.main --no-interactive-wifi  # 非交互连 WiFi
 python3 -m ATS.main --port /dev/ttyUSB0    # 指定串口
 python3 -m ATS.main --terminal             # 交互式串口终端
 python3 -m ATS.main --format               # 强制格式化 eMMC
-python3 -m ATS.main --power-stress         # 串口上下电控制模块独立压测(TC-PS-001，仅控制器不接EVB)
+python3 -m ATS.main --power-stress         # ⚠️ 实现文件 ATS/tools/power_switch_stress.py 缺失，入口已降级报错（退出码 2），当前不可用（见 known_issue.md）
 ```
 
 > 注意：`--modules` / `--skip` 已移除，`--scenario` 成为主入口。`test_config.yaml` 已删除。

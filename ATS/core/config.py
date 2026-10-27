@@ -13,6 +13,7 @@
 配置是「数据驱动」核心：增删测试项/改流程，大多只动 YAML，不改代码。
 """
 import os
+import sys
 import re
 import copy
 import glob
@@ -24,8 +25,33 @@ except ImportError:  # pragma: no cover
 
 _ENV_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
-# 默认配置目录：ATS/config
-CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config")
+# 打包内置只读配置备份目录（PyInstaller --add-data 打进的 _MEIPASS/ATS/config）
+_INTERNAL_CONFIG_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config"
+)
+
+
+def _resolve_config_dir() -> str:
+    """解析默认配置目录（T1，frozen 感知）。
+
+    优先级：
+    1. 显式 ``--config-dir`` 传入：由调用方传入，不在本函数处理。
+    2. ``sys.frozen`` 为真（PyInstaller 打包 exe）：
+       - 优先 ``<exe 同级>/config``（用户可编辑目录）；
+       - 该目录不存在或缺 ``system.yaml`` 时，回退到打包内置的
+         ``_MEIPASS/ATS/config``（只读备份，保证首次运行 ``--list-scenarios`` 可用）。
+    3. 非 frozen：维持 ``__file__`` 向上两级派生的 ``ATS/config``（不影响 Linux 主线）。
+    """
+    if getattr(sys, "frozen", False):
+        exe_side = os.path.join(os.path.dirname(os.path.abspath(sys.executable)), "config")
+        if os.path.isfile(os.path.join(exe_side, "system.yaml")):
+            return exe_side
+        return _INTERNAL_CONFIG_DIR
+    return _INTERNAL_CONFIG_DIR
+
+
+# 默认配置目录：ATS/config（frozen 下优先 exe 同级 config/，缺 system.yaml 回退内置备份）
+CONFIG_DIR = _resolve_config_dir()
 
 # 模块名 -> 配置文件名（wifi_check/scan/join 共用一个 wifi.yaml）
 _MODULE_FILE_MAP = {

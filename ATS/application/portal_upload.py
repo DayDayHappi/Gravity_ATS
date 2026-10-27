@@ -24,6 +24,7 @@ import hashlib
 import json
 import os
 import ssl
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -35,9 +36,14 @@ from ..core import logger
 # token 默认路径（协议 §2）
 _DEFAULT_TOKEN_FILE = os.path.expanduser("~/.config/ats-portal/token")
 
-# 工程根目录（本文件 ATS/application/portal_upload.py 向上三级），
-# 用于把 token_file / ca_cert 相对路径归一化到工程根，避免随启动 cwd 漂移。
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# 工程根目录（T3：frozen 感知）。
+# - frozen（PyInstaller exe）：token_file / ca_cert 相对路径锚定 exe 同级（发布包根目录）。
+# - 非 frozen：本文件 ATS/application/portal_upload.py 向上三级（ATS 源码所在工程根）。
+# 用途：把 token_file / ca_cert 相对路径归一化到发布包/工程根，避免随启动 cwd 漂移。
+if getattr(sys, "frozen", False):
+    _PROJECT_ROOT = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # API 前缀（协议 §1）
 _API_PREFIX = "/api/v1"

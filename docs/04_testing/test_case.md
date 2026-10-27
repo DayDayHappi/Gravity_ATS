@@ -57,3 +57,4 @@
 **下电判据（固件特性，ADR-015 实测）**：控制器响应帧返回的是**切换前状态**（下电前 ON → 回 `A0 01 01 A2`；已 OFF → 回 `A0 01 00 A1`），**发一次即生效**，无需轮询。故下电判据为「收到合法状态帧」而非「必回 OFF」；只有上电回 ON 作为硬判据。旧 30 周期×10s 真机压测全部回合法帧，下电每轮均生效（回 `01` = 切换前 ON，切到 OFF）。
 
 **已实现（Code Agent，devlog `20260921_1330`/`20260921_1402`/`20260921_1436`）**：`power_on()/power_off()` 已增强为「发帧 + 读响应」返回，读空自动重试一次；`is_valid_state_frame`/`frame_state` 判据沉淀到 `power_commands.py`；控制器通信写独立 `power_switch.log`。压测入口 `python3 -m ATS.main --power-stress`。
+> ⚠️ **入口现状（2026-10-27）**：`ATS/tools/power_switch_stress.py` 实现文件从未被 git 跟踪，`--power-stress` 已降级为明确报错（退出码 2），**当前不可用**；重建或摘除待决策，见 [known_issue.md](../05_handoff/known_issue.md)。

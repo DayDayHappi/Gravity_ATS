@@ -13,7 +13,7 @@ from ATS.core.runner import ScenarioAbort, TestRunner
 from ATS.core.scenario import LoopConfig, Scenario, Task
 from ATS.modules.base import TestModule, register
 
-rmod.load_module_config = lambda name: {}
+rmod.load_module_config = lambda name, config_dir=None: {}
 
 
 def _make_scenario(module_name, loop_count=5, loop_enable=True):

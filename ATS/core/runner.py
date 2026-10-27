@@ -109,7 +109,8 @@ class TestRunner:
                 continue
 
             # 参数合并：module 默认 + task.override + task.duration(经 duration_key)
-            module_defaults = load_module_config(task.module)
+            # T2：透传 ctx.config_dir，frozen 下读 exe 同级 config/modules/*.yaml
+            module_defaults = load_module_config(task.module, getattr(self.ctx, "config_dir", None))
             params = dict(task.override or {})
             dk = getattr(cls, "duration_key", None)
             if task.duration is not None and dk:

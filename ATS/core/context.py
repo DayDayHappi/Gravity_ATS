@@ -24,6 +24,7 @@ class Context:
     # wifi_ssid:     str     实际连接的 SSID
     # skip_wifi:     bool    WiFi 已交互连上，跳过 wifi 用例
     # console:       SerialConsole  串口控制台（由 runner 注入）
+    # config_dir:    str    配置目录锚点（ScenarioManager 透传，frozen 下为 exe 同级 config/）
     # power_switch:  PowerSwitch  串口上下电控制器（ADR-015，prepare 探测）
     # board_health_monitor:  BoardHealthMonitor（ADR-016，prepare 启动）
     # recovery_coordinator:  RecoveryCoordinator（ADR-016）

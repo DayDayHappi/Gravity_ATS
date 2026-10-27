@@ -18,7 +18,7 @@ from ATS.core.scenario_manager import ScenarioError, ScenarioManager
 from ATS.drivers import power_commands as pc
 from ATS.modules.base import TestModule, register
 
-rmod.load_module_config = lambda name: {}
+rmod.load_module_config = lambda name, config_dir=None: {}
 
 
 class _FakeSerial:

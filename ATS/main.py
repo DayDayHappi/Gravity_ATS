@@ -203,7 +203,19 @@ def main(argv=None) -> int:
 
     # --power-stress: 串口上下电控制模块独立压测（TC-PS-001，不走测试流程）
     if args.power_stress:
-        from ATS.tools.power_switch_stress import run_from_args as run_ps_stress
+        # BUG-008（预存缺口）：ATS/tools/power_switch_stress.py 从未被 git 跟踪、
+        # 仓库任何分支/备份均无历史，--power-stress 会 ImportError 崩溃。
+        # 这里降级为明确报错（不静默、不伪造实现），退出码 2（环境/入口错）。
+        # 后续由 Code Agent 按 devlog 20260921_1330/1402/1436/1517 重建该工具，
+        # 或由 Document Agent 摘除该 CLI 入口并同步 interface_spec.md/test_case.md。
+        try:
+            from ATS.tools.power_switch_stress import run_from_args as run_ps_stress
+        except ImportError as e:
+            print("[power-stress] 功能不可用：实现文件 ATS/tools/power_switch_stress.py 缺失"
+                  "（仓库从未跟踪，疑似历史 merge 丢失）。", file=sys.stderr)
+            print(f"[power-stress] 需重建该工具或由 Document Agent 摘除本入口。原始错误: {e}",
+                  file=sys.stderr)
+            return 2
         # 关键前置：先初始化 logger，否则 power_switch.log 因 _LOG_DIR=None 恒空转。
         # power-stress 不是 scenario，日志根目录单独约定 logs/power_stress/<date>/。
         rpt_cfg = system_cfg.get("report", {}) or {}

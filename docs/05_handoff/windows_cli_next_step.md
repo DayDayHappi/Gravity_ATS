@@ -3,6 +3,10 @@
 > 本文件是**分支专属**待办，短期不会合入 `new_arch`。
 > 合主线时由 Document Agent 一次性整合进主 `next_step.md`，不在分支上碰主文件。
 
+## 🔴 P0 — `--power-stress` 入口实现文件缺失（待决策：重建或摘除）
+
+`ATS/tools/power_switch_stress.py` 从未被 git 跟踪，仓库任何分支/备份均无历史；`--power-stress` 原会 ImportError 崩溃。已做防御性降级（devlog `20261027_1112`：捕获 ImportError 明确报错、退出码 2）。**重建该工具（对照 devlog `20260921_1330/1402/1436/1517`）或摘除该 CLI 入口并同步 `interface_spec.md`/`test_case.md`，待决策。**
+
 ## 决策状态（已定案）
 
 1. **实现方式**：**方案 A**（抽 `ATS/platform/` 平台抽象层）。

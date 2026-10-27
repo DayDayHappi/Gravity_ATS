@@ -447,8 +447,8 @@ def _action_preview_start(ctx, system_cfg):
     from ..drivers.rtmp_server import RtmpServer, RtmpServerError
     from .config import load_module_config
 
-    preview_cfg = load_module_config("preview")
-    rtmp_cfg = load_module_config("rtmp")
+    preview_cfg = load_module_config("preview", getattr(ctx, "config_dir", None))
+    rtmp_cfg = load_module_config("rtmp", getattr(ctx, "config_dir", None))
 
     # pc_ip 解析顺序：system.pc.ip -> auto 探测（复用 preview_manager._detect_pc_ip）
     evb_ip = getattr(ctx, "evb_ip", None)
@@ -511,7 +511,7 @@ def _action_health_monitor_start(ctx, system_cfg):
     from .config import load_module_config
 
     console = getattr(ctx, "console", None)
-    mon_cfg = load_module_config("board_health") or {}
+    mon_cfg = load_module_config("board_health", getattr(ctx, "config_dir", None)) or {}
     monitor = BoardHealthMonitor({**mon_cfg, **hm_cfg})
     monitor.start()
     if console is not None:
@@ -653,6 +653,7 @@ class ScenarioManager:
 
         ctx = Context()
         ctx.system_config = self.system_cfg
+        ctx.config_dir = self.config_dir          # T2：modules 层配置透传锚点（frozen 下 exe 同级可编辑目录）
         ctx.no_interactive_wifi = no_interactive_wifi
         ctx.preview_enabled = bool(self.preview_cfg.get("enabled", False))
         ctx.serial_fingerprint = scenario.serial_fingerprint   # ADR-013

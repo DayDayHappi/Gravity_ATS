@@ -90,7 +90,7 @@ def start_ftp(ctx, console, cfg=None):
         cfg = getattr(ctx, "ftp_cfg", None)
     if cfg is None:
         from ..core.config import load_module_config
-        cfg = load_module_config("ftp")
+        cfg = load_module_config("ftp", getattr(ctx, "config_dir", None))
     ctx.ftp_cfg = cfg
 
     # 1. 启动 EVB 端 FTP 服务（全局只发一次）。发 ftp_server 后必须等到

@@ -39,10 +39,15 @@
 - **只能识别「串口静默型整板无响应」**（超过 `inactivity_timeout` 无任何 RX：板子彻底安静、CPU hang 后不再打印、掉电）。若业务线程已死、msh 无法工作但后台错误日志持续刷串口，`last_rx` 会一直更新，Monitor 不会进入 SUSPECTED。本轮不扩大成复杂多源 watchdog。
 - 未来扩展方向：Task 业务 timeout → 触发 board health probe → shell 也不响应 → 升级 UNRESPONSIVE，覆盖「串口仍刷日志但控制链路已死」的故障。
 
+## Windows CLI 打包（feature/windows-cli）
+
+- **`--power-stress` 入口实现文件缺失（预存缺口）**：`ATS/tools/power_switch_stress.py` 从未被 git 跟踪，仓库任何分支/备份均无历史，`--power-stress` 原本会 `ImportError` 崩溃。已做**防御性降级**（devlog `20261027_1112`）：`main.py` 捕获 ImportError 后明确报错返回退出码 2，不静默、不伪造实现。**重建或摘除该工具待 Document Agent 决策**（涉及 `interface_spec.md`/`test_case.md` 同步）。
+
 ## 文档过时点（后续顺手修）
 
 | 位置 | 现象 |
 |------|------|
+| `interface_spec.md` / `test_case.md` | 宣称 `python3 -m ATS.main --power-stress` 可用，但 `ATS/tools/power_switch_stress.py` 实现文件缺失（本文件「Windows CLI 打包」一节），入口已降级报错，需同步 |
 | `config/system.yaml` | WiFi 默认值已再次变更为 `sw_test_24g`/`12345678`（commit `a9bf449`，历史候选 SW-test-2.4G/ftp_hw_2_4g/G-Demo/ftp_test_2_4G 已注释）；但 `ATS/README.md`、`archive/使用手册`、`archive/00_阅读导航` 仍写 `G-Demo`/`Gdemo@123` |
 | `devlog 20260817_0203` L24/L37 | 写「1080p = 1296×2304」「板子分辨率只支持 4k/1080p 两档」——**错误**。ffprobe 实测（2026-09-08）：`cam_set video 1080p` → 1920×1080（横屏）；不发 cam_set 直接录 → 1296×2304（竖屏，固件默认）；`cam_set video 3k` → 2268×3024（竖屏）。1296×2304 是不发 cam_set 时的固件默认，非 1080p 档。正确映射见 current_status.md「固件行为快照」 |
 | `modules/__init__.py` | 注释说 wifi 注册 scan/join，实际还注册了 `wifi_check` |

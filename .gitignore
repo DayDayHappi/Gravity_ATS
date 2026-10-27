@@ -11,6 +11,10 @@ logs/
 reports/
 downloads/
 
+# PyInstaller 打包产物（AtsCli.spec 跟踪，build/ 与 dist/ 是本地构建产物）
+build/
+dist/
+
 # 实测样本（开发参考，保留本地）
 res/
 
