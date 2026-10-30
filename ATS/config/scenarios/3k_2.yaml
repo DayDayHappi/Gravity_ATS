@@ -1,0 +1,36 @@
+# 压测场景：photo 50 次 + video 3min + rtmp 10min，整轮循环 3 次
+scenario:
+  name: 3k_2
+  preview:
+    enabled: true
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: true
+    count: 200
+  tasks:
+ 
+
+    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
+    - module: video
+      repeat: 1
+      duration: 20
+      override:
+        video_resolution: "3k_2"
+
+    
+    # 录像完成后统一做 H265 完整性检测：检本轮全部未检文件，跨 loop 靠 manifest 去重不重复检。
+    # 不能用 latest_unchecked（只检最新 1 个，会漏掉 sd1080p_0/1 的 repeat:10 其余 9 个）。
+    - module: video_integrity
+      override:
+        input:
+          source: "current_run"
+          selection: "all_unchecked"   # 检本轮全部未检文件；跨 loop 靠 manifest 去重不重复检
+          empty_input_policy: "skip"   # 某 size 录像失败/未下载时不判 FAIL，跳过而非双重惩罚
+  cleanup:
+
+    - power_switch_close
+    - close_serial
