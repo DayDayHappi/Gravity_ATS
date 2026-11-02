@@ -22,6 +22,26 @@ scenario:
     - module: photo
       repeat: 1
       override:
+        photo_modes: [hdr 0]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 1]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 2]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [hdr 3]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [mfnr]
+    - module: photo
+      repeat: 1
+      override:
         photo_modes: [auto]
     - module: photo
       repeat: 1
@@ -39,26 +59,8 @@ scenario:
       repeat: 1
       override:
         photo_modes: [single 480p]
-    - module: photo
-      repeat: 1
-      override:
-        photo_modes: [mfnr]
-    - module: photo
-      repeat: 1
-      override:
-        photo_modes: [hdr 0]
-    - module: photo
-      repeat: 1
-      override:
-        photo_modes: [hdr 1]
-    - module: photo
-      repeat: 1
-      override:
-        photo_modes: [hdr 2]
-    - module: photo
-      repeat: 1
-      override:
-        photo_modes: [hdr 3]
+
+
     # TODO-CONFIRM：heif 可能是独立模式名 cam_set photo heif，也可能带参数
     # （类似 cam_set photo hdr <0-3>），真机核实时需确认；若带参数需改 photo_modes: ["heif <参数>"]。
     - module: photo
