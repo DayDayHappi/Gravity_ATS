@@ -14,6 +14,7 @@ from typing import Mapping
 PHOTO_MODES: Mapping[str, str] = MappingProxyType({
     "auto": "cam_set photo auto",
     "single": "cam_set photo single",
+    "single 12m": "cam_set photo single 12m",
     "single 1080p": "cam_set photo single 1080p",
     "single 720p": "cam_set photo single 720p",
     "single 480p": "cam_set photo single 480p",
