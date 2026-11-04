@@ -59,6 +59,10 @@ scenario:
       repeat: 1
       override:
         photo_modes: [single 480p]
+    - module: photo
+      repeat: 1
+      override:
+        photo_modes: [single 12m]
 
 
     # TODO-CONFIRM：heif 可能是独立模式名 cam_set photo heif，也可能带参数
