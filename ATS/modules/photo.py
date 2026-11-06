@@ -176,11 +176,12 @@ class PhotoModule(TestModule):
         # （与历史单张语义一致，只是覆盖范围从第一张扩展到全部）。
         downloaded = []         # 成功下载且校验通过的本地路径
         verify_failed = None    # (jpg, vmsg)：第一张已下载但校验失败的
-        for jpg in jpgs:
+        for jpg, size in jpgs:
             remote = f"{save_dir}/{jpg}"
             local = os.path.join(dl_dir, jpg)
-            # download() 内部每次 connect() 重建连接，循环下载多张安全
-            if not ftp2.download(remote, local, timeout=30, retries=2):
+            # download() 内部每次 connect() 重建连接，循环下载多张安全；
+            # size 来自上面 _list_jpgs 的 LIST 结果，传 size_hint 免掉每张再 LIST 一次。
+            if not ftp2.download(remote, local, timeout=30, retries=2, size_hint=size):
                 continue   # 单张下载失败：辅助降级，继续下一张
             ok, vmsg = self._verify_image(local, _classify_image(jpg), min_kb_by_kind)
             if ok:
@@ -214,8 +215,9 @@ class PhotoModule(TestModule):
             return []
 
     def _list_jpgs(self, ftp, dir_path):
-        """列指定目录下的图片文件名（.jpg / .heic / .heif）。
+        """列指定目录图片，返回 ``[(name, size), ...]``（.jpg / .heic / .heif）。
 
+        size 供 ``download(size_hint=...)`` 复用，避免每个文件再 LIST 一次父目录。
         heif 拍照固件产出 .heic（日志 `...heic saved` / `Save Heif Successful`），
         若只认 .jpg 会漏掉 heif 模式产物，导致「未列出 jpg 辅助验证」降级 PASS。
 
@@ -223,7 +225,7 @@ class PhotoModule(TestModule):
         在 ``_verify_image`` 中按产物类型单独取（BUG-008）。
         """
         try:
-            return [n for n in ftp.list_files(dir_path)
+            return [(n, sz) for n, sz in ftp.list_files_detail(dir_path)
                     if n.lower().endswith((".jpg", ".heic", ".heif"))]
         except Exception:
             return []
