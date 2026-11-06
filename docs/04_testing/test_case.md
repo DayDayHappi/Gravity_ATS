@@ -31,7 +31,7 @@
 
 ## 判据要点
 
-- photo：FTP 下载 JPEG 头（FFD8FF）+ 大小 > 10KB 为辅助，失败降级不判 FAIL；遍历 photo_modes。
+- photo：FTP 下载 JPEG 头（FFD8FF）+ 大小阈值为辅助，失败降级不判 FAIL；遍历 photo_modes。阈值按产物类型分档（BUG-008）：主图 `photo_min_size_kb`(10) / 缩略图 `photo_thumb_min_size_kb`(4) / HEIC `photo_heif_min_size_kb`(4)。
 - video：FTP 下载校验大小 > 100KB 为辅助。
 - rtmp：不依赖 ftp；ffprobe 探测必须在 `rtmp_video_stop` 之前。
 

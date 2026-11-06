@@ -2,6 +2,60 @@
 
 > 只保留未完成任务，按优先级。
 
+## ✅ 已完成 — photo 缩略图套用主图大小阈值致全模式假 FAIL（BUG-008）
+
+**已修复 + 真机验证通过**（devlog `20261105_1116`，Document Agent 复核）。
+
+- **原现象**：真机 `20261104_182626` 跑完 56 cycle，277 条 photo FAIL 全部为 `文件过小 …_thum.jpg 校验失败`；
+  主图 2966 张 0 失败、448 张缩略图全部可解码（480×360，`FF D9` 结尾）。产品功能正常，属判据假 FAIL。
+- **根因**：`_list_jpgs()` 把固件缩略图 `*_thum.jpg` 与主图混为一类，`_verify_jpeg()` 统一套用
+  `photo_min_size_kb: 10`；缩略图亮场景仅约 9KB。
+- **修复**：`_classify_image()`（main/thumbnail/heif）+ `_min_kb_by_kind()` 分档阈值；
+  新增 `photo_thumb_min_size_kb: 4`、`photo_heif_min_size_kb: 4`（主图仍 10）。判据红线未变。
+- **验证**：71 单测 OK；真实产物回放 fail=0；真机 `20261105_133805` 58 cycle → photo **636 PASS**，
+  `_thum.jpg 校验失败` 与 `文件过小` 均为 **0**。
+
+**遗留 TODO-CONFIRM（新开，不在 BUG-008 内）**：`single 480p` 主图实测最小 **10240B，距 10KB 阈值为 0**
+（413 张中 34 张 ≤11264B），画面更简单时会假 FAIL。需人工拍板：单独为低分辨率主图设档 / 下调该档阈值 /
+改「格式头 + SOF 尺寸」判据。详见 [BUG-008](../03_development/bugfix/BUG-008-photo缩略图套用主图大小阈值致误判FAIL.md)「遗留 TODO-CONFIRM」。
+
+---
+
+## 🔴 P0 — 压测把 eMMC 写满，后半程 photo/video/rtmp 全失败（新，待决策）
+
+**现象（真机 `logs/stress/20261105/20261105_133805`，2026-11-05 13:38 → 11-06 09:19，58 cycle）**
+
+| 指标 | 结果 |
+|---|---|
+| eMMC 剩余 | 29.62GB → **0**（08:09:53 归零，缺口 28.25GB） |
+| `eMMC full` 串口报错 | **125 条** |
+| 失败起点 | cycle 53（video）/ cycle 54（photo），此后每轮固定失败 |
+| photo FAIL | 60，全为「拍照未完成保存」 |
+| video FAIL | 59（58「开始录像失败」+1「停止录像失败」） |
+| rtmp FAIL | 5（`ffprobe Input/output error`） |
+| photo 阈值类失败 | **0**（BUG-008 修复有效，与本节无关） |
+
+固件原文：
+```
+E/App Dfs: eMMC full: not enough free space (0KB free, need 3072KB), photo not started, run 'clean_emmc' to free space
+E/App Dfs: eMMC Space Total:61072064KB Used:61072064KB Free:0KB
+```
+
+**定性**：**不是脚本判据缺陷，是压测把板端 58.7GB eMMC 写满**（约 0.53GB/cycle）。固件行为正确（拒绝写入并明确报错）。
+脚本侧的问题是**没有容量护栏**：`preclean` 只做 `cd /` + stop video，不查/不释放空间；
+`photos/` 本地保留 28GB 现场文件，从未清理。
+
+**待决策方向（Code Agent 实施前需人工拍板，涉及是否格式化板端数据）**
+1. **增加容量检查/清理**：prepare 或 photo/video 前解析固件 `eMMC Space Total…Free:` 行（每拍/每录都会打印），
+   低于阈值则告警或执行 `clean_emmc`（需确认该命令语义与风险）。
+2. **场景参数化**：`stress.yaml` 的 loop.count 与单轮产物体积挂钩，或降低 photo repeat / video duration。
+3. **本地日志清理策略**：每 run 28GB 的 photos/videos 是否需保留全量（当前保留，占 PC 磁盘）。
+4. `--format` 已存在（`emmc.format: true`，mkfs+mount），但会在 prepare 阶段擦盘，适合"已知脏盘"场景而非运行中自愈。
+
+**红线**：不得把 eMMC full 判为 PASS；固件已明确拒绝写入，脚本 FAIL 是正确行为。
+
+---
+
 ## 🔴 P0 — recovery 冷启动改「先下电 → 再上电」（待实施）
 
 **需求（用户 2026-09-30）**：recovery 模式下每次脚本第一次运行时，串口控制器当前是「先发上电命令」，调整为「先发下电命令，再发上电命令」，使板子从确定的下电状态启动（而非假设已带电、直接上电可能是空操作）。

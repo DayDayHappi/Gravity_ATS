@@ -83,11 +83,13 @@
 ## photo
 
 - **Responsibility**：遍历拍照模式，每拍一次验证产物。
-- **Input**：photo_modes 参数。
+- **Input**：photo_modes 参数；三档大小阈值 `photo_min_size_kb`（主图，10）/ `photo_thumb_min_size_kb`（缩略图，4）/ `photo_heif_min_size_kb`（HEIC，4）。
 - **Output**：串口 `Capture completed successfully.`（主判据，相机日志全部打印完的完成标志）。
 - **Dependency**：逻辑依赖 FTP 就绪（需 FTP 客户端），由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得写 for 循环重复**（重复由 Scenario 的 task.repeat 驱动）；不感知场景类型。
 - **Lifecycle**：每模式一次动作；FTP 下载 JPEG 校验为辅助，失败降级不判 FAIL。
+- **产物构成（校验需分类）**：一次拍照目录同时含主图 `Image_<ts>_<n>.jpg`（1008×4032 等，≥12KB）、固件缩略图 `Image_<ts>_thum.jpg`（480×360，约 9KB）、heif 模式为 `.heic`（7~83KB）。校验按 `_classify_image` 分类后取对应阈值（BUG-008）；**不得对全部文件套用同一阈值**。
+- **容量前置（未实施）**：固件 eMMC 写满时报 `eMMC full: not enough free space` 并拒绝拍照，模块随之 FAIL。当前模块不做容量检查，长时间压测需场景侧控制（见 `05_handoff/known_issue.md`「eMMC 容量写满」）。
 
 ## video
 
