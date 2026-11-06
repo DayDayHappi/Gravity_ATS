@@ -9,7 +9,8 @@
 2. ``cam_set photo <mode>`` 切模式 + 稳定延时
 3. ``dfs_capture_start`` 拍照
 4. 轮询 FTP 列 /emmc/PIC，等出现新时间戳目录（超时 photo_capture_timeout）
-5. 下载新目录里第一个 jpg，验证 JPEG 头 ``FF D8 FF`` + 大小 > 阈值
+5. 下载新目录里的全部图片，按产物类型（主图 / 缩略图 / HEIC）分别校验
+   格式头（JPEG ``FF D8 FF`` / HEIF ``ftyp``）+ 各自的大小阈值
 
 某模式失败只标记该模式 FAIL，继续下一个模式，不影响后续录像/推流。
 返回多条 TestResult（每模式一条）。
@@ -32,6 +33,39 @@ _JPEG_MAGIC = b"\xff\xd8\xff"
 # 随后 4 字节应为 "ftyp"。heif 拍照固件产出 .heic/.heif，不能套 JPEG 魔数校验。
 _HEIF_FTYP = b"ftyp"
 
+# 产物类型（BUG-008）：同一次拍照目录里主图与缩略图尺寸量级不同，大小阈值必须分档。
+_KIND_MAIN = "main"
+_KIND_THUMBNAIL = "thumbnail"
+_KIND_HEIF = "heif"
+
+_KIND_LABELS = {
+    _KIND_MAIN: "主图",
+    _KIND_THUMBNAIL: "缩略图",
+    _KIND_HEIF: "HEIC",
+}
+
+# 固件缩略图命名：Image_<ts>_thum.jpg（480×360，实测 8.4–22.5KB）
+_THUMB_SUFFIX = "_thum.jpg"
+
+
+def _classify_image(name: str) -> str:
+    """按文件名判定产物类型：thumbnail / heif / main。"""
+    lower = name.lower()
+    if lower.endswith(_THUMB_SUFFIX):
+        return _KIND_THUMBNAIL
+    if lower.endswith((".heic", ".heif")):
+        return _KIND_HEIF
+    return _KIND_MAIN
+
+
+def _min_kb_by_kind(config: dict) -> dict:
+    """从模块配置构建分档阈值表（缺省值与 photo.yaml 一致，老配置可不写新增键）。"""
+    return {
+        _KIND_MAIN: int(config.get("photo_min_size_kb", 10)),
+        _KIND_THUMBNAIL: int(config.get("photo_thumb_min_size_kb", 4)),
+        _KIND_HEIF: int(config.get("photo_heif_min_size_kb", 4)),
+    }
+
 
 @register("photo")
 class PhotoModule(TestModule):
@@ -46,7 +80,9 @@ class PhotoModule(TestModule):
         modes = self.config.get("photo_modes", ["auto"])
         settle = float(self.config.get("photo_settle_delay", 1.0))
         cap_timeout = float(self.config.get("photo_capture_timeout", 10.0))
-        min_kb = int(self.config.get("photo_min_size_kb", 10))
+        # 按产物类型分档阈值（BUG-008）：主图沿用 photo_min_size_kb；
+        # 缩略图/HEIC 独立可选键，缺省值与 yaml 一致，老场景不配也安全。
+        min_kb_by_kind = _min_kb_by_kind(self.config)
 
         ftp = None
         tmp_dir = None
@@ -67,11 +103,11 @@ class PhotoModule(TestModule):
         results = []
         for mode in modes:
             results.append(self._test_one(ctx, console, ftp, mode,
-                                          settle, cap_timeout, min_kb, tmp_dir,
+                                          settle, cap_timeout, min_kb_by_kind, tmp_dir,
                                           ftp_download))
         return results
 
-    def _test_one(self, ctx, console, ftp, mode, settle, cap_timeout, min_kb, tmp_dir,
+    def _test_one(self, ctx, console, ftp, mode, settle, cap_timeout, min_kb_by_kind, tmp_dir,
                   ftp_download=True):
         name = f"photo[{mode}]"
         timer = Timer().start()
@@ -146,7 +182,7 @@ class PhotoModule(TestModule):
             # download() 内部每次 connect() 重建连接，循环下载多张安全
             if not ftp2.download(remote, local, timeout=30, retries=2):
                 continue   # 单张下载失败：辅助降级，继续下一张
-            ok, vmsg = self._verify_jpeg(local, min_kb)
+            ok, vmsg = self._verify_image(local, _classify_image(jpg), min_kb_by_kind)
             if ok:
                 downloaded.append(local)
             elif verify_failed is None:
@@ -182,6 +218,9 @@ class PhotoModule(TestModule):
 
         heif 拍照固件产出 .heic（日志 `...heic saved` / `Save Heif Successful`），
         若只认 .jpg 会漏掉 heif 模式产物，导致「未列出 jpg 辅助验证」降级 PASS。
+
+        固件缩略图 `*_thum.jpg` 也在此列出（仍下载留证 + 校验），但其大小阈值
+        在 ``_verify_image`` 中按产物类型单独取（BUG-008）。
         """
         try:
             return [n for n in ftp.list_files(dir_path)
@@ -199,21 +238,32 @@ class PhotoModule(TestModule):
             time.sleep(0.5)
         return None
 
-    def _verify_jpeg(self, local, min_kb):
+    def _verify_image(self, local, kind, min_kb_by_kind):
+        """按产物类型取阈值校验已下载图片：先大小，再格式头。
+
+        Args:
+            local: 本地文件路径。
+            kind: ``main`` / ``thumbnail`` / ``heif``（见 ``_classify_image``）。
+            min_kb_by_kind: {kind: 最小 KB} 阈值表。
+
+        Returns:
+            (ok, msg)。PASS/FAIL 语义不变：已下载且校验失败 → FAIL。
+        """
+        min_kb = min_kb_by_kind[kind]
         size = os.path.getsize(local)
         if size < min_kb * 1024:
-            return False, f"文件过小 {size}B < {min_kb}KB"
-        lower = local.lower()
+            return False, f"文件过小 {size}B < {min_kb}KB（{_KIND_LABELS[kind]}）"
         with open(local, "rb") as f:
             head = f.read(12)
-        if lower.endswith((".heic", ".heif")):
+        if kind == _KIND_HEIF:
             # HEIF（ISO BMFF）：前 4 字节 box size + 随后 4 字节 "ftyp"。
             if head[4:8] != _HEIF_FTYP:
-                return False, f"HEIF 头校验失败 {head[:8]!r}"
-            return True, f"HEIF OK {size//1024}KB"
+                return False, f"HEIF 头校验失败 {head[:8]!r}（{_KIND_LABELS[kind]}）"
+            return True, f"HEIF OK {size//1024}KB（{_KIND_LABELS[kind]}）"
+        # 主图与缩略图都是 JPEG
         if head[:3] != _JPEG_MAGIC:
-            return False, f"JPEG 头校验失败 {head!r}"
-        return True, f"JPEG OK {size//1024}KB"
+            return False, f"JPEG 头校验失败 {head!r}（{_KIND_LABELS[kind]}）"
+        return True, f"JPEG OK {size//1024}KB（{_KIND_LABELS[kind]}）"
 
     def _mk(self, name, status, msg, detail, timer):
         res = TestResult(name=name, module="photo", status=status,

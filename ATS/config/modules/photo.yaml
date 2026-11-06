@@ -1,6 +1,10 @@
 # 拍照模块参数
 ftp_download: true         # true=拍完立即 FTP 下载校验；false=纯拍摄不下载（无网络场景 override）
 photo_modes: ["auto"]      # 可扩为 [auto, single, mfnr, hdr 0, hdr 1, hdr 2, hdr 3]
-photo_min_size_kb: 10
+# 大小阈值按产物类型分档（BUG-008）：同一目录下主图/缩略图/HEIC 尺寸量级不同，
+# 不得共用单一阈值（缩略图 480×360 亮场景约 9KB，HEIC 实测 6.9–83KB）。
+photo_min_size_kb: 10          # 主图（勿轻易调低，低分辨率主图余量仅约 1.7KB）
+photo_thumb_min_size_kb: 4     # 固件缩略图 *_thum.jpg（实测 8.4–22.5KB，4 为安全下界）
+photo_heif_min_size_kb: 4      # HEIC（实测 6.9–83KB）
 photo_settle_delay: 1.0    # 模式切换后稳定延时(秒)
 photo_capture_timeout: 10
