@@ -21,38 +21,21 @@
 
 ---
 
-## 🔴 P0 — 压测把 eMMC 写满，后半程 photo/video/rtmp 全失败（新，待决策）
+## ⚪ 范围外（不处理）— 压测把 eMMC 写满，后半程 photo/video/rtmp 全失败
 
-**现象（真机 `logs/stress/20261105/20261105_133805`，2026-11-05 13:38 → 11-06 09:19，58 cycle）**
+> **决策（用户 2026-11-06）：eMMC 容量不属脚本职责，暂不处理。** 本节仅作为事实留档，
+> 防止后续 Agent 把 cycle 53 后的 60 条 photo FAIL 误当判据 bug 排查。**不要派任务给 Code Agent。**
 
-| 指标 | 结果 |
-|---|---|
-| eMMC 剩余 | 29.62GB → **0**（08:09:53 归零，缺口 28.25GB） |
-| `eMMC full` 串口报错 | **125 条** |
-| 失败起点 | cycle 53（video）/ cycle 54（photo），此后每轮固定失败 |
-| photo FAIL | 60，全为「拍照未完成保存」 |
-| video FAIL | 59（58「开始录像失败」+1「停止录像失败」） |
-| rtmp FAIL | 5（`ffprobe Input/output error`） |
-| photo 阈值类失败 | **0**（BUG-008 修复有效，与本节无关） |
+**现象（真机 `logs/stress/20261105/20261105_133805`，58 cycle）**：eMMC 剩余 29.62GB → 0（约 0.53GB/cycle），
+串口 125 条 `eMMC full: not enough free space (0KB free, need 3072KB)`。cycle 53 起 video/photo/rtmp 连锁失败：
+photo 60（全「拍照未完成保存」）、video 59、rtmp 5。**photo 阈值类失败为 0**（BUG-008 修复有效，与本现象无关）。
 
-固件原文：
-```
-E/App Dfs: eMMC full: not enough free space (0KB free, need 3072KB), photo not started, run 'clean_emmc' to free space
-E/App Dfs: eMMC Space Total:61072064KB Used:61072064KB Free:0KB
-```
+**定性**：固件行为正确（拒绝写入并明确报错），脚本 FAIL 也是正确行为。不是脚本判据缺陷。
 
-**定性**：**不是脚本判据缺陷，是压测把板端 58.7GB eMMC 写满**（约 0.53GB/cycle）。固件行为正确（拒绝写入并明确报错）。
-脚本侧的问题是**没有容量护栏**：`preclean` 只做 `cd /` + stop video，不查/不释放空间；
-`photos/` 本地保留 28GB 现场文件，从未清理。
+**脚本行为不变**：`preclean` 仍只做 `cd /` + stop video，不查容量、不执行 `clean_emmc`、不自动清理。
+运行前如需干净环境，由人工决定是否 `--format`（`emmc.format: true`，mkfs+mount）。
 
-**待决策方向（Code Agent 实施前需人工拍板，涉及是否格式化板端数据）**
-1. **增加容量检查/清理**：prepare 或 photo/video 前解析固件 `eMMC Space Total…Free:` 行（每拍/每录都会打印），
-   低于阈值则告警或执行 `clean_emmc`（需确认该命令语义与风险）。
-2. **场景参数化**：`stress.yaml` 的 loop.count 与单轮产物体积挂钩，或降低 photo repeat / video duration。
-3. **本地日志清理策略**：每 run 28GB 的 photos/videos 是否需保留全量（当前保留，占 PC 磁盘）。
-4. `--format` 已存在（`emmc.format: true`，mkfs+mount），但会在 prepare 阶段擦盘，适合"已知脏盘"场景而非运行中自愈。
-
-**红线**：不得把 eMMC full 判为 PASS；固件已明确拒绝写入，脚本 FAIL 是正确行为。
+**对压测的影响**：单轮约 0.53GB，58.7GB 盘约 53 cycle 饱和。如需长跑，由人工控制 `loop.count`。
 
 ---
 
@@ -324,6 +307,30 @@ python3 -m ATS.main --scenario stress_traverse_photo_mode --no-interactive-wifi 
 - 已实施：`ATS/drivers/preview_manager.py`（单例，含断流重连 wrapper）+ `config/modules/preview.yaml`；`rtmp.py` 移除全部 ffplay 逻辑；`scenario_manager.py` 新增 `preview_start`/`preview_stop`；`normal.yaml`/`stress.yaml` 补配置（`aging.yaml` 不启用）。
 - 验收项：normal 全程 1 个 ffplay 窗口；stress repeat=3/loop 多轮不重复开窗、无残留进程；cleanup 正常关闭窗口。
 - 已知遗留（见 devlog）：终端窗口模式 `killpg` 属 best-effort；`preview_required: true` 尚未闭环「影响整体结果」。
+
+## 🟡 P2 — stress 压测耗时优化（分析已完成，待实施）
+
+**分析报告**：[04_testing/test_report_20261105_压测耗时分析.md](../04_testing/test_report_20261105_压测耗时分析.md)
+（基于 `logs/stress/20261105/20261105_133805`，58 cycle / 19.7h）
+
+耗时分布：rtmp 45.6%（其中 600s/轮为业务保持时长）、video 36.5%、photo 16.4%、video_integrity 1.5%。
+
+| 优先级 | 项 | 位置 | 预计收益 | 风险 | 状态 |
+|---|---|---|---|---|---|
+| **P1** | 每文件下载重复 LIST 整个目录 → 复用 `_list_jpgs` 的 LIST 结果（`list_files_detail()` 已存在但无人调用） | `drivers/ftp_client.py` L209 `size()` / L255；`modules/photo.py` L183 | 实测 **~1.2h**（photo 60min + video 9min） | 低 | ✅ **已实施**（devlog `20261106_1129`，LIST 11→1、单文件间隔 1.83→0.74s） |
+| **P2** | 缩略图 `*_thum.jpg` 只下载留证、不纳入校验集合（仅占产物 0.1%，却各付一次连接） | `modules/photo.py` L216 `_list_jpgs` | ~19 分钟 | 中，**需产品侧拍板** | 待决策 |
+| **P3** | 清理 photo 死参数/死方法：`_test_one` 的 `ftp` 形参、`cap_timeout`、`_list_pic_dirs`/`_wait_new_dir`、docstring 与 `photo_capture_timeout` 配置项 | `modules/photo.py` | 0 | 极低 | 待实施 |
+| **P4** | rtmp 推流后固定 `sleep(3.0)` 与 ffprobe `attempts/interval` 重试重复 | `modules/rtmp.py` L132 | ~3 分钟 | 低 | 待实施 |
+
+**不建议动**：每文件 `connect()`（板端 FTP 3s 空闲断会话，BUG-003 必需）、video 下载（2.73MB/s 为板端上限）、rtmp 600s 保持、等 `Capture completed`。
+**注意**：video 每轮实测 22.36s（配置 20s），差额为固件编码收尾，不可压缩；**时间预算按 22.4s/轮算**。
+
+> 长跑时约 53 cycle 后 eMMC 写满会连锁 FAIL —— 属**范围外**（脚本不处理），非本优化项的阻塞，但会让后续轮次的耗时数据失去参考价值。
+
+**P1 已完成**，任务单已归档至 `03_development/archive/`（实施记录见 devlog `20261106_1129`，
+完整复核结论见分析报告 §八）。**下一步建议 P2（需拍板）或 P3（零成本清理）。**
+
+---
 
 ## 🟡 P3 — loop 语义局限
 

@@ -26,6 +26,11 @@
 1. `00_project/` + `01_architecture/` 全部
 2. [02_design/decision_record/](02_design/decision_record/) 相关 ADR
 
+### 性能 / 耗时分析
+
+1. [04_testing/test_report_20261105_压测耗时分析.md](04_testing/test_report_20261105_压测耗时分析.md) — stress 19.7h 耗时拆解与优化项
+2. 对应模块源码（`modules/photo.py`、`drivers/ftp_client.py`）
+
 ### Bug 修复
 
 1. [01_architecture/module_design.md](01_architecture/module_design.md)（对应模块）
@@ -40,7 +45,7 @@
 | `01_architecture/` | 分层 / 模块职责 / 数据流 / 接口 | 改代码前 |
 | `02_design/` | ADR 设计决策 | 架构修改时 |
 | `03_development/` | devlog 历史 + bugfix + archive | 排查历史时 |
-| `04_testing/` | 测试策略 / 用例 | 验证时 |
+| `04_testing/` | 测试策略 / 用例 / 测试报告 | 验证时 |
 | `05_handoff/` | 当前状态 / 环境 / 已知问题 / 下一步 | 接手时 |
 
 ## 红线速记
