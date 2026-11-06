@@ -166,7 +166,7 @@ class VideoModule(TestModule):
         local = os.path.join(tmp_dir, f"{profile.key}_{safe_dir}_{fname}")
         logger.info(f"FTP 开始下载视频: {video_path} ({sz//1024}KB) -> {local}")
         dl_start = time.monotonic()
-        if ftp2.download(video_path, local, timeout=20, retries=6):
+        if ftp2.download(video_path, local, timeout=20, retries=6, size_hint=sz):
             dl_elapsed = time.monotonic() - dl_start
             logger.info(f"FTP 下载完成，耗时 {dl_elapsed:.1f}s")
             msg = f"{msg_base}，{sz//1024}KB | 已下载到 {local}"

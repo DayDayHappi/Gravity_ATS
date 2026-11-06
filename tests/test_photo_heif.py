@@ -24,9 +24,13 @@ from ATS.modules.photo import (
 
 class _FakeFtp:
     def __init__(self, entries):
-        self._entries = entries
+        # entries: [(name, size), ...] 或旧式 [name, ...]（size 记 0）
+        self._entries = [(e, 0) if isinstance(e, str) else e for e in entries]
 
     def list_files(self, path):
+        return [n for n, _sz in self._entries]
+
+    def list_files_detail(self, path):
         return list(self._entries)
 
 
@@ -57,9 +61,11 @@ class PhotoHeifTest(unittest.TestCase):
             path, _classify_image(os.path.basename(path)), self._min_kb)
 
     def test_list_jpgs_includes_heic_heif(self):
-        ftp = _FakeFtp(["a.jpg", "b.HEIC", "c.heif", "d.png", "e.txt"])
+        ftp = _FakeFtp([("a.jpg", 111), ("b.HEIC", 222), ("c.heif", 333),
+                        ("d.png", 444), ("e.txt", 555)])
+        # 返回值带 size，供 download(size_hint=...) 复用，省重复 LIST
         self.assertEqual(self._module._list_jpgs(ftp, "/x"),
-                         ["a.jpg", "b.HEIC", "c.heif"])
+                         [("a.jpg", 111), ("b.HEIC", 222), ("c.heif", 333)])
 
     def test_verify_heic_follows_heif_branch(self):
         p = self._path("img.heic")

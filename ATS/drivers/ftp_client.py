@@ -221,7 +221,7 @@ class FtpClient:
             return -1
 
     def download(self, remote_path: str, local_path: str, timeout: float = 30.0,
-                 retries: int = 5) -> bool:
+                 retries: int = 5, size_hint: int = None) -> bool:
         """从板子复制文件到本地（二进制下载，支持断点续传）。
 
         板子 FTP 会话空闲超过约 3s 会被服务端断开，不能假设调用前的旧连接
@@ -238,6 +238,8 @@ class FtpClient:
             local_path: 本地保存路径。
             timeout: 单次 socket 操作超时秒数（卡死即中断续传）。
             retries: 断点续传最大尝试次数。
+            size_hint: 调用方已 LIST 得到的文件字节数；None/非正数时内部 ``size()``
+                （会 LIST 父目录）。用于免掉一次重复 LIST。
 
         Returns:
             True 下载成功（本地 >= 远端）；False 失败/不完整（保留部分文件）。
@@ -252,7 +254,10 @@ class FtpClient:
             except FtpError as e:
                 logger.warn(f"下载前建连失败: {e}")
                 return False
-            total = self.size(remote_path)
+            # 调用方若已列目录拿到大小（list_files_detail），直接用，省一次 LIST 父目录；
+            # size_hint 缺失/非法时回退原有 size() 行为，向后兼容。
+            total = size_hint if (size_hint and size_hint > 0) else self.size(remote_path)
+            hint_used = bool(size_hint and size_hint > 0)
             for attempt in range(1, retries + 1):
                 if self._ftp is None:
                     try:
@@ -275,6 +280,15 @@ class FtpClient:
                     local_sz = os.path.getsize(local_path)
                     if total <= 0 or local_sz >= total:
                         return True
+                    if hint_used:
+                        # 保底复核：hint 来自先前的 LIST，可能过期/不准。
+                        # 传输正常结束但不足 hint 时，以服务端当前真实大小为准再判一次。
+                        real = self.size(remote_path)
+                        if real > 0:
+                            total = real
+                            hint_used = False
+                            if local_sz >= total:
+                                return True
                     logger.warn(f"下载提前结束({local_sz//1024}KB/{total//1024}KB)，续传 {attempt}/{retries}")
                 except Exception as e:
                     logger.warn(f"下载异常(尝试{attempt}/{retries})，已传"
