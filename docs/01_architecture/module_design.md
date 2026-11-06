@@ -89,7 +89,7 @@
 - **Forbidden Dependency**：**不得写 for 循环重复**（重复由 Scenario 的 task.repeat 驱动）；不感知场景类型。
 - **Lifecycle**：每模式一次动作；FTP 下载 JPEG 校验为辅助，失败降级不判 FAIL。
 - **产物构成（校验需分类）**：一次拍照目录同时含主图 `Image_<ts>_<n>.jpg`（1008×4032 等，≥12KB）、固件缩略图 `Image_<ts>_thum.jpg`（480×360，约 9KB）、heif 模式为 `.heic`（7~83KB）。校验按 `_classify_image` 分类后取对应阈值（BUG-008）；**不得对全部文件套用同一阈值**。
-- **容量前置（未实施）**：固件 eMMC 写满时报 `eMMC full: not enough free space` 并拒绝拍照，模块随之 FAIL。当前模块不做容量检查，长时间压测需场景侧控制（见 `05_handoff/known_issue.md`「eMMC 容量写满」）。
+- **容量前置（范围外，不做）**：固件 eMMC 写满时报 `eMMC full: not enough free space` 并拒绝拍照，模块随之 FAIL。**eMMC 容量不属脚本职责**（用户 2026-11-06 决策），模块不做容量检查、不执行 `clean_emmc`、不自动清理；长跑由人工控制轮次或运行前 `--format`。详见 `05_handoff/known_issue.md`。
 
 ## video
 

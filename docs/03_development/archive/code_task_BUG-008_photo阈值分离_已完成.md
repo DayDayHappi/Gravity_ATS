@@ -1,7 +1,8 @@
 # Code Agent 任务单：BUG-008 photo 缩略图/HEIC 大小阈值分离
 
 > 由 Document Agent 出具，交 Code Agent 执行。
-> 依据：[BUG-008](../03_development/bugfix/BUG-008-photo缩略图套用主图大小阈值致误判FAIL.md)（根因与证据）。
+> **状态：✅ 已完成**（2026-11-05，devlog `20261105_1116`，真机验证通过）。
+> 依据：[BUG-008](../bugfix/BUG-008-photo缩略图套用主图大小阈值致误判FAIL.md)（根因与证据）。
 > 文档预授权：本任务属 Level 1（模块内部实现）+ 新增可选配置键（Level 2），**Document Agent 已完成复核**，
 > Code Agent 无需再发 `Document Agent Request`；实施后按本文「交付要求」写 devlog 即可。
 

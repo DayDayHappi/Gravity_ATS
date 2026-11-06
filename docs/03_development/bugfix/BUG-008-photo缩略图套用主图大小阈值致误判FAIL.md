@@ -86,7 +86,7 @@ Code Agent 按方案 A 实施，Document Agent 复核结论：**通过**。
 
 > 该 run 的 60 条 photo FAIL **与阈值无关**：全部是 `拍照未完成保存`，起于 cycle 54，
 > 串口同步打印 `E/App Dfs: eMMC full: not enough free space (0KB free, need 3072KB), photo not started`。
-> 属另一问题（压测把 eMMC 写满），见 known_issue「eMMC 写满」条目。
+> 属另一问题（压测把 eMMC 写满）。**该问题属范围外，脚本不处理**（用户 2026-11-06 决策），见 known_issue。
 
 ## 同类风险（修复时一并覆盖）
 
