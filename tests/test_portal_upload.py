@@ -10,7 +10,7 @@ import unittest
 from urllib.parse import quote
 
 from ATS.application import portal_upload as pu
-from ATS.application.portal_upload import PortalUploadError, _sha256_size
+from ATS.application.portal_upload import _sha256_size
 
 # 内嵌自签名测试证书（仅测试用，CN=ats-portal-test，与任何生产证书无关）。
 # 用于 _build_ssl_context 的 cafile 用例，避免测试运行时依赖 openssl/外部文件。
@@ -102,7 +102,9 @@ class PortalUploadTest(unittest.TestCase):
         cfg = {"enabled": True, "token_file": os.path.join(self.tmp, "nonexistent"),
                "artifacts": [{"name": "run.log", "kind": "log"}]}
         open(os.path.join(self.tmp, "run.log"), "w").write("x")
-        with self.assertRaises(PortalUploadError):
+        # 用 pu.PortalUploadError 而非导入期绑定的类：test_windows_cli_frozen_config
+        # 会 importlib.reload(portal_upload)，模块级异常类对象会被重建。
+        with self.assertRaises(pu.PortalUploadError):
             pu.upload_run(cfg, "n", self.tmp, self.tmp, "a", "b", "completed")
 
     def test_filename_url_encoding(self):

@@ -14,8 +14,10 @@ scenario:
     enable: true
     count: 200
   tasks:
-    # photo 按模式拆成 11 个 task，每个模式单元素 photo_modes + 独立 repeat，
-    # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 11 模式等价）。
+    # photo 按模式拆成 12 个 task，每个模式单元素 photo_modes + 独立 repeat，
+    # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1）。
+    # 顺序：hdr 0~3 → mfnr → auto → single → single 1080p/720p/480p → single 12m，
+    # 末尾补 12m 属规避下一轮切换失败的既有实践（勿随意调整顺序）。
     # hdr 0~3 已真机核实为「带参数形式」（cam_set photo hdr <0-3>），非下划线独立名 hdr_0~3。
     # single 1080p/720p/480p 三个含空格模式名仍需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
     # heif 可能是独立模式名（cam_set photo heif），也可能带参数，待真机核实。
@@ -63,7 +65,6 @@ scenario:
       repeat: 1
       override:
         photo_modes: [single 12m]
-
 
     # TODO-CONFIRM：heif 可能是独立模式名 cam_set photo heif，也可能带参数
     # （类似 cam_set photo hdr <0-3>），真机核实时需确认；若带参数需改 photo_modes: ["heif <参数>"]。
