@@ -6,7 +6,9 @@
 
 ## 分支定位
 
-- 从 `new_arch` 拉出，当前与 `new_arch` **完全同点**（0 ahead / 0 behind）。
+- 从 `new_arch` 拉出，当前与 `new_arch` **已分叉**（2026-11-09：new_arch 独有 7 提交 / 本分支独有 18 提交）。
+  其中 new_arch 侧的新功能与 BUG 修复已单向同步进本分支（devlog `20261109_1512`），
+  差异仅剩本分支的 Windows 平台层 / 打包发布 / 分支专属文档。
 - 目标：让上位机自动化测试脚本在 **Windows 下可用**（CLI 形态）。
 - 短期不合主线：分支文档全部走专属文件，不碰主线 handoff / 共享索引 / ADR 编号。
 
@@ -16,10 +18,26 @@
 - **真机验证（2026-09-20，stress 场景）**：
   - ✅ 串口枚举（COM10@2000000 探测命中）、WiFi 连接、FTP 控制连接、ffplay 拉起（preview worker 启动）、logger VT 模式均正常。
   - ✅ **FTP 数据连接超时已修复且真机复验通过**：根因为 Windows 防火墙规则三字段错配（RemoteAddress/LocalAddress/Program 全错），修复后真实 FTP LIST 恢复 0.21s，完整 stress 复验无问题。详见「真机已知问题」#1 与 [排查报告](../03_development/archive/Windows_CLI_FTP主动模式超时_排查与解决报告.md)。
-- **P1 离线测试未落地**：`tests/windows_cli/` 未创建，`.gitignore` 的 `/tests/` 未解除。
+- **P1 离线测试部分落地**：`.gitignore` 的 `/tests/` 忽略规则已解除（测试源码入 git）；
+  `tests/windows_cli/` 目录仍未创建，但 frozen 路径解析已有 `tests/test_windows_cli_frozen_config.py`（6 例）。
 - 可复用参照：
   1. `origin/feature/ats-ui-windows` 的 `ATS/platform/` 抽象层（`serial_ports.py` / `console_input.py` / `processes.py`，已核实存在且可读）。
   2. `.ats_cli_backups/20260916_143611_3152bae7/install_record.json`：记录过一套 `applied` 状态的 CLI 移植清单（`ATS/platform/` 5 文件 + ADR-012 + 测试），但正文已丢失，仅存文件清单与 sha256。
+
+## 已同步自 new_arch（2026-11-09，devlog `20261109_1512`）
+
+单向同步 new_arch 的 6 个提交（有意跳过 `209562d`，本分支已有更完整的 `ca_cert` 方案）：
+
+| 内容 | 落点 |
+|------|------|
+| 新场景 `3k_2`（video 3k_2 20s + H265 完整性检测） | `ATS/config/scenarios/3k_2.yaml`（含 3 条 TODO-CONFIRM） |
+| photo 模式顺序调整 + 末尾 `single 12m` | `stress.yaml`（12 个 photo task）、`photo_commands.py` |
+| BUG-008 缩略图 / HEIC 分档阈值 | `photo.py`（`_classify_image`/`_min_kb_by_kind`/`_verify_image`）、`photo.yaml` 三档键、`tests/test_photo_size_thresholds.py` |
+| 免重复 LIST 性能优化 | `ftp_client.download(size_hint=)`、`photo._list_jpgs` 返回 `[(name,size)]`、`video` 复用 `sz`、`tests/test_ftp_download_size_hint.py` |
+| 文档 | BUG-008 bugfix/archive、devlog 两篇、压测耗时分析报告、module_design/test_case/test_strategy/known_issue/next_step/README |
+
+**未同步的可选 delta**：`ATS_PORTAL_CA_CERT` 环境变量覆盖 + `~/ats/cert.pem` 默认回退（new_arch 有、本分支无，待拍板）。
+**未同步的场景改动**：new_arch 自身也未把 photo 新顺序/`single 12m` 同步到 `recovery_validation.yaml` 与 `stress_NoFtp_NoRtmp.yaml`（本分支同样保持原样，两分支一致）。
 
 ## 影响分析结论（Linux 专属依赖点）
 
@@ -74,6 +92,7 @@
 
 ## 待办（Code Agent）
 
-- **preview 窗口尺寸可配置（方案 A）**：Windows 下 ffplay 画面窗口过大（跟随视频原始分辨率）且无法 resize/移动。方案 A：`preview_manager.py` 的 `_argv()` 加 `-x/-y`（值从 `preview.yaml` 的 `window_width`/`window_height` 读，默认 960/540）。详见 [windows_cli_next_step.md](windows_cli_next_step.md)。
-
-- **portal 上传自签名证书 SSL 校验失败（方案 2-b，已定案）**：`portal_upload.py` 用默认 `urlopen` 走系统 SSL 校验，Portal 自签证书（`CN=ats-portal-local`，SAN 含 10.1.64.183）不被信任 → `登记清单失败 HTTP -1`。修复：新增 `upload.ca_cert` 配置，`_request` 透传 `ssl.create_default_context(cafile=...)`。完整规格见 [排查与修复方案](../03_development/archive/Windows_CLI_portal上传自签名证书SSL校验_排查与修复方案.md)。附带隐患：`token_file` 相对路径未归一化到工程根目录，随 cwd 漂移 + 短路默认路径，建议一并修。
+- **`--power-stress` 入口实现文件缺失（待决策）**：见 [windows_cli_next_step.md](windows_cli_next_step.md) 与 known_issue「Windows CLI 打包」一节。
+- ✅ 「preview 窗口尺寸」已实施（devlog `20260920_1610`）。
+- ✅ 「portal 自签名证书 SSL 校验」已由 `b77087f` 修复并通过真机端到端验证：`upload.ca_cert` 配置 + `_build_ssl_context` + `_request` 透传 `ssl_ctx`，`token_file` / `ca_cert` 相对路径归一化到工程根（frozen 感知），真机 `upload_state=complete`（devlog `20261019_1319` / `20261019_1419`）。
+  - ⬜ **未做的可选 delta（待人工拍板）**：new_arch 的 `ATS_PORTAL_CA_CERT` 环境变量覆盖 + `~/ats/cert.pem` 默认回退，本分支没有。

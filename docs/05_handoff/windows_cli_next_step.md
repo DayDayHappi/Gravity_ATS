@@ -27,25 +27,24 @@ Windows 防火墙规则错配导致的 FTP 主动模式超时已定位并修复�
 
 - 排查报告：[archive/Windows_CLI_FTP主动模式超时_排查与解决报告.md](../03_development/archive/Windows_CLI_FTP主动模式超时_排查与解决报告.md)。
 
-## 🟡 P1 — 离线测试（未落地）
+## 🟡 P1 — 离线测试（部分落地）
 
-- 解除 `/tests/` 忽略（`.gitignore` 放行 `tests/windows_cli/`；合主线时需复核）。
-- `tests/windows_cli/`：`test_platform.py` / `test_lifecycle.py` / `test_cli.py` / `test_regression.py`（参照 ui-windows 取舍）。
+- ✅ `/tests/` 忽略规则已解除（`.gitignore`），测试源码入 git。
+- ✅ 已有 `tests/test_windows_cli_frozen_config.py`（6 例：config 目录 frozen 解析 + portal `_PROJECT_ROOT`）。
+- ⬜ `tests/windows_cli/` 目录仍未创建（`test_platform.py` / `test_lifecycle.py` / `test_cli.py` / `test_regression.py`，参照 ui-windows 取舍）。
 
-## 🟡 P1 — preview 窗口尺寸可配置（方案 A，待 Code Agent 实施）
+## ✅ P1 已实施 — preview 窗口尺寸可配置（方案 A，devlog `20260920_1610`）
 
-**现象**：Windows 下 ffplay 画面窗口过大（跟随视频原始分辨率，如 3k/4k），且无法 resize / 移动。
-
-**方案 A（已拍板）**：`preview_manager.py` 的 `_argv()` 增加 `-x <宽> -y <高>`，值从 `preview.yaml` 读取。
-
-- `preview.yaml` 新增 `window_width` / `window_height`（默认 `960` / `540`，留空/0 表示跟随原始分辨率、不传 `-x/-y`）。
-- `__init__` 读取这两个配置项；`_argv()` 条件拼入 `-x`/`-y`。
-- 边界：`-x/-y` 是窗口初始尺寸（非视频缩放），可解决「框太大」；「无法移动/缩放」是 ffplay SDL 窗口固有行为，`-x/-y` 后至少不再超屏，需在文档标注此限制。
+`preview.yaml` 新增 `window_width: 960` / `window_height: 540`；`preview_manager.__init__` 读取，
+`_argv()` 条件拼入 `-x`/`-y`（0/空则不传，跟随原始分辨率）。
+边界不变：`-x/-y` 是窗口初始尺寸（非视频缩放），「无法移动/缩放」是 ffplay SDL 窗口固有行为。
 
 ## 🟡 P1 — 文档
 
 - 设计文档已产出：[02_design/windows_cli_port_plan.md](../02_design/windows_cli_port_plan.md)（分支专属，合主线时升正式 ADR）。
-- 分支 devlog 命名 `<YYYYMMDD>_<HHMM>_<描述>.md`，**不更新**共享 `devlog/README.md` 索引（合主线时再补）。
+- 分支 devlog 命名 `<YYYYMMDD>_<HHMM>_<描述>.md`。**TODO-CONFIRM**：本文件原约定「不更新共享 `devlog/README.md` 索引（合主线时再补）」，
+  但 2026-11-09 同步时按项目红线「改代码必留痕并更新索引」写入了共享索引；
+  分支是否继续更新共享索引需人工确认（当前状态：同步相关条目在共享索引内可见）。
 - 修正 devlog `20260920_1502` 的「真实枚举返回 ['COM3','COM4']」→ 实为 `['COM10','COM9','COM3','COM4']`（当时 EVB 未插）。
 
 ## 参考
