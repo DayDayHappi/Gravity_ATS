@@ -19,12 +19,19 @@ scenario:
     enable: true
     count: 200
   tasks:
-    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
+    # 3k 单轮录像（仅支持 30fps / eis 2）；7 个参数必须全部显式写出
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "3k_2"
+        video_params:
+          res: "3k"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
     # 录像完成后统一做 H265 完整性检测：检本轮全部未检文件，跨 loop 靠 manifest 去重不重复检。
     # 不能用 latest_unchecked（只检最新 1 个，会漏掉 repeat>1 的其余文件）。

@@ -1,6 +1,6 @@
 # 压测场景：遍历全部拍照模式 + 3k 录像（video/rtmp 时长与整轮循环次数自行按需配置）
-# 与 stress_traverse_photo_mode.yaml 唯一差异：video task 用 override.video_resolution=3k
-# 强制 3k 录像（不碰 config/modules/video.yaml 的全局默认 1080p）。
+# 与 stress_traverse_photo_mode.yaml 唯一差异：video task 用 override.video_params 强制 3k
+# 录像（不碰 config/modules/video.yaml 的全局默认）。3k 仅支持 30fps / eis 2。
 # 其余（preview/prepare/loop/video_integrity/rtmp/cleanup）与源文件完全一致。
 scenario:
   name: stress_traverse_photo_mode_3k
@@ -25,7 +25,14 @@ scenario:
     - module: video
       duration: 66
       override:
-        video_resolution: "3k_2"          # 唯一新增：3k 录像（覆写模块默认 1080p）
+        video_params:                     # 唯一新增：3k 录像（覆写模块默认参数）
+          res: "3k"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
     - module: video_integrity
       override:
         input:

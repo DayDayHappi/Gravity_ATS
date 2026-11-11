@@ -396,7 +396,7 @@ def _action_wifi_connect(ctx, system_cfg):
 
 @prepare_action("preclean")
 def _action_preclean(ctx, system_cfg):
-    """板子状态预清理：回根目录、停录像（未在录则忽略）。"""
+    """板子状态预清理：回根目录、停录像、停推流（均幂等，未在跑则忽略）。"""
     console = getattr(ctx, "console", None)
     if console is None:
         return
@@ -407,6 +407,10 @@ def _action_preclean(ctx, system_cfg):
         console.exec_async(video_commands.VIDEO_STOP_COMMAND,
                            expect=video_commands.VIDEO_CLEANUP_EXPECT,
                            result_timeout=video_commands.VIDEO_CLEANUP_TIMEOUT)
+        # 清除上一轮残留的推流状态，避免后续 cam_set video 被固件以 busy 拒绝。
+        console.exec_async(rtmp_commands.RTMP_STOP_COMMAND,
+                           expect=rtmp_commands.RTMP_STOP_EXPECT,
+                           result_timeout=rtmp_commands.RTMP_STOP_TIMEOUT)
     except Exception as e:
         logger.warn(f"预清理异常(可忽略): {e}")
 

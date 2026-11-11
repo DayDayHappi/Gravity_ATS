@@ -1,13 +1,16 @@
-"""单次录像：显式选择完整 size 命令，再录像与 FTP 辅助验证。
+"""单次录像：按显式参数组合下发完整 cam_set 命令，再录像与 FTP 辅助验证。
 
-协议定义：ATS/drivers/video_commands.py（命令、判据、实测 size 映射）。
-测试编排：Scenario 的多个 video task + repeat/duration；模块不做 size 循环。
+协议定义：ATS/drivers/video_commands.py（参数取值域、命令拼装、判据）。
+测试编排：Scenario 的多个 video task + repeat/duration；模块不做参数组合循环。
 保留最终完成标志、完整路径扫描、f_index 启动兜底和关键字符串标注。
-下载文件仍放在本次日志 videos/ 下，使用组合与板端时间戳目录区分。
+下载文件仍放在本次日志 videos/ 下，使用参数短键与板端时间戳目录区分。
 
 ``ftp_download: false`` 时走纯录像分支（不碰 FTP）：等 ``Video recording completed
 successfully.`` 即 PASS，仅扫描 /emmc/VIDEO 路径作证据展示，不 size/不下载；
 关键字符串检测保留（命中只标 detail，不判 FAIL）。
+
+新语法未提供「参数 → 落盘 w×h」的可信映射，本模块**不做尺寸断言**，
+detail 只展示设置命令与录像时长。
 """
 import math
 import os
@@ -21,6 +24,8 @@ from .string_hit_monitor import build_monitor
 from ..drivers import video_commands as commands
 
 _VIDEO_DIR = "/emmc/VIDEO"
+# codec 可配：h264 / h265 产物都要能扫描到。
+_VIDEO_FILE_RE = re.compile(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.(?:h265|h264)")
 
 
 @register("video")
@@ -35,13 +40,13 @@ class VideoModule(TestModule):
         self._console = None           # 录像窗口内用于摘除 listener（run() 时赋值）
         self._hit_monitor = None       # 关键字符串命中检测器（detect_strings 选择）
         self._hit_monitor_cb = None    # 命中检测 listener 回调（用于 teardown 兜底移除）
-        self._profile = None
+        self._params = None            # 已校验的 VideoParams（失败时可能为 None）
         self._duration = None
         self._recording_active = False
 
     def run(self, ctx, console, params=None):
         self._console = console
-        self._profile = None
+        self._params = None
         self._duration = None
         self._recording_active = False
         self._hit_monitor = None
@@ -56,12 +61,11 @@ class VideoModule(TestModule):
                 self._detach_hit_listener()
 
     def _run_once(self, ctx, console, params=None):
-        # 不把运行时覆盖写回默认配置，实例复用/重试不会继承上一个 size。
+        # 不把运行时覆盖写回默认配置，实例复用/重试不会继承上一个参数组合。
         cfg = self._merge(params)
         timer = Timer().start()
         try:
-            self._profile = commands.resolve_video_profile(
-                cfg.get("video_resolution", commands.DEFAULT_VIDEO_PROFILE))
+            self._params = commands.resolve_video_params(cfg.get("video_params"))
             value = cfg.get("video_duration", 5)
             if (isinstance(value, bool) or not isinstance(value, (int, float))
                     or not math.isfinite(value) or value <= 0):
@@ -71,12 +75,11 @@ class VideoModule(TestModule):
             min_kb = int(cfg.get("video_min_size_kb", 100))
         except (ValueError, TypeError, OverflowError) as exc:
             return self._mk("ERROR", f"录像配置错误：{exc}", "未下发录像命令", timer)
-        profile = self._profile
-        resolution = profile.key
+        vparams = self._params
 
         ftp_download = bool(cfg.get("ftp_download", True))
         if not ftp_download:
-            return self._run_no_ftp(ctx, console, profile, resolution, duration, timer, cfg)
+            return self._run_no_ftp(ctx, console, vparams, duration, timer, cfg)
 
         ftp = getattr(ctx, "ftp_client", None)
         if ftp is None:
@@ -91,20 +94,19 @@ class VideoModule(TestModule):
         tmp_dir = os.path.join(logger.log_dir() or "logs", "videos")
         os.makedirs(tmp_dir, exist_ok=True)
 
-        logger.step(f"  录像测试: {resolution} / {duration:g}s / "
-                    f"预期 {profile.width}x{profile.height} {profile.orientation}")
-        logger.info(f"录像 size 设置命令: {profile.command}")
+        logger.step(f"  录像测试: {vparams.key} / {duration:g}s")
+        logger.info(f"录像参数设置命令: {vparams.command}")
 
-        # 1. 设置分辨率
-        r = console.exec_sync(profile.command, timeout=commands.VIDEO_SET_TIMEOUT)
+        # 1. 设置录像参数（显式全参数；busy/未知参数由 VIDEO_SET_ERROR 判 FAIL，不重试）
+        r = console.exec_sync(vparams.command, timeout=commands.VIDEO_SET_TIMEOUT)
         if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
-            return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
+            return self._mk("FAIL", f"设置录像参数 {vparams.key} 失败", r.clean, timer)
 
         # 关键字符串检测（录像窗口）：命中不判 FAIL，仅 detail 标注（cycle/rep 由 runner 填）。
         self._attach_hit_listener(console, cfg)
 
         # 2. 开始录像。启动成功判据保持 Record Start 或编码心跳 f_index。
-        logger.info(f"拍摄开始（{resolution} / {duration}s）...")
+        logger.info(f"拍摄开始（{vparams.key} / {duration}s）...")
         rec_start = time.monotonic()
         self._recording_active = True  # 发起后即使超时，也可能已半启动。
         r = console.exec_async(commands.VIDEO_START_COMMAND,
@@ -117,7 +119,7 @@ class VideoModule(TestModule):
         # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
         # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
         from ..application import runtime_control
-        # BUG-007：走到这里说明 dfs_video_start 已成功回显（r.success），控制链路事实健康；
+        # BUG-007：走到这里说明 cam_run video start 已成功回显（r.success），控制链路事实健康；
         # 清掉可能残留的 SUSPECTED 恢复标志（如录像前 FTP/网络静默被 watchdog 误置的）。
         # 安全性：只清「进入等待前」的残留标志，不影响 wait() 内部实时检测——
         # watchdog 按 1s 步长持续监测，真死机会重新置位，wait() 照样提前返回，不掩盖真恢复。
@@ -138,7 +140,7 @@ class VideoModule(TestModule):
         logger.info(f"拍摄结束，耗时 {rec_elapsed:.1f}s")
 
         # 4. 完成后从累积缓冲扫描完整视频路径，FTP 校验维持辅助性质。
-        m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
+        m2 = _VIDEO_FILE_RE.search(r.clean)
         video_path = m2.group(0) if m2 else ""
         msg_base = "录像成功"
         if video_path:
@@ -160,10 +162,10 @@ class VideoModule(TestModule):
 
         # 下载录像到本地（断点续传，FTP 卡死后自动从断点继续）
         fname = video_path.rsplit("/", 1)[-1]
-        # 同名 Video_1_0.h265 可出现在不同板端目录；不能误当作已下载而续传旧 size。
+        # 同名 Video_1_0.h265/h264 可出现在不同板端目录；不能误当作已下载而续传旧 size。
         remote_dir = video_path.rsplit("/", 2)[-2]
         safe_dir = re.sub(r"[^A-Za-z0-9_.-]", "_", remote_dir)
-        local = os.path.join(tmp_dir, f"{profile.key}_{safe_dir}_{fname}")
+        local = os.path.join(tmp_dir, f"{vparams.key}_{safe_dir}_{fname}")
         logger.info(f"FTP 开始下载视频: {video_path} ({sz//1024}KB) -> {local}")
         dl_start = time.monotonic()
         if ftp2.download(video_path, local, timeout=20, retries=6, size_hint=sz):
@@ -177,26 +179,25 @@ class VideoModule(TestModule):
             msg = f"{msg_base}，{sz//1024}KB | 下载不完整({local_sz//1024}KB/{sz//1024}KB)"
         return self._mk("PASS", msg, video_path, timer)
 
-    def _run_no_ftp(self, ctx, console, profile, resolution, duration, timer, cfg):
+    def _run_no_ftp(self, ctx, console, vparams, duration, timer, cfg):
         """纯录像分支（ftp_download=false）：只拍不下载，完全不碰 FTP。
 
         判据与有下载分支一致：Record Start|f_index 启动 + Video recording
         completed successfully. 完成；关键字符串检测保留（命中只标 detail，不判 FAIL）。
         """
-        logger.step(f"  录像测试(无下载): {resolution} / {duration:g}s / "
-                    f"预期 {profile.width}x{profile.height} {profile.orientation}")
-        logger.info(f"录像 size 设置命令: {profile.command}")
+        logger.step(f"  录像测试(无下载): {vparams.key} / {duration:g}s")
+        logger.info(f"录像参数设置命令: {vparams.command}")
 
-        # 1. 设置分辨率
-        r = console.exec_sync(profile.command, timeout=commands.VIDEO_SET_TIMEOUT)
+        # 1. 设置录像参数（显式全参数；busy/未知参数由 VIDEO_SET_ERROR 判 FAIL，不重试）
+        r = console.exec_sync(vparams.command, timeout=commands.VIDEO_SET_TIMEOUT)
         if not r.success or re.search(commands.VIDEO_SET_ERROR, r.clean or ""):
-            return self._mk("FAIL", f"设置录像组合 {resolution} 失败", r.clean, timer)
+            return self._mk("FAIL", f"设置录像参数 {vparams.key} 失败", r.clean, timer)
 
         # 关键字符串检测（录像窗口）：命中不判 FAIL，仅 detail 标注。
         self._attach_hit_listener(console, cfg)
 
         # 2. 开始录像
-        logger.info(f"拍摄开始（{resolution} / {duration}s）...")
+        logger.info(f"拍摄开始（{vparams.key} / {duration}s）...")
         self._recording_active = True
         r = console.exec_async(commands.VIDEO_START_COMMAND,
                                expect=commands.VIDEO_START_EXPECT,
@@ -208,7 +209,7 @@ class VideoModule(TestModule):
         # 长时间录像：用 runtime.wait 分段 sleep（cooperative cancellation，ADR-016）。
         # 板卡失去响应时提前结束等待，交 Runner 在安全点恢复；业务模块不直接执行恢复。
         from ..application import runtime_control
-        # BUG-007：走到这里说明 dfs_video_start 已成功回显（r.success），控制链路事实健康；
+        # BUG-007：走到这里说明 cam_run video start 已成功回显（r.success），控制链路事实健康；
         # 清掉可能残留的 SUSPECTED 恢复标志（如录像前 FTP/网络静默被 watchdog 误置的）。
         # 安全性：只清「进入等待前」的残留标志，不影响 wait() 内部实时检测——
         # watchdog 按 1s 步长持续监测，真死机会重新置位，wait() 照样提前返回，不掩盖真恢复。
@@ -227,7 +228,7 @@ class VideoModule(TestModule):
         logger.info("拍摄结束（无下载，不校验大小）")
 
         # 4. 从累积缓冲扫描完整视频路径（仅作证据展示，不下载/不校验大小）
-        m2 = re.search(rf"{re.escape(_VIDEO_DIR)}/[^\s/]+/Video_[^\s]+\.h265", r.clean)
+        m2 = _VIDEO_FILE_RE.search(r.clean)
         video_path = m2.group(0) if m2 else ""
         msg = "录像成功"
         if video_path:
@@ -238,15 +239,14 @@ class VideoModule(TestModule):
         self._detach_hit_listener()
         mon = self._hit_monitor
         detail = mon.attach_to(detail or "") if mon else detail
-        profile = getattr(self, "_profile", None)
+        vparams = getattr(self, "_params", None)
         name = "video"
-        if profile is not None:
-            name = f"video[{profile.key}]"
+        if vparams is not None:
+            name = f"video[{vparams.key}]"
             metadata = (
-                f"录像组合: {profile.key}\n"
-                f"设置命令: {profile.command}\n"
-                f"预期 size: {profile.width}x{profile.height} ({profile.orientation})\n"
-                "尺寸来源: 用户手测映射；不是本次视频实测值"
+                f"录像参数: {vparams.key}\n"
+                f"设置命令: {vparams.command}\n"
+                "尺寸断言: 无（新语法无落盘 w×h 映射，未做尺寸校验）"
             )
             if self._duration is not None:
                 metadata += f"\n配置录像时长: {self._duration:g}s"

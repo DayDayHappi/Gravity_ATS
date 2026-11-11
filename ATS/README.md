@@ -212,10 +212,10 @@ logs/<时间戳>/
 ### 7.7 ✅ RTMP 推流
 
 - PC 端需起 **nginx-rtmp** 服务端（`systemctl start nginx`，监听 1935，配 `application live { live on; record off; }`）
-- 命令：`rtmp_video_start rtmp://<pc_ip>/live/cam`、`rtmp_video_stop`
+- 命令：`cam_run live start rtmp://<pc_ip>/live/cam`、`cam_run live stop`
 - PC 的 IP 自动检测（多网卡建议在 `config/system.yaml` 写死 EVB 可达的 `pc.ip`）
 - 验证：`ffprobe` 实时探测 `rtmp://<pc_ip>/live/cam`（探到 h264 + 分辨率即 PASS），可选 `ffplay` 画面确认（无 DISPLAY 自动跳过）
-- ★ 关键时序：ffprobe 探测必须在 `rtmp_video_stop` 之前（探测的是实时流）
+- ★ 关键时序：ffprobe 探测必须在 `cam_run live stop` 之前（探测的是实时流）
 
 ### 7.8 ✅ eMMC
 
@@ -225,7 +225,7 @@ logs/<时间戳>/
 ### 7.9 ⚠️ 测试稳定性注意
 
 - **连续拍照+录像可能触发摄像头资源冲突**：若录像 start 卡住（无 `Record Start`），可能上次操作未释放。建议复杂场景下测试前重启板子
-- **`Record Start` 偶发漏打，`f_index` 才是编码真实心跳**：实测连续压测后期 `dfs_video_start` 后无 `Record Start` 但 `f_index` 持续增长（编码在跑）。`f_index` 每 90 帧发一次（第一次 `=0` 第二次 `=90`），录像启动判据应以 `f_index` 为准，不能只看 `Record Start`（见 known_issue）
+- **`Record Start` 偶发漏打，`f_index` 才是编码真实心跳**：实测连续压测后期 `cam_run video start` 后无 `Record Start` 但 `f_index` 持续增长（编码在跑）。`f_index` 每 90 帧发一次（第一次 `=0` 第二次 `=90`），录像启动判据应以 `f_index` 为准，不能只看 `Record Start`（见 known_issue）
 - **FTP 在每次摄像头操作后会崩**：`ensure_ftp` 会恢复，但连续操作间隔太短可能来不及
 - 建议每轮完整测试前重启板子，保证干净状态
 
@@ -240,7 +240,7 @@ logs/<时间戳>/
 看 `logs/<时间戳>/serial.log` 里的 `wifi join` 输出。RSSI < -70 信号弱，换近一点的 AP。
 
 **Q: 拍照后等不到新文件？**
-看串口日志 `dfs_capture_start` 是否报错；FTP 列 `/emmc/pic` 是否成功；eMMC 是否已挂载。
+看串口日志 `cam_run photo` 是否报错；FTP 列 `/emmc/pic` 是否成功；eMMC 是否已挂载。
 
 **Q: RTMP 推流验证失败？**
 确认 PC 的 IP 与 EVB 同网段；防火墙放行 1935 端口；`logs/<时间戳>/rtmp/` 下的 flv 文件大小。

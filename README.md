@@ -342,7 +342,7 @@ python -m ATS.main --scenario normal --port /dev/ttyUSB0 --no-interactive-wifi
 | `aging` | 基于整轮时间预算的拍照和 RTMP 老化；时间预算在整轮结束时判断，不是强制到点打断当前任务。 |
 | `Rtmp` | 独立 RTMP 推流与预览；场景名的大小写需保持一致。 |
 | `no_network` | 不连接 WiFi、不启动 FTP 或 RTMP，执行 eMMC 与不下载的拍照、录像。 |
-| `video_size_traverse` | 遍历录像命令组合并进行视频检测；当前配置末尾还包含拍照和 RTMP，不能仅凭名字认为它只录像。 |
+| `video_matrix` | `cam_set video` 全参数排列矩阵（168 条，逐条显式写全 res/fps/eis/codec/bitrate/gop/vui），由 `scripts/gen_video_matrix.py` 生成，请勿手改。 |
 | `stress_traverse_photo_mode` | 拍照模式遍历与录像、推流组合测试；具体任务以 YAML 为准。 |
 | `stress_traverse_photo_mode_3k` | 使用 3k 录像组合的拍照模式遍历场景；具体任务以 YAML 为准。 |
 | `utest` | 独立板级自检场景，不要求 WiFi、FTP 和预览。 |
@@ -378,7 +378,14 @@ scenario:
       repeat: 2
       duration: 10
       override:
-        video_resolution: "sd1080p_0"
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
         ftp_download: true
     - module: video_integrity
       override:
@@ -403,21 +410,34 @@ python -m ATS.main --scenario quick_check --port /dev/ttyUSB0 --no-interactive-w
 
 **禁用测试项应删除或注释整个 task，不要设置 `repeat: 0`。** 当前 Runner 会将该值按至少 1 次处理。启用 `loop` 却同时省略 `count` 和 `duration` 会进入无限循环，使用前应明确退出方式。
 
-### 录像组合与诊断开关
+### 录像参数与诊断开关
 
-录像组合 ID 来自 [ATS/drivers/video_commands.py](ATS/drivers/video_commands.py)，例如 `sd1080p_0`、`hd1080p_2`、`3k_2`、`720p_0`。场景只选择 profile，不直接拼接完整串口命令：
+录像命令由 [ATS/drivers/video_commands.py](ATS/drivers/video_commands.py) 统一拼装，采用固件新语法：
+
+```text
+cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
+```
+
+场景不写命令，只给 7 个参数（全部必须显式写出，override 会整体替换模块默认值而非单键合并）：
 
 ```yaml
 - module: video
   repeat: 1
   duration: 20
   override:
-    video_resolution: "3k_2"
+    video_params:
+      res: "3k"          # 4k / 3k / 1080p / sd1080p / 720p / 480p
+      fps: 30            # 30 / 60（4k、3k 仅支持 30）
+      eis: 2             # 0 / 1 / 2（3k 仅支持 2）
+      codec: "h265"      # h264 / h265
+      bitrate: 8000000   # 50000–25000000
+      gop: 30            # 0–1000
+      vui: "709"         # 709 / 6010 / 6011
     ftp_download: true
     detect_strings: [tt_error, imu_fmq_overflow]
 ```
 
-上面是 `scenario.tasks` 内的任务片段，不是完整场景文件。`detect_strings: []` 表示不启用这组关键字符串检测；启用后命中内容写入结果详情，不单独改变 PASS/FAIL。
+非法组合（枚举外 / 越界 / `3k` 配 `eis 0|1` / `4k`、`3k` 配 60fps / 缺键）在模块启动前报 `ERROR`，不会静默下发。全参数排列矩阵见 `video_matrix` 场景（168 条，由脚本生成）。
 
 ### 独立检测本地 H.265 文件
 

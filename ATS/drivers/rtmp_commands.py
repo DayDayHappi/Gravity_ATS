@@ -5,14 +5,14 @@
 import re
 from typing import Pattern
 
-RTMP_START_COMMAND = "rtmp_video_start {url}"
-RTMP_STOP_COMMAND = "rtmp_video_stop"
+RTMP_START_COMMAND = "cam_run live start {url}"
+RTMP_STOP_COMMAND = "cam_run live stop"
 RTMP_START_EXPECT = r"publish ready|Push Start"
 RTMP_STOP_EXPECT = r"Push Stop|Stop requested"
 RTMP_START_TIMEOUT = 8.0
 RTMP_STOP_TIMEOUT = 8.0
 
-# 推流码率设置（可选，在 rtmp_video_start 之前发送；0/未配置则不发送）。
+# 推流码率设置（可选，在 cam_run live start 之前发送；0/未配置则不发送）。
 # 命令模板 + format，与 RTMP_START_COMMAND 同范式；码率值不做合法性校验（固件自行拒绝）。
 RTMP_BITRATE_COMMAND = "cam_set live bitrate {bitrate}"
 RTMP_BITRATE_TIMEOUT = 10.0
@@ -25,5 +25,5 @@ RTMP_BITRATE_TIMEOUT = 10.0
 #
 # 裸匹配安全前提（窗口隔离）：仅用于 rtmp 推流保持窗口内监听，该窗口内串口仅有
 # Rtmp 一种 f_index（scenario 串行时序 photo -> video -> rtmp，video 的 Dfs 心跳在
-# dfs_video_stop 后已停），故无前缀也不会误匹配其它模块的 f_index。
+# cam_run video stop 后已停），故无前缀也不会误匹配其它模块的 f_index。
 RTMP_HEARTBEAT_RE: Pattern = re.compile(r"f_index\s*=\s*\d+")

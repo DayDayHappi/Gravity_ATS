@@ -1,6 +1,14 @@
 # 录像模块参数
 ftp_download: true         # true=录完 FTP 下载校验大小；false=纯录像不下载（无网络场景 override）
-video_resolution: "sd1080p_0"
+# 录像参数（7 个键必须全部显式写出；override 的 video_params 会整体替换本段，不按单键合并）
+video_params:
+  res: "4k"
+  fps: 30
+  eis: 0
+  codec: "h265"
+  bitrate: 8000000
+  gop: 30
+  vui: "709"
 video_duration: 180        # 录像时长(秒)；scenario 里 task.duration 可覆盖
 video_min_size_kb: 100
 video_capture_timeout: 15

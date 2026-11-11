@@ -7,7 +7,7 @@
 每个模式：
 1. 记录 /emmc/PIC 旧时间戳目录集合
 2. ``cam_set photo <mode>`` 切模式 + 稳定延时
-3. ``dfs_capture_start`` 拍照
+3. ``cam_run photo`` 拍照
 4. 轮询 FTP 列 /emmc/PIC，等出现新时间戳目录（超时 photo_capture_timeout）
 5. 下载新目录里的全部图片，按产物类型（主图 / 缩略图 / HEIC）分别校验
    格式头（JPEG ``FF D8 FF`` / HEIF ``ftyp``）+ 各自的大小阈值

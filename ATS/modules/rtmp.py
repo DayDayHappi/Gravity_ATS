@@ -3,9 +3,9 @@
 流程：
 - setup: 确定 pc_ip（自动检测或配置，复用 drivers/preview_manager._detect_pc_ip），
          创建 RtmpReceiver（ffprobe）
-- run: 检查 nginx-rtmp 就绪 -> ``rtmp_video_start <url>`` (exec_async，不依赖哨兵) ->
+- run: 检查 nginx-rtmp 就绪 -> ``cam_run live start <url>`` (exec_async，不依赖哨兵) ->
        等推流上线 -> ffprobe 实时探测流（★ 主判据） ->
-       RTMPMonitor 持续检测 heartbeat（f_index，超时则 FAIL）-> ``rtmp_video_stop``
+       RTMPMonitor 持续检测 heartbeat（f_index，超时则 FAIL）-> ``cam_run live stop``
 - teardown: 移除 monitor listener（兜底）
 
 画面观察（ffplay）已由 ADR-010 抽离到 ``drivers/preview_manager.py``，属 Scenario 生命
@@ -21,7 +21,7 @@ exec_async 不依赖哨兵，真正成败判据交给 PC 端 ffprobe 是否探�
 由独立的 RTMPMonitor 订阅串口原始数据、周期性检查超时，捕捉"推流中途异常停止"
 （如 ImuThread 崩溃导致画面卡住），避免干等剩余时长误判 PASS。
 
-★ 关键时序：ffprobe 探测必须在 ``rtmp_video_stop`` **之前**——探测的是实时流，
+★ 关键时序：ffprobe 探测必须在 ``cam_run live stop`` **之前**——探测的是实时流，
 stop 后流断开探测必失败。这与 MediaMTX 时代"先 stop 再 verify 存盘文件"相反。
 """
 import time
@@ -96,7 +96,7 @@ class RtmpModule(TestModule):
 
         logger.step(f"  RTMP 推流测试: {url} / {duration}s")
 
-        # 2.5 可选：推流码率设置（必须在 rtmp_video_start 之前，先设码率后推流）。
+        # 2.5 可选：推流码率设置（必须在 cam_run live start 之前，先设码率后推流）。
         #     未配置 / 0 / 空 → 不发命令（纯增量，无回归）；失败直接 FAIL 不继续推流，
         #     与 video 模块 cam_set 失败即 FAIL 对齐。
         bitrate = self.config.get("bitrate", 0)
@@ -117,7 +117,7 @@ class RtmpModule(TestModule):
         # 3. EVB 开始推流（先于探测启动）。
         # 用 exec_async：只发命令、不发哨兵，直接等业务状态字符串（DUT 侧开始推流）。
         # expect 匹配 "publish ready / Push Start" 表示 DUT 侧 RTMP 已上线，不再用
-        # 命令回显（"rtmp_video_start"）当匹配——命令回显 ≠ 业务成功。但 exec_async
+        # 命令回显（"cam_run live start"）当匹配——命令回显 ≠ 业务成功。但 exec_async
         # 的匹配结果仍不作为 RTMP 最终判据，最终判据是 PC 端 ffprobe 探测到流。
         # 即便 exec_async 没匹配到也不立即 FAIL，留给 ffprobe 兜底。
         # 注：必须先推流后探测——ffprobe 连无流的源会立即 I/O error。
@@ -132,7 +132,7 @@ class RtmpModule(TestModule):
         time.sleep(3.0)
 
         # 5. ffprobe 实时探测 RTMP 流（★ 主判据，带重试防上线时间不准）。
-        #    ★ 必须在 rtmp_video_stop 之前探测——探测的是实时流。
+        #    ★ 必须在 cam_run live stop 之前探测——探测的是实时流。
         info = self._receiver.probe(url, attempts=5, interval=3.0)
 
         # 6. 探测到流后，保持推流 stream_duration 秒，同时用 RTMPMonitor 持续检测

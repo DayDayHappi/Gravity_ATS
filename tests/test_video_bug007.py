@@ -2,7 +2,7 @@
 
 覆盖：
 - 方案 A：``_list_video_dirs`` / ``_wait_new_dir`` 死方法及 ``before = set(...)`` 调用已删除。
-- 方案 B：``dfs_video_start`` 成功回显后、进入 ``runtime_control.wait()`` 前，
+- 方案 B：``cam_run video start`` 成功回显后、进入 ``runtime_control.wait()`` 前，
   ``clear_recovery()`` 被调用，清掉残留 SUSPECTED 标志，录像不再被打断。
 - 方案 B 反例：wait 期间新置位恢复请求，``wait()`` 仍提前返回（B 不掩盖真恢复）。
 
@@ -49,8 +49,9 @@ class _FakeConsole:
 
 
 def _make_params(duration):
-    return {"video_resolution": "sd1080p_0", "video_duration": duration,
-            "ftp_download": False}
+    return {"video_params": {"res": "1080p", "fps": 30, "eis": 2, "codec": "h265",
+                            "bitrate": 8000000, "gop": 30, "vui": "709"},
+            "video_duration": duration, "ftp_download": False}
 
 
 class VideoBug007Test(unittest.TestCase):

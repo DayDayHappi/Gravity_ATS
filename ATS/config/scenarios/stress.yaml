@@ -72,92 +72,89 @@ scenario:
       repeat: 1
       override:
         photo_modes: [heif]
-    # sd1080p_0: 预期 1920x1080 横屏（用户手测映射，非本次测量）
+    # video 代表组合：6 档分辨率 × h265 × 30fps × eis 2（3k 仅支持 eis 2），
+    # 完整全参数排列见 video_matrix.yaml（168 条）。每个 task 参数必须 7 键写全：
+    # override 的 video_params 整体替换模块默认值，不按单键合并。
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "sd1080p_0"
+        video_params:
+          res: "4k"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
-    # sd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "sd1080p_1"
+        video_params:
+          res: "3k"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
-    # sd1080p_2: 预期 2016x1034 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "sd1080p_2"
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
-    # hd1080p_1: 预期 1920x1080 横屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "hd1080p_1"
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
-    # hd1080p_2: 预期 1296x2304 竖屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "hd1080p_2"
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
-    # 3k_2: 预期 2268x3024 竖屏（用户手测映射，非本次测量）
     - module: video
       repeat: 1
       duration: 20
       override:
-        video_resolution: "3k_2"
-
-    # 720p_0: 预期 1280x720 横屏（用户手测映射，非本次测量）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "720p_0"
-
-    # 720p_1: 预期 1280x720 横屏（用户手测映射，非本次测量）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "720p_1"
-
-    # 720p_2: 预期 1600x900 横屏（用户手测映射，非本次测量）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "720p_2"
-
-    # 480p_0: 预期 640x480 横屏（用户手测映射，非本次测量）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "480p_0"
-
-    # 480p_1: 预期 640x480 横屏（用户口述估计，TODO-CONFIRM 待真机 ffprobe 校准）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "480p_1"
-
-    # 480p_2: 预期 800x600 横屏（用户手测映射，非本次测量）
-    - module: video
-      repeat: 1
-      duration: 20
-      override:
-        video_resolution: "480p_2"
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 8000000
+          gop: 30
+          vui: "709"
 
     # 录像完成后统一做 H265 完整性检测：检本轮全部未检文件，跨 loop 靠 manifest 去重不重复检。
-    # 不能用 latest_unchecked（只检最新 1 个，会漏掉 sd1080p_0/1 的 repeat:10 其余 9 个）。
+    # 不能用 latest_unchecked（只检最新 1 个，会漏掉其余已下载文件）。
     - module: video_integrity
       override:
         input:

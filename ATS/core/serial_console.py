@@ -7,7 +7,7 @@
     发「命令 + echo 哨兵」，等哨兵出现定界。哨兵在此只表示「前一条同步 Shell 命令已
     返回」，解决 msh 提示符被后台日志/回显打碎粘连的问题
     （``msh />[32m...``、``msh />wifi scan``）。
-  - ``exec_async``（异步命令，如 wifi join / dfs_capture_start / rtmp_video_start）：
+  - ``exec_async``（异步命令，如 wifi join / cam_run photo / cam_run live start）：
     **只发命令、不发哨兵**，直接等业务完成字符串（Got IP / Save Photo Successful）。
     因为哨兵只能表示命令已返回、不能表示异步业务真正完成。
 - **自动探测**：未指定端口时通过平台抽象层枚举候选串口（Linux ``/dev/ttyUSB*``/``/dev/ttyACM*``、
@@ -78,7 +78,7 @@ _SENTINEL_PREFIX = "__EVBTEST_END_"
 
 # 分片发送参数：板子串口接收环形缓冲 RT_SERIAL_RB_BUFSZ 偏小（默认约 64 字节），
 # 且 rtmp 阶段 FTP 崩溃刷屏使板子 CPU 忙、来不及搬移接收字节，一次性写入长命令
-# （如 rtmp_video_start <url> + echo 哨兵，约 77 字节）会溢出丢字节，命令被截断报
+# （如 cam_run live start <url> + echo 哨兵，约 77 字节）会溢出丢字节，命令被截断报
 # "command not found"。故按固定字节分片 + 片间延时写入，见 devBugLog 记录。
 _WRITE_CHUNK_BYTES = 32     # 每片最大字节数（< RT_SERIAL_RB_BUFSZ 默认 64，留余量）
 _WRITE_CHUNK_DELAY = 0.1    # 片间延时（秒），给板子接收/搬移字节时间
@@ -302,7 +302,7 @@ class SerialConsole:
     def _write_safe(self, text: str):
         """统一安全发送：把给定文本（含换行）分片写入串口，片间延时。
 
-        命令 + echo 哨兵（同步）或长命令（如 rtmp_video_start <url>）可能达几十字节，
+        命令 + echo 哨兵（同步）或长命令（如 cam_run live start <url>）可能达几十字节，
         板子串口接收环形缓冲（RT_SERIAL_RB_BUFSZ，默认约 64 字节）偏小，且 FTP 崩溃
         刷屏时板子 CPU 忙、来不及搬移接收字节，一次性写入会溢出导致命令被截断
         （"command not found"）。分片后每片字节数远小于缓冲，片间延时给板子搬移时间。
@@ -434,7 +434,7 @@ class SerialConsole:
 
     def exec_async(self, cmd: str, expect: str, send_timeout: float = 5.0,
                    result_timeout: float = 30.0) -> Response:
-        """执行异步命令（如 wifi join / dfs_capture_start / rtmp_video_start）。
+        """执行异步命令（如 wifi join / cam_run photo / cam_run live start）。
 
         异步命令 Shell 返回后业务仍在后台继续，哨兵只能表示「命令已返回」、不能表示
         业务真正完成，故**不发送哨兵**：只发送业务命令，然后直接在 result_timeout 内

@@ -59,9 +59,9 @@ class ConfigFrozenResolutionTest(unittest.TestCase):
             os.makedirs(os.path.join(d, "modules"))
             with open(os.path.join(d, "modules", "video.yaml"), "w",
                       encoding="utf-8") as f:
-                f.write("video_resolution: 3k_2\n")
+                f.write("video_duration: 42\n")
             loaded = cfg.load_module_config("video", d)
-            self.assertEqual(loaded["video_resolution"], "3k_2")
+            self.assertEqual(loaded["video_duration"], 42)
 
 
 class PortalProjectRootTest(unittest.TestCase):

@@ -9,8 +9,8 @@
   ``drivers/``，不新增 ``core/`` 或 ``services/`` 目录。
 
 关键适配（stress 多轮 start/stop 推流的现实）：nginx-rtmp 在 EVB 停止推流
-（``rtmp_video_stop``）时会断开该 stream 的观看连接，单次 ffplay 进程会在流断后退出、
-且下一轮 ``rtmp_video_start`` 时不会自动重连。因此 ``start()`` 内部用 Python 重连
+（``cam_run live stop``）时会断开该 stream 的观看连接，单次 ffplay 进程会在流断后退出、
+且下一轮 ``cam_run live start`` 时不会自动重连。因此 ``start()`` 内部用 Python 重连
 worker 线程：ffplay 退出后 sleep + 重试，直到 ``stop()`` 终止 worker 及子进程。
 
 进程管理走平台抽象层（``ProcessController`` + ``ResourceLocator`` 构造注入），

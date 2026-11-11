@@ -39,6 +39,62 @@ photo 60（全「拍照未完成保存」）、video 59、rtmp 5。**photo 阈�
 
 ---
 
+## 🔴 P0 — 固件命令族改为 `cam_run`（待实施·Code Agent）
+
+**需求（用户 2026-11-10）**：固件已将 photo/video/rtmp 的启动停止命令改为 `cam_run` 命令族，同时 **`cam_set` 之后不再打印设置成功信息**。
+
+| 动作 | 旧 | 新 |
+|---|---|---|
+| 开始拍照 | `dfs_capture_start` | `cam_run photo` |
+| 开始录像 / 停止录像 | `dfs_video_start` / `dfs_video_stop` | `cam_run video start` / `cam_run video stop` |
+| 开始推流 / 停止推流 | `rtmp_video_start <url>` / `rtmp_video_stop` | `cam_run live start <url>` / `cam_run live stop` |
+
+**任务单**：[code_task_cam_run命令族迁移.md](../03_development/archive/code_task_cam_run命令族迁移.md)（含精确锚点、验收标准、禁止做法）。
+
+**影响面（已核实）**：改动仅落在 5 个协议常量（`drivers/photo_commands.py`、`video_commands.py`、`rtmp_commands.py`），业务层全走 `commands.*` 引用，架构不变，**无需新 ADR**（ADR-011 既定范式）。
+
+**三项已拍板（用户 2026-11-10）**：
+1. **业务完成字符串无变化** → 6 条 `*_EXPECT` 一律不改，只改命令字面量；
+2. **`cam_set` 不改名**（`cam_set photo` / `cam_set video <组合>` / `cam_set live bitrate` 保持原样）；
+3. **`cam_set` 判据加固本次不做**（静默失败风险记入 known_issue，待后续决策）。
+
+---
+
+## 🔴 P0 — `cam_set video` 全参数排列组合（**已就绪，待 Code Agent 实施**）
+
+**原则（用户 2026-11-10 已定）**：每条参数显式写全，每种取值组合单独一条 task，全排列。
+
+```text
+cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
+```
+
+**任务单**：[code_task_cam_set视频参数矩阵.md](../03_development/archive/code_task_cam_set视频参数矩阵.md)
+
+**最终取值域（方案 A，三项已拍板）**：
+
+| 参数 | 取值 | 数量 |
+|---|---|---|
+| `res` | 4k / 3k / 1080p / sd1080p / 720p / 480p | 6 |
+| `fps` | 30 / 60（**4k、3k 也支持 60**） | 2 |
+| `eis` | 0 / 1 / 2；3k 仅 2 | 16 |
+| `codec` | h264 / h265 | 2 |
+| `bitrate` | **8000000（单值）** | 1 |
+| `gop` | **30（单值）** | 1 |
+| `vui` | 709 / 6010 / 6011 | 3 |
+
+→ **合计 192 条 / 约 1.2 h 纯录像**（`N = 2×2×1×1×3×16`）。
+
+**实施要点**：
+- `video_commands.py` 移除 `VIDEO_PROFILES`/`resolve_video_profile()`，改为 `VIDEO_RESOLUTIONS/VIDEO_FPS/...` 常量 + `VideoParams` 数据类 + `resolve_video_params()` 校验；
+- `video.py` 参数接口 `video_resolution` → `video_params`（7 键必须写全，`_merge()` 是浅合并）；
+- 新增 `scripts/gen_video_matrix.py` 生成 `config/scenarios/video_matrix.yaml`（192 条）；
+- **`busy` 止血**：`VIDEO_SET_ERROR` 增加 `\bbusy\b`（原文待用户后续提供，只改这一处常量）；`preclean` 补幂等 `cam_run live stop`；
+- 旧尺寸变体（2016×1034 / 1600×900 / 800×600 / 1296×2304 竖屏 / `hd1080p`）按已移除处理，6 个既有场景改 representative 组合（`video_size_traverse.yaml` 归档）。
+
+**遗留**：`busy` 日志原文待真机观察；新 6 档实际 w×h 待 ffprobe 校准（当前一律 0，不做尺寸断言）。
+
+---
+
 ## 🔴 P0 — recovery 冷启动改「先下电 → 再上电」（待实施）
 
 **需求（用户 2026-09-30）**：recovery 模式下每次脚本第一次运行时，串口控制器当前是「先发上电命令」，调整为「先发下电命令，再发上电命令」，使板子从确定的下电状态启动（而非假设已带电、直接上电可能是空操作）。

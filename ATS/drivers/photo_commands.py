@@ -28,7 +28,7 @@ PHOTO_MODES: Mapping[str, str] = MappingProxyType({
 
 # 命令模板（保持对任意 mode 的兼容，由固件自行拒绝非法模式名）。
 PHOTO_SET_COMMAND = "cam_set photo {mode}"
-PHOTO_CAPTURE_COMMAND = "dfs_capture_start"
+PHOTO_CAPTURE_COMMAND = "cam_run photo"
 PHOTO_CAPTURE_EXPECT = r"Capture completed successfully."
 PHOTO_SET_TIMEOUT = 10.0
 PHOTO_CAPTURE_TIMEOUT = 30.0
