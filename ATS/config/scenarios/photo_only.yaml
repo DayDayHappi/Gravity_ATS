@@ -1,0 +1,47 @@
+# 单元测试场景：仅拍照，不做 FTP 下载（ftp_download: false，全程不碰网络/FTP）。
+# prepare 只 serial_init + preclean（去掉 wifi_connect/ftp_ready/preview_start）；
+# tasks 只保留 photo（无 emmc/video/rtmp/video_integrity）。
+# 用途：真机验证 cam_set photo <mode> size <size> + cam_run photo + 存盘路径扫描链路。
+#       命令集按 2026-11-20 真机实测从 42 组合收缩，再按用户决定「暂不支持」3 条 → **12 条可用**；
+#       整轮循环 20 次（20 轮 × 12 组合 = 240 次拍照）。
+#       （ADR-018；实测见 04_testing/test_report_20261120_photo_mode_size全枚举.md）
+# 排除：fcov 整列（持续取流、锁死板子只能断电）；8m/w8m 限 auto/single/mfnr/hdr（cam open failed，heif 除外）；
+#       auto/mfnr/hdr 的 3m/1080p/720p/480p（size 仅 single 支持，SET 阶段被拒）；
+#       single 3m、heif 8m、heif 720p（实测可拍，但按用户决定本轮「暂不支持」）。
+scenario:
+  name: photo_only
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - preclean
+  loop:
+    enable: true
+    count: 20              # 20 轮 × 12 组合 = 240 次拍照
+  tasks:
+    # photo_modes 为结构化映射列表 {mode, size}；ftp_download: false 走纯拍摄分支。
+    # 命令：cam_set photo <mode> size <size>（size 恒显式，不含 num）。
+    # 顺序 mode-major：mode 按 auto→single→mfnr→hdr→heif，共 12 条（实测可用且纳入）。
+    - module: photo
+      override:
+        ftp_download: false
+        photo_modes:
+          # auto（仅 12m 可用）
+          - {mode: auto,   size: 12m}
+          # single（12m/1080p/720p/480p；3m 暂不支持，8m/w8m 打不开相机，均不列）
+          - {mode: single, size: 12m}
+          - {mode: single, size: 1080p}
+          - {mode: single, size: 720p}
+          - {mode: single, size: 480p}
+          # mfnr（仅 12m 可用）
+          - {mode: mfnr,   size: 12m}
+          # hdr（仅 12m 可用）
+          - {mode: hdr,    size: 12m}
+          # heif（12m/w8m/3m/1080p/480p；8m、720p 暂不支持，不列）
+          - {mode: heif,   size: 12m}
+          - {mode: heif,   size: w8m}
+          - {mode: heif,   size: 3m}
+          - {mode: heif,   size: 1080p}
+          - {mode: heif,   size: 480p}
+  cleanup:
+    - close_serial

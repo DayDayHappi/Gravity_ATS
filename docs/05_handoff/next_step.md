@@ -95,6 +95,34 @@ cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
 
 ---
 
+## 🔴 P0 — `cam_set photo` 参数结构化（**已定型，待 Code Agent 实施**）
+
+**需求（用户 2026-11-19，固件串口日志）**：固件 `cam_set photo <mode> [size <SIZE>] [num]`；裸 token 被当 `num`（fps），设尺寸**必须带 `size` 关键字**。现脚本发的 `single 12m`/`single 1080p` 均非法（静默回落到 12m/30）。
+
+**决策**：用户拍板 **方案 B（photo 参数结构化）**。接口由 [ADR-018](../02_design/decision_record/ADR-018-photo参数结构化.md) 定型（Status=Accepted）。
+**任务单**：[code_task_photo_size关键字显式化.md](../03_development/archive/code_task_photo_size关键字显式化.md)（Level 2）。
+
+**要点**：
+- `photo_modes` 元素由字符串尾巴 → 映射 `{mode, size}`（**硬切**，字符串元素报 `PhotoParamsError`，不双读）。
+- **命令形式 `cam_set photo <mode> size <size>`，对 mode × size 全枚举 = 6 × 7 = 42 条；不建模/不发送 `num`。**
+- 协议层 `photo_commands.py`：+ `PhotoParams(mode, size)` / `resolve_photo_params()` / `PHOTO_MODE_NAMES` / `PHOTO_SIZES`；− `PHOTO_SET_COMMAND` / `PHOTO_MODES`。
+- 模块层 `photo.py`：走 `params.command` 下发；报告名/本地目录用无空格 `params.key`（`auto-12m`/`single-1080p`）；默认回退 `[{"mode":"auto","size":"12m"}]`。
+- 新增场景 `photo_matrix.yaml`（**单 photo task 遍历 42 元素**）；既有 5 个场景 photo_modes 改结构体子集（见任务单 §4.4）。
+- **`config/modules/photo.yaml` 默认值必须同批结构化**（否则 normal/aging/no_network 未 override 场景命中字符串报错）。
+- 判据/超时/下载零改动；`size→fps` 不校验不断言。
+
+**⚠ 工作区漂移**：当前分支工作区有**一版未提交的含 `num` 实现**（`photo_commands.py` 的 `PhotoParams(mode,size=None,num=None)`、配置 `{mode: hdr, num: 0}`、`tests/test_photo_params.py` 的 `test_hdr_with_num`），与修订版「无 num、size 必填」**不符**。Code Agent 须**删 num、补 size、按 42 条重做**，勿沿用。
+
+**🔴 真机实测（2026-11-20）：42 条不可全枚举，收缩到 12 条** —— 逐条实测 42 组合：15 可拍成功、12 条被固件拒（`does not support <mode> (supported: single)`）、10 条 `cam open failed`、5 条 `fcov` 持续取流锁死板子。**`8m/w8m` 小概率整板 panic，`fcov` 必毒 → 排除**；用户另定 `single 3m`/`heif 8m`/`heif 720p` 「暂不支持」（实测 PASS，策略暂缓）→ **最终纳入 12 条**。详见 [test_report_20261120_photo_mode_size全枚举.md](../04_testing/test_report_20261120_photo_mode_size全枚举.md)、[ADR-018](../02_design/decision_record/ADR-018-photo参数结构化.md)。
+
+**🔴 已就绪的两个场景落点任务单（Code Agent，与本条同批）**：
+- [code_task_photo_only收缩为可用命令.md](../03_development/archive/code_task_photo_only收缩为可用命令.md)（`photo_only.yaml` → 12 条 + loop 20 轮）
+- [code_task_stress_photo替换为可用命令.md](../03_development/archive/code_task_stress_photo替换为可用命令.md)（`stress.yaml` 删原 photo task → 12 条）
+
+**遗留（非阻塞）**：photo `cam_set` 非法 size / busy 拒绝串（`does not support`/`rejected: busy`）未被 `_ERROR_RE` 识别 → 静默当成功（观测性缺口，另案）；`8m/w8m` 是否永久跳过、`fcov` 是否单列场景、"暂不支持"3 条何时恢复 —— 见 test_report §七 TODO-CONFIRM。
+
+---
+
 ## 🔴 P0 — recovery 冷启动改「先下电 → 再上电」（待实施）
 
 **需求（用户 2026-09-30）**：recovery 模式下每次脚本第一次运行时，串口控制器当前是「先发上电命令」，调整为「先发下电命令，再发上电命令」，使板子从确定的下电状态启动（而非假设已带电、直接上电可能是空操作）。

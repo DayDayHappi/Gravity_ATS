@@ -1,6 +1,10 @@
 # 拍照模块参数
 ftp_download: true         # true=拍完立即 FTP 下载校验；false=纯拍摄不下载（无网络场景 override）
-photo_modes: ["auto"]      # 可扩为 [auto, single, mfnr, hdr 0, hdr 1, hdr 2, hdr 3]
+# photo_modes：结构化列表，每元素为映射 {mode, size?, num?}（ADR-018，硬切，旧字符串形式报错）。
+#   mode: auto|single|mfnr|hdr|fcov|heif；size: 12m|8m|w8m|3m|1080p|720p|480p；num: hdr 0-3 / single 帧率
+#   示例：- {mode: single, size: 12m}  /  - {mode: hdr, num: 0}  /  - {mode: auto}
+photo_modes:
+  - {mode: auto}
 # 大小阈值按产物类型分档（BUG-008）：同一目录下主图/缩略图/HEIC 尺寸量级不同，
 # 不得共用单一阈值（缩略图 480×360 亮场景约 9KB，HEIC 实测 6.9–83KB）。
 photo_min_size_kb: 10          # 主图（勿轻易调低，低分辨率主图余量仅约 1.7KB）

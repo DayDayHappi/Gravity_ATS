@@ -19,9 +19,16 @@ scenario:
     - module: photo
       repeat: 1            # Runner 每轮 repeat 都完整遍历一次 photo_modes
       override:
-        # hdr 0~3 已真机核实为「带参数形式」（cam_set photo hdr <0-3>），非下划线独立名 hdr_0~3。
-        # single 1080p/720p/480p 三个含空格模式名仍需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
-        photo_modes: [auto, single, mfnr, hdr 0, hdr 1, hdr 2, hdr 3]
+        # photo_modes 为结构化映射 {mode, size?, num?}（ADR-018，硬切，旧字符串形式报错）：
+        #   命令由 drivers/photo_commands.py 拼装；hdr 用 num 表达连拍张数。
+        photo_modes:
+          - {mode: auto}
+          - {mode: single}
+          - {mode: mfnr}
+          - {mode: hdr, num: 0}
+          - {mode: hdr, num: 1}
+          - {mode: hdr, num: 2}
+          - {mode: hdr, num: 3}
     - module: video
       duration: 66
       override:

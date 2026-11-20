@@ -6,7 +6,8 @@
 
 每个模式：
 1. 记录 /emmc/PIC 旧时间戳目录集合
-2. ``cam_set photo <mode>`` 切模式 + 稳定延时
+2. ``cam_set photo <mode> [size <SIZE>] [num]`` 切模式 + 稳定延时
+   （参数结构化，命令经 drivers/photo_commands.py 的 PhotoParams 拼装）
 3. ``cam_run photo`` 拍照
 4. 轮询 FTP 列 /emmc/PIC，等出现新时间戳目录（超时 photo_capture_timeout）
 5. 下载新目录里的全部图片，按产物类型（主图 / 缩略图 / HEIC）分别校验
@@ -77,7 +78,13 @@ class PhotoModule(TestModule):
         self.config = self._merge(params)
         ftp_download = bool(self.config.get("ftp_download", True))
 
-        modes = self.config.get("photo_modes", ["auto"])
+        # photo_modes 元素为结构化映射 {mode, size?, num?}（ADR-018，硬切；
+        # 旧字符串形式报错）。提前全部校验，配置错误即整体拒绝执行、不猜测。
+        try:
+            param_list = [commands.resolve_photo_params(entry)
+                          for entry in self.config.get("photo_modes", [{"mode": "auto"}])]
+        except commands.PhotoParamsError as exc:
+            return self._error(f"拍照配置错误：{exc}")
         settle = float(self.config.get("photo_settle_delay", 1.0))
         cap_timeout = float(self.config.get("photo_capture_timeout", 10.0))
         # 按产物类型分档阈值（BUG-008）：主图沿用 photo_min_size_kb；
@@ -101,20 +108,22 @@ class PhotoModule(TestModule):
             os.makedirs(tmp_dir, exist_ok=True)
 
         results = []
-        for mode in modes:
-            results.append(self._test_one(ctx, console, ftp, mode,
+        for photo_params in param_list:
+            results.append(self._test_one(ctx, console, ftp, photo_params,
                                           settle, cap_timeout, min_kb_by_kind, tmp_dir,
                                           ftp_download))
         return results
 
-    def _test_one(self, ctx, console, ftp, mode, settle, cap_timeout, min_kb_by_kind, tmp_dir,
-                  ftp_download=True):
+    def _test_one(self, ctx, console, ftp, photo_params, settle, cap_timeout, min_kb_by_kind,
+                  tmp_dir, ftp_download=True):
+        # photo_params 为已校验的 PhotoParams（ADR-018）；key 无空格，直接用作报告名/目录名。
+        mode = photo_params.key
         name = f"photo[{mode}]"
         timer = Timer().start()
         logger.step(f"  拍照测试: 模式 {mode}")
 
-        # 1. 切模式
-        r = console.exec_sync(commands.PHOTO_SET_COMMAND.format(mode=mode),
+        # 1. 切模式（命令与判据均来自 drivers/photo_commands.py，ADR-011）
+        r = console.exec_sync(photo_params.command,
                               timeout=commands.PHOTO_SET_TIMEOUT)
         if not r.success:
             return self._mk(name, "FAIL", f"设置模式 {mode} 失败", r.clean, timer)
@@ -165,10 +174,9 @@ class PhotoModule(TestModule):
             return self._mk(name, "PASS", f"{msg_base}（未列出 jpg 辅助验证）", r.clean[-200:], timer)
 
         # 下载整个时间戳目录下的全部 jpg（不只第一张）。
-        # 本地建子目录 {safe_mode}_{new_dir}/，避免 mode 名含空格 / 多张同名冲撞。
-        import re
-        safe_mode = re.sub(r"[^A-Za-z0-9_.-]", "_", mode)
-        dl_dir = os.path.join(tmp_dir, f"{safe_mode}_{new_dir}")
+        # 本地建子目录 {mode}_{new_dir}/：mode 为 PhotoParams.key（无空格，如 single-12m），
+        # 天然可作目录名，无需再 sanitize（ADR-018）。
+        dl_dir = os.path.join(tmp_dir, f"{mode}_{new_dir}")
         os.makedirs(dl_dir, exist_ok=True)
 
         # 辅助判据：FTP 下载失败降级不判 FAIL（test_strategy 红线）；

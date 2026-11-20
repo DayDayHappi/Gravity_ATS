@@ -84,6 +84,7 @@
 
 - **Responsibility**：遍历拍照模式，每拍一次验证产物。
 - **Input**：photo_modes 参数；三档大小阈值 `photo_min_size_kb`（主图，10）/ `photo_thumb_min_size_kb`（缩略图，4）/ `photo_heif_min_size_kb`（HEIC，4）。
+  - **接口变更中（ADR-018，待实施）**：`photo_modes` 由字符串尾巴（`["single 1080p"]`）改为结构化映射（`[{mode: single, size: 1080p}]`），命令由 `PhotoParams.command` 生成（`cam_set photo <mode> size <size>`），对 mode × size 全枚举（6×7=42 条），不含 `num`；新配置以 ADR-018 为准，勿再使用字符串形式。详见 [ADR-018](../02_design/decision_record/ADR-018-photo参数结构化.md)、[任务单](../03_development/archive/code_task_photo_size关键字显式化.md)。
 - **Output**：串口 `Capture completed successfully.`（主判据，相机日志全部打印完的完成标志）。
 - **Dependency**：逻辑依赖 FTP 就绪（需 FTP 客户端），由 prepare.ftp_ready 保证；代码 `depends=[]`。
 - **Forbidden Dependency**：**不得写 for 循环重复**（重复由 Scenario 的 task.repeat 驱动）；不感知场景类型。

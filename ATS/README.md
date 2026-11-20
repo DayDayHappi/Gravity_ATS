@@ -97,7 +97,7 @@ pc:
   ip: "auto"            # RTMP 推流目标
 
 # modules/photo.yaml
-photo_modes: ["auto"]   # 可扩为 [auto,single,mfnr,hdr_0,hdr_1,hdr_2,hdr_3]
+photo_modes: [{mode: auto}]   # 结构化列表，可扩为 [{mode: single, size: 12m}, {mode: hdr, num: 0}]
 ```
 
 敏感字段支持 `${ENV_VAR}` 从环境变量读。

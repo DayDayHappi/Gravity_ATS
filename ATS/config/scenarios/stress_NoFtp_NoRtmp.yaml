@@ -13,65 +13,63 @@ scenario:
   tasks:
     # photo 按模式拆成 11 个 task，每个模式单元素 photo_modes + 独立 repeat，
     # 以便后续单独调整某一模式的 repeat 次数（本次全部 = 1，与拆分前遍历 11 模式等价）。
-    # hdr 0~3 已真机核实为「带参数形式」（cam_set photo hdr <0-3>），非下划线独立名 hdr_0~3。
-    # single 1080p/720p/480p 三个含空格模式名仍需真机核实（见 archive/新增需求_photo单拍分辨率变体.md）。
-    # heif 可能是独立模式名（cam_set photo heif），也可能带参数，待真机核实。
+    # photo_modes 为结构化映射 {mode, size?, num?}（ADR-018，硬切，旧字符串形式报错）：
+    #   命令由 drivers/photo_commands.py 拼装，single 的尺寸须经 size 关键字下发。
+    # hdr 用 {mode: hdr, num: <0-3>} 表达连拍张数；heif 为独立模式名 {mode: heif}。
     - module: photo
       repeat: 1
       override:
-        photo_modes: [auto]
+        photo_modes: [{mode: auto}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [single]
+        photo_modes: [{mode: single}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [single 1080p]
+        photo_modes: [{mode: single, size: 1080p}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [single 720p]
+        photo_modes: [{mode: single, size: 720p}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [single 480p]
+        photo_modes: [{mode: single, size: 480p}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [mfnr]
+        photo_modes: [{mode: mfnr}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [hdr 0]
+        photo_modes: [{mode: hdr, num: 0}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [hdr 1]
+        photo_modes: [{mode: hdr, num: 1}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [hdr 2]
+        photo_modes: [{mode: hdr, num: 2}]
         ftp_download: false
     - module: photo
       repeat: 1
       override:
-        photo_modes: [hdr 3]
+        photo_modes: [{mode: hdr, num: 3}]
         ftp_download: false
-    # TODO-CONFIRM：heif 可能是独立模式名 cam_set photo heif，也可能带参数
-    # （类似 cam_set photo hdr <0-3>），真机核实时需确认；若带参数需改 photo_modes: ["heif <参数>"]。
     - module: photo
       repeat: 1
       override:
-        photo_modes: [heif]
+        photo_modes: [{mode: heif}]
         ftp_download: false
     # video 代表组合：6 档分辨率 × h265 × 30fps × eis 2（3k 仅支持 eis 2），
     # 完整全参数排列见 video_matrix.yaml（168 条）。override 的 video_params 整体替换
