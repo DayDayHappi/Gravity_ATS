@@ -1,0 +1,482 @@
+[
+{
+"res": "3k",
+"fps": 30,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 30,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 30,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 30,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 30,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 30,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=3k fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 0,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1915427] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 0,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1916481] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 1,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1917533] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 1,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1918572] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 2,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1919625] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "3k",
+"fps": 60,
+"eis": 2,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1920676] I/CtrlCfg: fps 60 not supported on 3k, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 30,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=1080p fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 0,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1928036] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 0,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1929087] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 1,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1930138] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 1,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1931191] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 2,
+"fmt": "h264",
+"st": "ERR",
+"msg": "msh />[1932240] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "1080p",
+"fps": 60,
+"eis": 2,
+"fmt": "h265",
+"st": "ERR",
+"msg": "msh />[1933290] I/CtrlCfg: fps 60 not supported on 1080p, use 30 or pick sd1080p|720p|480p for 60"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 30,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "sd1080p",
+"fps": 60,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=sd1080p fps=60 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=30 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=30 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=30 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=30 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 30,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=60 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=60 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=60 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=60 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=720p fps=60 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "720p",
+"fps": 60,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=720p fps=60 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=30 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=30 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=30 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=30 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=30 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 30,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=30 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 0,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=60 eis=0 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 0,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=60 eis=0 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 1,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=60 eis=1 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 1,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=60 eis=1 format=h265 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 2,
+"fmt": "h264",
+"st": "OK",
+"msg": "size=480p fps=60 eis=2 format=h264 bitrate=18000000 gop=30 vui=709"
+},
+{
+"res": "480p",
+"fps": 60,
+"eis": 2,
+"fmt": "h265",
+"st": "OK",
+"msg": "size=480p fps=60 eis=2 format=h265 bitrate=18000000 gop=30 vui=709"
+}
+]
