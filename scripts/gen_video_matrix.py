@@ -11,7 +11,7 @@
 
 固定顺序：res → fps → eis → codec → bitrate → gop → vui，便于日志对照与失败二分。
 
-4k / 3k 仅支持 30fps、3k 仅支持 eis 2（用户 2026-11-10 确认），当前共 168 条。
+4k / 3k / 1080p 仅支持 30fps、3k 仅支持 eis 2（1080p 限制于真机 2026-11-23 确认），当前共 150 条。
 """
 import argparse
 import datetime
@@ -31,7 +31,7 @@ DEFAULT_DURATION = 10
 _HEADER = """\
 # 由 scripts/gen_video_matrix.py 生成，请勿手改；改取值域请改 drivers/video_commands.py 后重新生成。
 # 生成时间: {timestamp}
-# 取值域: res={res} × fps={fps}（4k/3k 仅 30）× eis={eis}（3k 仅 2）× codec={codec}
+# 取值域: res={res} × fps={fps}（{fps_forced} 仅 30）× eis={eis}（3k 仅 2）× codec={codec}
 #         × bitrate={bitrate} × gop={gop} × vui={vui}
 # 组合数: {count} 条（末尾 video_integrity 不计入）
 # 重新生成: python scripts/gen_video_matrix.py
@@ -97,6 +97,7 @@ def build_text(timestamp: str) -> tuple:
         timestamp=timestamp,
         res="/".join(vc.VIDEO_RESOLUTIONS),
         fps="/".join(str(x) for x in vc.VIDEO_FPS),
+        fps_forced="/".join(sorted(vc.VIDEO_FPS_FORCED)),
         eis="/".join(str(x) for x in vc.VIDEO_EIS_MODES),
         codec="/".join(vc.VIDEO_CODECS),
         bitrate="/".join(str(x) for x in (8000000,)),

@@ -36,6 +36,11 @@
 1. [04_testing/test_report_20261120_photo_mode_size全枚举.md](04_testing/test_report_20261120_photo_mode_size全枚举.md) — `cam_set photo <mode> size <size>` 42 组合实测（15 可拍 / 12 被拒 / 10 open 失败 / 5 fcov 有毒）；`8m/w8m` 危险、`fcov` 须排除
 2. 相关决策：[ADR-018](02_design/decision_record/ADR-018-photo参数结构化.md)、[任务单](03_development/archive/code_task_photo_size关键字显式化.md)、[known_issue](05_handoff/known_issue.md)
 
+### 固件能力实测（video 录像矩阵）
+
+1. [04_testing/test_report_20261123_video关键字式60组合实测.md](04_testing/test_report_20261123_video关键字式60组合实测.md) — `cam_set video` 关键字式语法 60 组合实测（OK 47 / SET_FAIL 12 / STUCK 1）；**固件只认关键字式**（位置式被拒）、1080p+fps60 不支持、`sd1080p fps60 eis2 h265` 固件 stop 挂死
+2. 相关：[known_issue](05_handoff/known_issue.md)、[next_step（Level 2 语法修正 + video_only 任务单）](05_handoff/next_step.md)
+
 ### Bug 修复
 
 1. [01_architecture/module_design.md](01_architecture/module_design.md)（对应模块）

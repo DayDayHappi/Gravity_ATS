@@ -415,8 +415,10 @@ python -m ATS.main --scenario quick_check --port /dev/ttyUSB0 --no-interactive-w
 录像命令由 [ATS/drivers/video_commands.py](ATS/drivers/video_commands.py) 统一拼装，采用固件新语法：
 
 ```text
-cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
+cam_set video <res> fps <N> eis <N> format <h264|h265> bitrate <N> gop <N> vui <N>
 ```
+
+> 语法为**关键字式**（`fps`/`format` 关键字，2026-11-23 真机确认固件唯一接受；旧位置式 `cam_set video <res> <N> eis <N> <codec>` 已被固件拒：`bare number 30 not allowed, use "fps 30" or a keyword`）。
 
 场景不写命令，只给 7 个参数（全部必须显式写出，override 会整体替换模块默认值而非单键合并）：
 

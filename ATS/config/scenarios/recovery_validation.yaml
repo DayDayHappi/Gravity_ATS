@@ -88,7 +88,7 @@ scenario:
       override:
         photo_modes: [{mode: heif}]
     # 恢复验证不关心分辨率矩阵，只保留 2 个代表组合（1080p / 3k）。
-    # 完整全参数排列见 video_matrix.yaml（168 条）；override 的 video_params 整体替换
+    # 完整全参数排列见 video_matrix.yaml（150 条）；override 的 video_params 整体替换
     # 模块默认值，7 个键必须写全。
     - module: video
       repeat: 1

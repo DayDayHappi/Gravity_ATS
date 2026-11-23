@@ -72,7 +72,7 @@ scenario:
         photo_modes: [{mode: heif}]
         ftp_download: false
     # video 代表组合：6 档分辨率 × h265 × 30fps × eis 2（3k 仅支持 eis 2），
-    # 完整全参数排列见 video_matrix.yaml（168 条）。override 的 video_params 整体替换
+    # 完整全参数排列见 video_matrix.yaml（150 条）。override 的 video_params 整体替换
     # 模块默认值，7 个键必须写全。
     - module: video
       repeat: 1

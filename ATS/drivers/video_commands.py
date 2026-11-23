@@ -1,8 +1,10 @@
 """录像固件协议定义：命令、判据、参数取值域与校验的唯一维护位置。
 
 本文件不发送串口、不连接 FTP、不读取 YAML，也不安排测试次数或时长。
-新固件采用「每个参数都显式写全」的 ``cam_set video`` 语法；本文件是取值域、
-命令拼装与合法性校验的唯一来源，场景只选择参数组合，不内联协议字符串（ADR-011）。
+新固件采用**关键字式** ``cam_set video`` 语法（每个参数都带 key，如
+``cam_set video <res> fps <N> eis <N> format <codec> bitrate <N> gop <N> vui <N>``）；
+本文件是取值域、命令拼装与合法性校验的唯一来源，场景只选择参数组合，不内联协议
+字符串（ADR-011）。
 """
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -21,13 +23,18 @@ VIDEO_GOP_RANGE = (0, 1000)
 
 # 分辨率对其它参数的硬约束：
 # - 3k 只允许 eis 2（离线防抖）；
-# - 4k / 3k 不支持 60fps（用户 2026-11-10 更正）。
+# - 4k / 3k / 1080p 不支持 60fps（真机 2026-11-23 确认 1080p 亦不支持）。
 VIDEO_EIS_FORCED_OFFLINE: Mapping[str, int] = MappingProxyType({"3k": 2})
-VIDEO_FPS_FORCED: Mapping[str, tuple] = MappingProxyType({"4k": (30,), "3k": (30,)})
+VIDEO_FPS_FORCED: Mapping[str, tuple] = MappingProxyType(
+    {"4k": (30,), "3k": (30,), "1080p": (30,)})
 
+# 关键字式（2026-11-23 真机实测确认固件唯一接受的写法）。
+# 旧位置式（``{res} {fps} eis {eis} {codec}``，res 后裸数字当 fps）已被固件拒绝：
+# ``I/CtrlCfg: bare number 30 not allowed, use "fps 30" or a keyword``。
 # 固定字段顺序；即使取值等于固件默认也必须写出（不依赖固件缺省值）。
 VIDEO_SET_COMMAND = (
-    "cam_set video {res} {fps} eis {eis} {codec} bitrate {bitrate} gop {gop} vui {vui}"
+    "cam_set video {res} fps {fps} eis {eis} format {codec} "
+    "bitrate {bitrate} gop {gop} vui {vui}"
 )
 
 VIDEO_START_COMMAND = "cam_run video start"
@@ -160,7 +167,8 @@ def iter_video_params(bitrates=(8000000,), gops=(30,)):
 
     顺序：res（VIDEO_RESOLUTIONS 顺序）→ fps 升序 → eis 升序 → codec（h264, h265）
     → bitrate → gop → vui（709, 6010, 6011）。
-    默认 bitrate/gop 各单值（方案 A），6 档 × 2fps（4k/3k 仅 30） × eis 共 16 种 = 168 条。
+    默认 bitrate/gop 各单值（方案 A），6 档：4k/3k/1080p 仅 30fps（各 3/1/3 eis），
+    sd1080p/720p/480p 支持 30/60fps，每档 3 eis → 共 150 条。
     """
     for res in VIDEO_RESOLUTIONS:
         forced_eis = VIDEO_EIS_FORCED_OFFLINE.get(res)

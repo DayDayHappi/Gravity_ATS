@@ -14,9 +14,9 @@ from ATS.drivers import video_commands as vc
 class VideoParamsMatrixTest(unittest.TestCase):
 
     def test_total_combinations(self):
-        """方案 A 默认取值域：6 档 × fps（4k/3k 仅 30）× eis（3k 仅 2）= 168。"""
+        """方案 A 默认取值域：4k/3k/1080p 仅 30fps × eis（3k 仅 2）= 150。"""
         params = list(vc.iter_video_params())
-        self.assertEqual(len(params), 168)
+        self.assertEqual(len(params), 150)
 
     def test_per_resolution_counts(self):
         params = list(vc.iter_video_params())
@@ -24,13 +24,13 @@ class VideoParamsMatrixTest(unittest.TestCase):
         for p in params:
             counts[p.res] = counts.get(p.res, 0) + 1
         self.assertEqual(counts, {
-            "4k": 18, "3k": 6, "1080p": 36,
+            "4k": 18, "3k": 6, "1080p": 18,
             "sd1080p": 36, "720p": 36, "480p": 36,
         })
 
-    def test_4k_and_3k_only_30fps(self):
+    def test_4k_3k_1080p_only_30fps(self):
         for p in vc.iter_video_params():
-            if p.res in ("4k", "3k"):
+            if p.res in ("4k", "3k", "1080p"):
                 self.assertEqual(p.fps, 30, f"{p.res} 不应生成 60fps")
 
     def test_3k_only_eis_2(self):
@@ -52,16 +52,16 @@ class VideoParamsMatrixTest(unittest.TestCase):
             "res": "4k", "fps": 30, "eis": 0, "codec": "h264",
             "bitrate": 8000000, "gop": 30, "vui": "709",
         })
+        # 关键字式（2026-11-23 真机确认）：fps / format 带关键字。
         self.assertEqual(
             p.command,
-            "cam_set video 4k 30 eis 0 h264 bitrate 8000000 gop 30 vui 709")
-        # 任务单示例标注 63 字节（含行尾 CRLF）；命令本体 61 字节。
-        self.assertEqual(len(p.command), 61)
+            "cam_set video 4k fps 30 eis 0 format h264 bitrate 8000000 gop 30 vui 709")
+        self.assertEqual(len(p.command), 72)
 
     def test_longest_command_fits_chunked_write(self):
         """最长组合应远小于一次写入缓冲风险区间，由 32B 分片覆盖。"""
         longest = max((p.command for p in vc.iter_video_params()), key=len)
-        self.assertLessEqual(len(longest), 70)
+        self.assertLessEqual(len(longest), 80)
         self.assertGreater(len(longest), 32)
 
     def test_key_format(self):
@@ -103,6 +103,11 @@ class VideoParamsRejectTest(unittest.TestCase):
     def test_4k_with_60fps(self):
         with self.assertRaises(vc.VideoParamsError):
             vc.resolve_video_params(self._valid(res="4k", fps=60))
+
+    def test_1080p_with_60fps(self):
+        """真机 2026-11-23 确认 1080p 不支持 60fps。"""
+        with self.assertRaises(vc.VideoParamsError):
+            vc.resolve_video_params(self._valid(res="1080p", fps=60))
 
     def test_unknown_resolution(self):
         for bad in ("hd1080p", "3k_2", "sd1080p_0", "4K"):

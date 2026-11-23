@@ -21,7 +21,7 @@ normal 执行：prepare（wifi_connect 收敛器连 WiFi + ftp_ready 启 FTP）
 ## 3. 支持场景（Supported Scenario）
 
 - **normal**：WiFi/FTP 由 prepare 准备（wifi_connect 收敛器 + ftp_ready），tasks 4 项（emmc/photo/video/rtmp），向后兼容的默认场景。
-- **stress**：photo×50 + video 180s + rtmp 600s，整轮循环 3 次（压测）。
+- **stress**：photo 12 类（结构化 mode×size）+ video 43 个实测组合（各 20s，仅录像不下载）+ rtmp 600s，整轮循环 200 次（压测）。
 - **aging**：photo×10 + rtmp 600s，限时 2h 循环（老化）。
 
 ## 4. 系统边界（System Boundary）

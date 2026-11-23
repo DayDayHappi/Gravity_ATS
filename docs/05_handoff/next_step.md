@@ -60,15 +60,18 @@ photo 60（全「拍照未完成保存」）、video 59、rtmp 5。**photo 阈�
 
 ---
 
-## 🔴 P0 — `cam_set video` 全参数排列组合（**已就绪，待 Code Agent 实施**）
+## 🔴 P0 — `cam_set video` 全参数排列组合（**语法修正 ✅ 已实施；矩阵待真机**）
 
 **原则（用户 2026-11-10 已定）**：每条参数显式写全，每种取值组合单独一条 task，全排列。
 
 ```text
-cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
+# 关键字式（2026-11-23 真机实测确认固件唯一接受；旧位置式已被拒）
+cam_set video <res> fps <N> eis <N> format <h264|h265> bitrate <N> gop <N> vui <N>
 ```
 
-**任务单**：[code_task_cam_set视频参数矩阵.md](../03_development/archive/code_task_cam_set视频参数矩阵.md)
+**✅ 语法修正已实施（2026-11-23，devlog `20261123_1340`）**：`drivers/video_commands.py` 的 `VIDEO_SET_COMMAND` 已由位置式改为**关键字式**（`{res} fps {fps} eis {eis} format {codec} …`）；`VIDEO_FPS_FORCED` 已补 `1080p`（真机：1080p 不支持 fps60）；`video_matrix.yaml` 随之重生成（168→150 条）。证据见 [test_report_20261123](../04_testing/test_report_20261123_video关键字式60组合实测.md)。
+
+**任务单**：[code_task_cam_set视频参数矩阵.md](../03_development/archive/code_task_cam_set视频参数矩阵.md)（**注：其 §2/§4.1 的命令形为旧位置式，实施时以本条关键字式为准**）。
 
 **最终取值域（方案 A，三项已拍板）**：
 
@@ -92,6 +95,11 @@ cam_set video <res> <fps> eis <N> <codec> bitrate <N> gop <N> vui <N>
 - 旧尺寸变体（2016×1034 / 1600×900 / 800×600 / 1296×2304 竖屏 / `hd1080p`）按已移除处理，6 个既有场景改 representative 组合（`video_size_traverse.yaml` 归档）。
 
 **遗留**：`busy` 日志原文待真机观察；新 6 档实际 w×h 待 ffprobe 校准（当前一律 0，不做尺寸断言）。
+
+### 同批附带任务单（2026-11-23）
+
+- [code_task_video_only场景.md](../03_development/archive/code_task_video_only场景.md) — 新增 `video_only.yaml`：仅录像不下载、43 条真机实测可用组合、每条 3s（Level 1）。**前置依赖**：本条 Level 2 语法修正先落地。**✅ 已实施并真机 43/43 PASS（devlog `20261123_1340`）**。
+- [code_task_stress录像命令替换.md](../03_development/archive/code_task_stress录像命令替换.md) — 把 `stress.yaml` 现有 6 条 video 替换为 43 条实测可用集（Level 1）。**✅ 已实施（devlog `20261123_1358`）**：43 条全 `ftp_download: false`、删 4k、删除 `video_integrity` task；离线校验通过（未真机）。
 
 ---
 

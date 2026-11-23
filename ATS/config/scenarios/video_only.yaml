@@ -1,0 +1,557 @@
+# video_only：仅录像不下载，逐条跑真机实测可用的 43 个 cam_set video 组合，每条 3s。
+# 组合来源：docs/04_testing/test_report_20261123_video关键字式60组合实测.md（60 组合实测去重）。
+# 已排除：3k/1080p × fps60（固件拒，'fps 60 not supported'）；sd1080p fps60 eis2 h265（固件 stop 挂死，仅断电可解）。
+# 说明：3k 强制 eis=2（请求 eis0/1 固件一律回 eis2，故只列 2 条）；ftp_download:false 走纯录像分支不碰 FTP。
+# 命令为关键字式（2026-11-23 真机确认）：cam_set video <res> fps <N> eis <N> format <codec> bitrate 18000000 gop 30 vui 709
+scenario:
+  name: video_only
+  preview:
+    enabled: false
+  prepare:
+    - serial_init
+    - wifi_connect
+    - preclean
+    - ftp_ready
+  loop:
+    enable: false          # 单轮跑完即止；轮次由人工改
+  tasks:
+    # ── 3k / fps 30 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "3k"
+          fps: 30
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "3k"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 1080p / fps 30 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 1080p / fps 30 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 1080p / fps 30 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "1080p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 30 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 30 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 30 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 60 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 60
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 60
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 60 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 60
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 60
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── sd1080p / fps 60 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "sd1080p"
+          fps: 60
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 30 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 30 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 30 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 60 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 60 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 720p / fps 60 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "720p"
+          fps: 60
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 30 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 30 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 30 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 30
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 60 / eis 0 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 0
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 0
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 60 / eis 1 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 1
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 1
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    # ── 480p / fps 60 / eis 2 ──
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 2
+          codec: "h264"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+    - module: video
+      duration: 3
+      override:
+        ftp_download: false
+        video_params:
+          res: "480p"
+          fps: 60
+          eis: 2
+          codec: "h265"
+          bitrate: 18000000
+          gop: 30
+          vui: "709"
+  cleanup:
+    - close_serial
