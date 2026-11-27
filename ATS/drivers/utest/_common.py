@@ -54,6 +54,7 @@ UTEST_TESTCASES: Mapping[str, float] = MappingProxyType({
     "pvt_test": 10.0,
     # 固件 run timeout 10s 组 → 脚本 20s
     "i2c_test": 20.0,
+    "cam_test": 20.0,
     "flash_read": 20.0,
     # qspi_test 本期不恢复进 scenario（D6），映射保留以备未来恢复。
     # 注意：qspi_test 的 "1 lane fail!" 是合法中间态（先单线探测失败再升多线），

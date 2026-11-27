@@ -2,6 +2,7 @@
 
 导入各 case 模块触发 @register；注册名 = utest_<case>（见 §5 映射表）。
 """
+from . import cam  # noqa: F401
 from . import efuse  # noqa: F401
 from . import filesystem  # noqa: F401
 from . import i2c  # noqa: F401

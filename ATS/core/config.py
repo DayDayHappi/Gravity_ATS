@@ -57,10 +57,10 @@ CONFIG_DIR = _resolve_config_dir()
 _MODULE_FILE_MAP = {
     "wifi_check": "wifi", "wifi_scan": "wifi", "wifi_join": "wifi",
     "emmc": "emmc", "ftp": "ftp", "photo": "photo", "video": "video", "rtmp": "rtmp",
-    # utest 每 case 一模块（ADR-012/D2），8 个 utest_<case> 共用 utest.yaml
-    "utest_efuse": "utest", "utest_filesystem": "utest", "utest_i2c": "utest",
-    "utest_imu": "utest", "utest_pvt_auto": "utest", "utest_pvt": "utest",
-    "utest_flash_xip_speed": "utest", "utest_flash_read": "utest",
+    # utest 每 case 一模块（ADR-012/D2），9 个 utest_<case> 共用 utest.yaml
+    "utest_cam": "utest", "utest_efuse": "utest", "utest_filesystem": "utest",
+    "utest_i2c": "utest", "utest_imu": "utest", "utest_pvt_auto": "utest",
+    "utest_pvt": "utest", "utest_flash_xip_speed": "utest", "utest_flash_read": "utest",
 }
 
 
